@@ -4,7 +4,6 @@ import service from '../../service/common_service'
 import {IAnyRequest} from "../interfaces";
 import rp from 'request-promise'
 import {AXIOS_OPTIONS} from "../helpers/common";
-import { Configuration, OpenAIApi } from "openai";
 import {getArticleDetails, getNaverNews, getNews, sendLinks} from "./worker";
 import {generateChatMessage} from "./openai";
 
