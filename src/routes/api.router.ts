@@ -1,6 +1,15 @@
 import {FastifyInstance} from 'fastify'
 import {apiSchema, signupSchema} from '../schema'
-import {apiDef, apiSyncUp, preApiNews, preApiSyncUp, preSearchNewLink, preSearchNews, signUp} from "../controllers";
+import {
+    apiDef,
+    apiMemoryRate,
+    apiSyncUp,
+    preApiNews,
+    preApiSyncUp,
+    preSearchNewLink,
+    preSearchNews,
+    signUp
+} from "../controllers";
 
 async function apiRouter(fastify: FastifyInstance) {
 
@@ -25,6 +34,11 @@ async function apiRouter(fastify: FastifyInstance) {
         method: 'GET',
         url: '/rank',
         schema: apiSchema, preHandler: preApiNews,handler: apiSyncUp
+    })
+    fastify.route({
+        method: 'GET',
+        url: '/memory',
+        schema: apiSchema, handler: apiMemoryRate
     })
     fastify.route({
         method: 'GET',
