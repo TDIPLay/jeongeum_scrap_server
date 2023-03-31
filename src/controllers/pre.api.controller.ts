@@ -4,7 +4,9 @@ import service from '../../service/common_service'
 import {IAnyRequest} from "../interfaces";
 import rp from 'request-promise'
 import {AXIOS_OPTIONS} from "../helpers/common";
+import { Configuration, OpenAIApi } from "openai";
 import {getArticleDetails, getNaverNews, getNews, sendLinks} from "./worker";
+import {generateChatMessage} from "./openai";
 
 
 export const preApiNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
@@ -40,6 +42,20 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
         const {query} = request.query;
         const news = await sendLinks(query);
         request.transfer = news;
+        done();
+    } catch (e) {
+        console.log(e)
+        handleServerError(reply, e)
+    }
+}
+
+export const preOpenAi = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+
+        const {query} = request.query;
+        const response = await generateChatMessage(query)
+
+        request.transfer = response !== null ? response : "기사를 작성 할 수 없습니다.";
         done();
     } catch (e) {
         console.log(e)

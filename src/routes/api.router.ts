@@ -5,7 +5,7 @@ import {
     apiMemoryRate,
     apiSyncUp,
     preApiNews,
-    preApiSyncUp,
+    preApiSyncUp, preOpenAi,
     preSearchNewLink,
     preSearchNews,
     signUp
@@ -39,6 +39,11 @@ async function apiRouter(fastify: FastifyInstance) {
         method: 'GET',
         url: '/memory',
         schema: apiSchema, handler: apiMemoryRate
+    })
+    fastify.route({
+        method: 'GET',
+        url: '/ai',
+        schema: apiSchema, preHandler: preOpenAi,handler: apiSyncUp
     })
     fastify.route({
         method: 'GET',
