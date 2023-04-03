@@ -7,6 +7,7 @@ export async function generateChatMessage(query:string):Promise<string> {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
     };
+
     const text_davinci = {
         model: 'text-davinci-002',
         prompt: `${query} 키워드로 뉴스기사써줘`,
@@ -17,17 +18,25 @@ export async function generateChatMessage(query:string):Promise<string> {
         presence_penalty: 0
     };
 
-    const gpt_turbo = {
+    const gpt_turbo =
+        {
         model: "gpt-3.5-turbo",
-        messages: [
-            {"role": "system", "content": `${query} 키워드로 뉴스기사써줘`},
-        ]
-    }
+        max_tokens: 2048,
+        //stream: true,
+        messages:
+            [
+                {
+                    role: "user",
+                    content: `${query} 키워드로 뉴스기사써줘`
+                },
+            ],
+       // responseType: 'stream'
+        };
 
 
     try {
         const response = await axios.post(url, gpt_turbo, { headers });
-        console.log(response.data.choices[0].message.content);
+        //console.log(response.data.choices[0].message.content);
         return response.data.choices[0].message;
     } catch (error) {
         console.error(error);
