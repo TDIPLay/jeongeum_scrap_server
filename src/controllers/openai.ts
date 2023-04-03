@@ -27,7 +27,7 @@ export async function generateChatMessage(query:string):Promise<string> {
             [
                 {
                     role: "user",
-                    content: `${query} 키워드로 뉴스기사써줘`
+                    content: `${query} 키워드로 뉴스기사작성해줘`
                 },
             ],
        // responseType: 'stream'
