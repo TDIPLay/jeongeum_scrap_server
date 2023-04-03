@@ -39,6 +39,7 @@ export async function getArticleDetails(news: News, axiosOptions: any, thumbnail
         const emailIndex = emailRegex.test(author) ? author.indexOf('(') > -1 ? author.lastIndexOf('(') + 1 : author.lastIndexOf(' ') + 1 : null;
         const email = emailIndex ? author.indexOf('(') > -1 ? author.substring(emailIndex, author.length - 1) : author.substring(emailIndex, author.length) : null;
         const name = email ? author.split(email)[0].replace("(", "").trim() : author;
+        const content = $('#dic_area').first().text().trim();
         const description = news.description ? news.description : `${$('meta[property^="og:description"]').attr('content')}...`
         const company = news.company ? news.company : $('meta[name^="twitter:creator"]').attr('content');
         const thumbnail = news.thumbnail ? news.thumbnail : $('meta[property^="og:image"]').attr('content');
@@ -52,12 +53,14 @@ export async function getArticleDetails(news: News, axiosOptions: any, thumbnail
         if (author) news.author = author;
         if (email && email.includes('@')) news.email = email;
         if (author) news.name = name;
+        if (content) news.content = content;
 
         if (news.pubDate) {
             news.timestamp = moment(news.pubDate).unix();
+            news.pubDate = moment.unix(news.timestamp).format("YYYY-MM-DD HH:mm:ss")
         } else {
             const date = $(main).find("span.media_end_head_info_datestamp_time._ARTICLE_DATE_TIME").attr('data-date-time')
-            news.pubDate = date;
+            news.pubDate = moment(new Date(date).getTime()).format("YYYY-MM-DD HH:mm:ss")
             news.timestamp = new Date(date).getTime() / 1000;
         }
 
@@ -66,7 +69,6 @@ export async function getArticleDetails(news: News, axiosOptions: any, thumbnail
         //if (author) news.name = match ? author.replace(/\(.+\)/g, '').trim() : author;
 
     } catch (error) {
-        console.error(error);
         console.error(`Error fetching article: ${error.message} => ${news.title}`);
     }
 }
@@ -115,6 +117,15 @@ export async function getNaverNews(): Promise<PageInfo> {
         .forEach(news => articlePromises.push(getArticleDetails(news, AXIOS_OPTIONS, 0)));
     await Promise.all(articlePromises);
 
+  /*  const CHUNK_SIZE = 10;
+    const articlePromises: Promise<void>[] = [];
+    for (let i = 0; i < newsList.length; i += CHUNK_SIZE) {
+        const newsChunk = newsList.slice(i, i + CHUNK_SIZE);
+        const promises = newsChunk.map((news) => getArticleDetails(news, AXIOS_OPTIONS, 0));
+        articlePromises.push(...promises);
+        await Promise.all(promises);
+    }*/
+
     return pageInfo;
 }
 
@@ -136,19 +147,10 @@ export async function getNaverRealNews(): Promise<PageInfo> {
     const $ = cheerio.load(content);
 
     const pageInfo: PageInfo = {};
-    console.log("test")
-    const headlines = $('div.hdline_news').find('li > div > a');
-    headlines.each((i, el) => {
-        const title = $(el).text().trim();
-        const link = $(el).attr('href');
-        console.log(`${title}: ${link}`);
-    });
-
 
     $("div.main_brick").each((index, block) => {
-        console.log("start")
+
         const company = $(block).find(".channel").text().trim();
-        console.log($(block).html())
         if (!company) return;
 
         const newsList = $(block).find(".cc_text_list > li").map((index, news) => {
@@ -196,7 +198,14 @@ export async function getNaverRealNews(): Promise<PageInfo> {
 }*/
 
 
-async function getNewLinks(query: string, oldLinks: string[] = []) {
+// query	String	Y	검색어. UTF-8로 인코딩되어야 합니다.
+// display	Integer	N	한 번에 표시할 검색 결과 개수(기본값: 10, 최댓값: 100)
+// start	Integer	N	검색 시작 위치(기본값: 1, 최댓값: 1000)
+// sort	String	N	검색 결과 정렬 방법
+// - sim: 정확도순으로 내림차순 정렬(기본값)
+// - date: 날짜순으로 내림차순 정렬
+
+async function getNewLinks(query: string, oldLinks: string[] = [], start:number = 1) {
     // (주의) 네이버에서 키워드 검색 - 뉴스 탭 클릭 - 최신순 클릭 상태의 url
     let api_url = 'https://openapi.naver.com/v1/search/news.json?query=' + encodeURI(query) + "&display=100"; // JSON 결과
     let options = {
@@ -219,9 +228,9 @@ async function getNewLinks(query: string, oldLinks: string[] = []) {
     return diffLinks;
 }
 
-export async function getNews(query: string, oldLinks: string[] = []) {
+export async function getNews(query: string, start:number = 1) {
 
-    let api_url = 'https://openapi.naver.com/v1/search/news.json?query=' + encodeURI(query) + "&display=100"; // JSON 결과
+    let api_url = `https://openapi.naver.com/v1/search/news.json?query=${encodeURI(query)}&display=100&start=${start}`; // JSON 결과
     let options = {
         headers: {
             'X-Naver-Client-Id': process.env["NAVER_CLIENT_ID"],
@@ -238,7 +247,7 @@ export async function getNews(query: string, oldLinks: string[] = []) {
 export async function sendLinks(query: string) {
 
     // 새로운 메시지가 있으면 링크 전송
-    const newLinks = await getNewLinks(query, service.oldLinks);
+    const newLinks = await getNewLinks(query, service.oldLinks,1);
 
     /*console.log(service.oldLinks)
     console.log("=====================================================================================")*/

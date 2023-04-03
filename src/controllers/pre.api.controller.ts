@@ -32,10 +32,10 @@ export const preApiRealNews = async (request: IAnyRequest, reply: FastifyReply, 
 }
 export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
-        const {query} = request.query;
+        const {query,start} = request.query;
 
         const articlePromises: Promise<void>[] = [];
-        const news = await getNews(query);
+        const news = await getNews(query,start);
         news.filter(news => news.link && news.link.includes("http") && news.link.includes("naver"))
             .forEach(news => articlePromises.push(getArticleDetails(news, AXIOS_OPTIONS, 1)));
         await Promise.all(articlePromises);
