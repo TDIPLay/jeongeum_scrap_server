@@ -1,4 +1,5 @@
 export interface News {
+    description: string;
     title: string;
     link: string;
     thumbnail?: string;

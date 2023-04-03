@@ -36,7 +36,6 @@ export const apiMemoryRate = async (request: IAnyRequest, reply: FastifyReply) =
     }
 }
 
-
 export const signUp = async (request: IUserRequest, reply: FastifyReply) => {
     try {
         const {email/*, password, firstName, lastName*/} = request.body

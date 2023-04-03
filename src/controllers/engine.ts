@@ -4,22 +4,16 @@ import moment from "moment";
 import {getRedis} from "../../service/redis";
 import {promisify} from "util";
 
-export async function calculate_weight(): Promise<boolean> {
+export async function getNewsScap(): Promise<boolean> {
 
 
     const redis = await getRedis();
-    // initRedisHmSet("GUARANTEE", redis, JSON.stringify(obj), 368000);
+    // initRedisHmSet("Scrap", redis, JSON.stringify(obj), 368000);
 
     return true;
 }
 
 
-
-
-export async function news_status_change(): Promise<boolean> {
-
-    return true;
-}
 
 
 
@@ -42,9 +36,6 @@ export async function init_Transaction(): Promise<boolean> {
                     } else {
                         try {
                             const uData = JSON.parse(reply[1][key]);
-                            // console.log(uData)
-                            // console.log(rediskey)
-                            // console.log(tm - uData.tm)
                             if ((tm - uData.tm) > 3600) {
                                 redis.hdel('Transaction', rediskey);
                                 console.log(`deleted => ${rediskey}_time:${tm - uData.tm}`);

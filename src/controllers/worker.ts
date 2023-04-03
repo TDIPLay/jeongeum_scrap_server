@@ -37,20 +37,30 @@ export async function getArticleDetails(news: News, axiosOptions: any, thumbnail
         const emailIndex = author.indexOf('(') > -1 ? author.lastIndexOf('(') + 1 : author.lastIndexOf(' ') + 1;
         const email = author.indexOf('(') > -1 ? author.substring(emailIndex, author.length - 1) : author.substring(emailIndex, author.length);
         const name = author.split(email)[0].replace("(", "").trim()
-
+        const description = news.description ? news.description : $('meta[property^="og:description"]').attr('content')
 
         if (thumbnail) {
-            news.thumbnail = $(main).find('div.media_end_head_share.nv_notrans > a').attr('data-kakaotalk-image-url');
+            news.thumbnail = $('meta[property^="og:image"]').attr('content');
         } else {
             news.originalLink = $(main).find('a').attr('href') ?? '';
         }
 
-        news.company = news.company ? news.company : $('.media_end_head_top_logo > img').attr('alt');
+        news.company = news.company ? news.company : $('meta[name^="twitter:creator"]').attr('content');
 
+        if (description) news.description = description;
         if (author) news.author = author;
         if (email && email.includes('@')) news.email = email;
         if (author) news.name = name;
-        if (news.pubDate) news.timestamp = moment(news.pubDate).unix();
+
+        if (news.pubDate) {
+            news.timestamp = moment(news.pubDate).unix();
+        } else {
+            const date = $(main).find("span.media_end_head_info_datestamp_time._ARTICLE_DATE_TIME").attr('data-date-time')
+            news.pubDate = date;
+            news.timestamp = new Date(date).getTime() / 1000;
+        }
+
+
         // $timestamp = strtotime($date_str);
         //if (author) news.name = match ? author.replace(/\(.+\)/g, '').trim() : author;
 
@@ -107,6 +117,62 @@ export async function getNaverNews(): Promise<PageInfo> {
     return pageInfo;
 }
 
+
+export async function getNaverRealNews(): Promise<PageInfo> {
+
+    axiosRetry(axios, {
+        retries: 2,
+        retryDelay: (retryCount) => {
+            return retryCount * 1000; // 1초, 2초, 3초
+        },
+        shouldResetTimeout: true,
+    });
+
+    // @ts-ignore
+    const {data} = await axios.get("https://news.naver.com", AXIOS_OPTIONS);
+    const content = iconv.decode(data, "EUC-KR").toString();
+    const cheerio = require('cheerio');
+    const $ = cheerio.load(content);
+
+    const pageInfo: PageInfo = {};
+    console.log("test")
+    const headlines = $('div.hdline_news').find('li > div > a');
+    headlines.each((i, el) => {
+        const title = $(el).text().trim();
+        const link = $(el).attr('href');
+        console.log(`${title}: ${link}`);
+    });
+
+
+    $("div.main_brick").each((index, block) => {
+        console.log("start")
+        const company = $(block).find(".channel").text().trim();
+        console.log($(block).html())
+        if (!company) return;
+
+        const newsList = $(block).find(".cc_text_list > li").map((index, news) => {
+            return {
+                title: $(news).find(".cc_text_item > a").text().trim(),
+                link: $(news).find("a").attr("href") ?? '',
+                originalLink: '',
+                //   thumbnail: $(news).find("a > img").attr("src") ?? '',
+                company: company,
+                author: '',
+                name: '',
+                email: '',
+            };
+        }).get();
+
+        pageInfo[company] = newsList;
+    });
+    const articlePromises: Promise<void>[] = [];
+    Object.values(pageInfo).flatMap(newsList => newsList.filter(news => news.link && news.link.includes("http")))
+        .forEach(news => articlePromises.push(getArticleDetails(news, AXIOS_OPTIONS, 0)));
+    await Promise.all(articlePromises);
+
+    return pageInfo;
+}
+
 /*async function getNewLinks(query: string, oldLinks: string[] = []) {
 
     const url = `https://search.naver.com/search.naver?where=news&query=${query}&sm=tab_opt&sort=1&photo=0&field=0&pd=0&ds=&de=&docid=&related=0&mynews=0&office_type=0&office_section_code=0&news_office_checked=&nso=so%3Add%2Cp%3Aall&is_sug_officeid=0`;
@@ -131,7 +197,7 @@ export async function getNaverNews(): Promise<PageInfo> {
 
 async function getNewLinks(query: string, oldLinks: string[] = []) {
     // (주의) 네이버에서 키워드 검색 - 뉴스 탭 클릭 - 최신순 클릭 상태의 url
-    let api_url = 'https://openapi.naver.com/v1/search/news.json?query=' + encodeURI(query) + "&display=10"; // JSON 결과
+    let api_url = 'https://openapi.naver.com/v1/search/news.json?query=' + encodeURI(query) + "&display=100"; // JSON 결과
     let options = {
         headers: {
             'X-Naver-Client-Id': process.env["NAVER_CLIENT_ID"],
@@ -145,7 +211,7 @@ async function getNewLinks(query: string, oldLinks: string[] = []) {
     //const newLinks = Array.from(data.items).map((news:SearchNews) => news?.link);
     // 기존의 링크와 신규 링크를 비교해서 새로운 링크만 저장
     const uniqueLinks = Array.from(new Set(data.items));
-    const diffLinks = uniqueLinks.filter((link: SearchNews) => !oldLinks.includes(link.link));
+    const diffLinks = uniqueLinks.filter((item: SearchNews) =>  item.link.includes("naver") && !oldLinks.includes(item.link));
     const newLinks = Array.from(diffLinks).map((news: SearchNews) => news?.link);
     service.oldLinks = [...newLinks, ...service.oldLinks];
 
@@ -164,7 +230,7 @@ export async function getNews(query: string, oldLinks: string[] = []) {
     };
     const {data} = await axios.get(api_url, options);
 
-    return data.items;
+    return data.items.filter(news => news.link && news.link.includes("http") && news.link.includes("naver"));
 }
 
 

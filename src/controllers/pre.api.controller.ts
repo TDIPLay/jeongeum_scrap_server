@@ -4,7 +4,7 @@ import service from '../../service/common_service'
 import {IAnyRequest} from "../interfaces";
 import rp from 'request-promise'
 import {AXIOS_OPTIONS} from "../helpers/common";
-import {getArticleDetails, getNaverNews, getNews, sendLinks} from "./worker";
+import {getArticleDetails, getNaverNews, getNaverRealNews, getNews, sendLinks} from "./worker";
 import {generateChatMessage} from "./openai";
 
 
@@ -12,6 +12,17 @@ export const preApiNews = async (request: IAnyRequest, reply: FastifyReply, done
     try {
 
         const news = await getNaverNews();
+        request.transfer = news;
+
+        done();
+    } catch (e) {
+        handleServerError(reply, e)
+    }
+}
+export const preApiRealNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+
+        const news = await getNaverRealNews();
         request.transfer = news;
 
         done();

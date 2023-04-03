@@ -3,7 +3,7 @@ import {RedisClientType} from 'redis'
 import cron from 'node-cron';
 import {getDateString, logger} from "../src/helpers/utils";
 import {xServerError} from "../src/helpers/errors";
-import {news_status_change, calculate_weight, init_Transaction} from "../src/controllers/engine"
+import {getNewsScap} from "../src/controllers/engine"
 import {initRedisHmSet} from "../src/controllers/worker";
 
 export default class Common_service {
@@ -38,22 +38,16 @@ export default class Common_service {
     async module_start() {
         logger.info("init_start")
         // const redis = await getRedis();
-        // await this.initDataSet("ADS", QUERY.ADS, ["ads_no"], redis, REDIS_EXPIRE).then(() => logger.info(`init ADS`));
-        // await this.initDataSet("HOUSE", QUERY.HOUSE, ["ads_no"], redis, REDIS_EXPIRE).then(() => logger.info(`init HOUSE`));
 
     }
 
     async engine_start() {
 
-        if (!await news_status_change()) {
-            console.log("ads status change error");
+        //jab 돌릴예정
+        if (!await getNewsScap()) {
+            console.log("getNewsScap error");
         }
 
-        if (!await calculate_weight()) {
-            console.log("calculate_weight error");
-        }
-
-        await init_Transaction();
     }
 
     async update_data() {
