@@ -28,7 +28,7 @@ export async function generateChatMessage(query:string):Promise<string> {
     try {
         const response = await axios.post(url, gpt_turbo, { headers });
         console.log(response.data.choices[0].message.content);
-        return response.data.choices[0];
+        return response.data;
     } catch (error) {
         console.error(error);
         return null;

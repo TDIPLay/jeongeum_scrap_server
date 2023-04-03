@@ -35,15 +35,6 @@ export const apiMemoryRate = async (request:IAnyRequest, reply: FastifyReply) =>
         handleServerError(reply, e)
     }
 }
-export const apiAi = async (request:IAnyRequest, reply: FastifyReply) => {
-    try {
-        const used = process.memoryUsage().heapUsed / 1024 / 1024;
-        console.log(`The script uses approximately ${used} MB`);
-        reply.status(STANDARD.SUCCESS).send({"message" : `The script uses approximately ${used} MB`})
-    } catch (e) {
-        handleServerError(reply, e)
-    }
-}
 
 
 export const signUp = async (request: IUserRequest, reply: FastifyReply) => {
