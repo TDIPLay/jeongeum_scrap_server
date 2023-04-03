@@ -1,11 +1,13 @@
 import {FastifyInstance} from 'fastify'
 import {apiSchema, signupSchema} from '../schema'
 import {
-    apiDef,
+    apiAuth,
     apiMemoryRate,
     apiSyncUp,
-    preApiNews, preApiRealNews,
-    preApiSyncUp, preOpenAi,
+    preApiNews,
+    preApiRealNews,
+    preApiSyncUp,
+    preOpenAi,
     preSearchNewLink,
     preSearchNews,
     signUp
@@ -53,7 +55,7 @@ async function apiRouter(fastify: FastifyInstance) {
     fastify.route({
         method: 'GET',
         url: '/oauth',
-        schema: apiSchema, handler: apiDef
+        schema: apiSchema, handler: apiAuth
     })
 
     fastify.route({

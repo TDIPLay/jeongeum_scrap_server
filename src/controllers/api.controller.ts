@@ -17,7 +17,7 @@ export const apiSyncUp = async (request: IAnyRequest, reply: FastifyReply) => {
     }
 }
 
-export const apiDef = async (request: IAnyRequest, reply: FastifyReply) => {
+export const apiAuth = async (request: IAnyRequest, reply: FastifyReply) => {
     try {
         const {code} = request.query
         service.kakao_a_key = await exampleUsage(code);
