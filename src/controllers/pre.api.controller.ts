@@ -26,7 +26,7 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
         const articlePromises: Promise<void>[] = [];
         const news = await getNews(query);
         news.filter(news => news.link && news.link.includes("http") && news.link.includes("naver"))
-            .forEach(news => articlePromises.push(getArticleDetails(news, AXIOS_OPTIONS,1)));
+            .forEach(news => articlePromises.push(getArticleDetails(news, AXIOS_OPTIONS, 1)));
         await Promise.all(articlePromises);
         request.transfer = news;
         done();
@@ -54,7 +54,7 @@ export const preOpenAi = async (request: IAnyRequest, reply: FastifyReply, done)
         const {query} = request.query;
         const response = await generateChatMessage(query)
 
-        request.transfer = response !== null ? response : "기사를 작성 할 수 없습니다.";
+        request.transfer = response !== null ? response : {massage: "기사를 작성 할 수 없습니다."};
         done();
     } catch (e) {
         console.log(e)
@@ -66,7 +66,7 @@ export const preOpenAi = async (request: IAnyRequest, reply: FastifyReply, done)
 export const preApiSyncUp = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
 
-        const options = { method: 'GET' };
+        const options = {method: 'GET'};
         const requests = service.server_info.map((value) => {
             const url = `http://${value.ip}/tdi/v1/set_sync`;
             return rp(url, options).catch(() => 'err');
@@ -75,7 +75,7 @@ export const preApiSyncUp = async (request: IAnyRequest, reply: FastifyReply, do
         const results = await Promise.all(requests);
         service.err_cnt += results.filter((res) => res === 'err').length;
 
-        request.transfer = {'err' : service.err_cnt}
+        request.transfer = {'err': service.err_cnt}
 
         done();
     } catch (e) {
