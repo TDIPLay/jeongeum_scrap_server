@@ -54,7 +54,7 @@ export const preOpenAi = async (request: IAnyRequest, reply: FastifyReply, done)
         const {query} = request.query;
         const response = await generateChatMessage(query)
 
-        request.transfer = response !== null ? response : {massage: "기사를 작성 할 수 없습니다."};
+        request.transfer = response !== null ? {result : "Success" , massage: response} : {result : "Fail" , massage: "기사를 작성 할 수 없습니다."};
         done();
     } catch (e) {
         console.log(e)
