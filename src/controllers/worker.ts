@@ -31,7 +31,9 @@ export async function getArticleDetails(news: News, axiosOptions: any, thumbnail
 
         const {data} = await axios.get(news.link, axiosOptions);
         const $ = cheerio.load(data);
+
         const main = $('div#ct > div.media_end_head.go_trans > div.media_end_head_info.nv_notrans');
+
         const author = $('.byline_s').text();
         const emailRegex = /\S+@\S+\.\S+/;
         const emailIndex = emailRegex ? author.indexOf('(') > -1 ? author.lastIndexOf('(') + 1 : author.lastIndexOf(' ') + 1 : null;
@@ -39,13 +41,12 @@ export async function getArticleDetails(news: News, axiosOptions: any, thumbnail
         const name = email ? author.split(email)[0].replace("(", "").trim() : author;
         const description = news.description ? news.description : $('meta[property^="og:description"]').attr('content')
         const company = news.company ? news.company : $('meta[name^="twitter:creator"]').attr('content');
+        const thumbnail = news.thumbnail ? news.thumbnail : $('meta[property^="og:image"]').attr('content');
+        const originalLink = news.originalLink ? news.originalLink : $(main).find('a').attr('href') ?? '';
 
-        if (thumbnail) {
-            news.thumbnail = $('meta[property^="og:image"]').attr('content');
-        } else {
-            news.originalLink = $(main).find('a').attr('href') ?? '';
-        }
 
+        if (originalLink) news.originalLink = originalLink;
+        if (thumbnail) news.thumbnail = thumbnail;
         if (company) news.company = company;
         if (description) news.description = description;
         if (author) news.author = author;
