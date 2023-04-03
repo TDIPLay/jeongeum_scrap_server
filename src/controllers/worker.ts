@@ -34,10 +34,11 @@ export async function getArticleDetails(news: News, axiosOptions: any, thumbnail
         const main = $('div#ct > div.media_end_head.go_trans > div.media_end_head_info.nv_notrans');
         const author = $('.byline_s').text();
         const emailRegex = /\S+@\S+\.\S+/;
-        const emailIndex = author.indexOf('(') > -1 ? author.lastIndexOf('(') + 1 : author.lastIndexOf(' ') + 1;
-        const email = author.indexOf('(') > -1 ? author.substring(emailIndex, author.length - 1) : author.substring(emailIndex, author.length);
-        const name = author.split(email)[0].replace("(", "").trim()
+        const emailIndex = emailRegex ? author.indexOf('(') > -1 ? author.lastIndexOf('(') + 1 : author.lastIndexOf(' ') + 1 : null;
+        const email = emailIndex ? author.indexOf('(') > -1 ? author.substring(emailIndex, author.length - 1) : author.substring(emailIndex, author.length) : null;
+        const name = email ? author.split(email)[0].replace("(", "").trim() : author;
         const description = news.description ? news.description : $('meta[property^="og:description"]').attr('content')
+        const company = news.company ? news.company : $('meta[name^="twitter:creator"]').attr('content');
 
         if (thumbnail) {
             news.thumbnail = $('meta[property^="og:image"]').attr('content');
@@ -45,8 +46,7 @@ export async function getArticleDetails(news: News, axiosOptions: any, thumbnail
             news.originalLink = $(main).find('a').attr('href') ?? '';
         }
 
-        news.company = news.company ? news.company : $('meta[name^="twitter:creator"]').attr('content');
-
+        if (company) news.company = company;
         if (description) news.description = description;
         if (author) news.author = author;
         if (email && email.includes('@')) news.email = email;
