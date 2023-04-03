@@ -9,7 +9,7 @@ export async function generateChatMessage(query:string):Promise<string> {
     };
     const text_davinci = {
         model: 'text-davinci-002',
-        prompt: `${query} 키워드로 기사 써줘`,
+        prompt: `${query} 키워드로 뉴스기사써줘`,
         temperature: 0.5,
         max_tokens: 1000,
         top_p: 1,
@@ -20,7 +20,7 @@ export async function generateChatMessage(query:string):Promise<string> {
     const gpt_turbo = {
         model: "gpt-3.5-turbo",
         messages: [
-            {"role": "system", "content": `${query}  키워드로 기사 써줘`},
+            {"role": "system", "content": `${query} 키워드로 뉴스기사써줘`},
         ]
     }
 
