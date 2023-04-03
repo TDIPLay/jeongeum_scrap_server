@@ -39,12 +39,11 @@ export async function getArticleDetails(news: News, axiosOptions: any, thumbnail
         const emailIndex = emailRegex.test(author) ? author.indexOf('(') > -1 ? author.lastIndexOf('(') + 1 : author.lastIndexOf(' ') + 1 : null;
         const email = emailIndex ? author.indexOf('(') > -1 ? author.substring(emailIndex, author.length - 1) : author.substring(emailIndex, author.length) : null;
         const name = email ? author.split(email)[0].replace("(", "").trim() : author;
-        const content = $('#dic_area').first().text().trim();
+        const content = $('#dic_area').first().text().replace(/\s/g, '').trim();
         const description = news.description ? news.description : `${$('meta[property^="og:description"]').attr('content')}...`
         const company = news.company ? news.company : $('meta[name^="twitter:creator"]').attr('content');
         const thumbnail = news.thumbnail ? news.thumbnail : $('meta[property^="og:image"]').attr('content');
         const originalLink = news.originalLink ? news.originalLink : $(main).find('a').attr('href') ?? '';
-
 
         if (originalLink) news.originalLink = originalLink;
         if (thumbnail) news.thumbnail = thumbnail;
