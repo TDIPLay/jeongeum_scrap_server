@@ -4,7 +4,13 @@ import service from '../../service/common_service'
 import {IAnyRequest} from "../interfaces";
 import rp from 'request-promise'
 import {AXIOS_OPTIONS} from "../helpers/common";
-import {getArticleDetails, getNaverNews, getNaverRealNews, getNews, sendLinks} from "./worker";
+import {
+    getArticle,
+    getNaverNews,
+    getNaverRealNews,
+    getNews,
+    sendLinks
+} from "./news";
 import {generateChatMessage} from "./openai";
 
 
@@ -36,8 +42,16 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
 
         const articlePromises: Promise<void>[] = [];
         const news = await getNews(query,start);
-        news.filter(news => news.link && news.link.includes("http") && news.link.includes("naver"))
-            .forEach(news => articlePromises.push(getArticleDetails(news, AXIOS_OPTIONS, 1)));
+         /*news.filter(news => news.link && news.link.includes("http") && news.link.includes("naver"))
+             .forEach(news => articlePromises.push(getArticleDetails(news, AXIOS_OPTIONS, 1)));
+         await Promise.all(articlePromises);
+
+        news.filter(news => news.link && news.link.includes("http") && !news.link.includes("naver"))
+            .forEach(news => articlePromises.push(getArticleMetaDetails(news, AXIOS_OPTIONS, 1)));
+        await Promise.all(articlePromises);*/
+
+        news.filter(news => news.link && news.link.includes("http"))
+            .forEach(news => articlePromises.push(getArticle(news, AXIOS_OPTIONS, 1)));
         await Promise.all(articlePromises);
         request.transfer = news;
         done();

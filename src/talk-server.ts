@@ -20,14 +20,14 @@ let debug_flag_log = false;
 let flag_log = false;
 
 process.on('unhandledRejection', (e) => {
-  console.error(e)
+  //console.error(e)
   console.log('Exiting finally...')
   process.exit(1)
 })
 
 // DB 업데이트 Trigger
 pmx.action('db_update', (reply)=> {
-  service.getInstance().module_start();
+  //service.getInstance().module_start();
   reply({answer: 'db_update'});
 });
 
@@ -40,7 +40,7 @@ pmx.action('debug', (reply) =>{
 
 ON_DEATH( () =>{
   console.log('Exiting finally...')
-  service.getInstance().sql_release();
+  //service.getInstance().sql_release();
   setTimeout(function () {
     process.exit(0)
   }, 100)
@@ -96,11 +96,10 @@ const startServer = async () => {
     if (process.env.NODE_ENV === 'production') {
       for (const signal of ['SIGINT', 'SIGTERM']) {
         process.on(signal, () =>
-          server.close().then((err) => {
-            console.log(`close application on ${signal}`)
-            service.getInstance().sql_release();
-            process.exit(err ? 1 : 0)
-          }),
+            server.close().then((err) => {
+              console.log(`close application on ${signal}`)
+              process.exit(err ? 1 : 0)
+            }),
         )
       }
     }

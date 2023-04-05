@@ -19,6 +19,24 @@ export interface SearchNews {
     description: string;
     pubDate: string;
 }
+
+interface MetaData {
+    title: string;
+    description: string;
+    classification: string;
+    ogSiteName: string;
+    ogImage: string;
+    ogType: string;
+    ogUrl: string;
+    ogTitle: string;
+    ogDescription: string;
+    ogArticleAuthor: string;
+    twitterCard: string;
+    twitterTitle: string;
+    twitterDescription: string;
+}
+
+
 export interface PageInfo {
     [company: string]: News[];
 }
