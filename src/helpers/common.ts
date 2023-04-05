@@ -1,3 +1,4 @@
+import { ResponseType } from 'axios';
 export const REDIS_EXPIRE = 86400		        // 레디스 expire TTL
 export const FIX = 10000		                    // 소수점 4자리
 
@@ -25,5 +26,5 @@ export const AXIOS_OPTIONS = {
     encoding: null,
     method: "GET",
     timeout: 5000,
-    responseType: "arraybuffer",
+    responseType: "arraybuffer" as ResponseType,
 };

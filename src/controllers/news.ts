@@ -1,47 +1,18 @@
-import {getDateString, logger} from "../helpers/utils";
-import {Query} from "mysql";
-import mysql from "../../service/mysql";
 import axios, {AxiosResponse} from 'axios';
 import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
 import iconv from 'iconv-lite';
-import {AXIOS_OPTIONS} from "../helpers/common";
 import {News, PageInfo, SearchNews} from "../interfaces/talk_struct";
 import service from "../../service/common_service";
 import {KakaoTalkMessage} from "./kakaotalk";
 import cron from 'node-cron';
 import moment from 'moment'
-
-interface MetaData {
-    title: string;
-    description: string;
-    classification: string;
-    ogSiteName: string;
-    ogImage: string;
-    ogType: string;
-    ogUrl: string;
-    ogTitle: string;
-    ogDescription: string;
-    ogArticleAuthor: string;
-    twitterCard: string;
-    twitterTitle: string;
-    twitterDescription: string;
-}
-
-export const initRedisHmSet = (key: string, redis, result: string, expire: number) => {
-    redis.hmset(key, {data: result, "update_time": getDateString("default")}, (err) => {
-
-        if (!err) redis.expire(key, expire)
-        else logger.error({err})
-    });
-}
-
-export const query = async (query: string, val: []): Promise<Query> => {
-    return await mysql.getInstance().query(query, val);
-}
+import {AXIOS_OPTIONS} from "../helpers/common";
+import {decodeHtmlEntities} from "../helpers/utils";
+import {json} from "stream/consumers";
 
 
-async function getArticleDetails(news: News, axiosOptions: any, thumbnail: number): Promise<void> {
+async function getArticleDetails(news: News,  thumbnail: number): Promise<void> {
 
     try {
 
@@ -53,29 +24,33 @@ async function getArticleDetails(news: News, axiosOptions: any, thumbnail: numbe
             shouldResetTimeout: true,
         });
 
-        const {data} = await axios.get(news.link, axiosOptions);
+        const response: AxiosResponse = await axios.get(news.link, AXIOS_OPTIONS);
+        const content_type = response.headers['content-type'].match(/charset=(.+)/);
+        const encoding = content_type > 0 ? content_type[1] : "utf-8";
+        const data = encoding.toLowerCase() !== 'utf-8' ? iconv.decode(response.data, encoding) : response.data;
         const $ = cheerio.load(data);
 
         const main = $('div#ct > div.media_end_head.go_trans > div.media_end_head_info.nv_notrans');
-
         const author = $('.byline_s').text();
-        const emailRegex = /\S+@\S+\.\S+/;
-        const emailIndex = emailRegex.test(author) ? author.indexOf('(') > -1 ? author.lastIndexOf('(') + 1 : author.lastIndexOf(' ') + 1 : null;
-        const email = emailIndex ? author.indexOf('(') > -1 ? author.substring(emailIndex, author.length - 1) : author.substring(emailIndex, author.length) : null;
-        const name = email ? author.split(email)[0].replace("(", "").trim() : author;
-        // const content = $('#dic_area').first().text().replace(/\s/g, '').trim();
+        const result = extractAuthorAndEmail(author);
+        const name = result.map(acc => acc.name)
+        const email = result.map(acc => acc.email)
+        // const content = $('body').find('p').text().trim();
+        // const content = $('#dic_area').first().text().replace(/\s/g, ' ').trim();
         const description = news.description ? news.description : `${$('meta[property^="og:description"]').attr('content')}...`
         const company = news.company ? news.company : $('meta[name^="twitter:creator"]').attr('content');
         const thumbnail = news.thumbnail ? news.thumbnail : $('meta[property^="og:image"]').attr('content');
         const originalLink = news.originalLink ? news.originalLink : $(main).find('a').attr('href') ?? '';
-
+            // .replace(/&quot;/g, '\\"')
+        if (news.title) news.title = decodeHtmlEntities(news.title);
         if (originalLink) news.originalLink = originalLink;
         if (thumbnail) news.thumbnail = thumbnail;
         if (company) news.company = company;
-        if (description) news.description = description;
+        if (description) news.description = decodeHtmlEntities(description);
         if (author) news.author = author;
-        if (email && email.includes('@')) news.email = email;
-        if (author) news.name = name;
+        if (name) news.name = JSON.stringify(name);
+        if (email) news.email = JSON.stringify(email);
+
         // if (content) news.content = content;
 
         if (news.pubDate) {
@@ -87,12 +62,8 @@ async function getArticleDetails(news: News, axiosOptions: any, thumbnail: numbe
             news.timestamp = new Date(date).getTime() / 1000;
         }
 
-
-        // $timestamp = strtotime($date_str);
-        //if (author) news.name = match ? author.replace(/\(.+\)/g, '').trim() : author;
-
     } catch (error) {
-        console.error(`Error fetching article: ${error.message} => ${news.title}`);
+        console.error(`Error fetching getArticleDetails: ${error.message} => ${news.title}`);
     }
 }
 
@@ -100,7 +71,7 @@ async function fetchMetadata(url: string): Promise<any> {
     try {
         // @ts-ignore
         // const { data,headers } = await axios.get(url, AXIOS_OPTIONS);
-
+        //articleBody
         const response: AxiosResponse = await axios.get(url, AXIOS_OPTIONS);
         const content_type = response.headers['content-type'].match(/charset=(.+)/);
         const encoding = content_type > 0 ? content_type[1] : "utf-8";
@@ -108,7 +79,8 @@ async function fetchMetadata(url: string): Promise<any> {
 
         const $ = cheerio.load(content);
         const metadata: any = {};
-
+        const patten ="/\\s/g";
+        // metadata.bady = $('body').find('p').text().trim();
         $('meta').each((i, el) => {
             const name = $(el).attr('name');
             const property = $(el).attr('property');
@@ -127,14 +99,14 @@ async function fetchMetadata(url: string): Promise<any> {
     }
 }
 
-export async function getArticle(news: News, axiosOptions: any, thumbnail: number): Promise<void> {
+export async function getArticle(news: News, thumbnail: number): Promise<void> {
 
     try {
 
         if (news.link.includes("naver")) {
-            await getArticleDetails(news, axiosOptions, thumbnail)
+            await getArticleDetails(news, thumbnail)
         } else {
-            await getArticleMetaDetails(news, axiosOptions, thumbnail)
+            await getArticleMetaDetails(news)
         }
 
     } catch (error) {
@@ -142,7 +114,7 @@ export async function getArticle(news: News, axiosOptions: any, thumbnail: numbe
     }
 }
 
-async function getArticleMetaDetails(news: News, axiosOptions: any, thumbnail: number): Promise<void> {
+async function getArticleMetaDetails(news: News): Promise<void> {
 
     try {
 
@@ -152,16 +124,26 @@ async function getArticleMetaDetails(news: News, axiosOptions: any, thumbnail: n
         else news.company = data.Copyright;
         if (data.author) news.author = data.author;
 
+        const result = extractAuthorAndEmail(news.author);
+        const name = result.map(acc => acc.name)
+        const email = result.map(acc => acc.email)
+        if (name) news.name = JSON.stringify(name);
+        if (email) news.email = JSON.stringify(email);
+
+        if (data.bady) news.content = data.bady;
+
         if (news.pubDate) {
             news.timestamp = moment(news.pubDate).unix();
             news.pubDate = moment.unix(news.timestamp).format("YYYY-MM-DD HH:mm:ss")
         } else {
-            news.pubDate = moment(new Date(data.published_time).getTime()).format("YYYY-MM-DD HH:mm:ss")
-            news.timestamp = new Date(data.published_time).getTime() / 1000;
+
+            news.pubDate = data.published_time ? moment(new Date(data.published_time).getTime()).format("YYYY-MM-DD HH:mm:ss"): ""
+            news.timestamp = data.published_time ? new Date(data.published_time).getTime() / 1000 : 0;
         }
 
     } catch (error) {
-        console.error(`Error fetching article: ${error.message} => ${news.title}`);
+        console.log(error)
+        console.error(`Error fetching getArticleMetaDetails: ${error.message} => ${news.title}`);
     }
 }
 
@@ -207,7 +189,7 @@ export async function getNaverNews(): Promise<PageInfo> {
 
     const articlePromises: Promise<void>[] = [];
     Object.values(pageInfo).flatMap(newsList => newsList.filter(news => news.link && news.link.includes("http")))
-        .forEach(news => articlePromises.push(getArticleDetails(news, AXIOS_OPTIONS, 0)));
+        .forEach(news => articlePromises.push(getArticleDetails(news,  0)));
     await Promise.all(articlePromises);
 
     /*  const CHUNK_SIZE = 10;
@@ -263,7 +245,7 @@ export async function getNaverRealNews(): Promise<PageInfo> {
     });
     const articlePromises: Promise<void>[] = [];
     Object.values(pageInfo).flatMap(newsList => newsList.filter(news => news.link && news.link.includes("http")))
-        .forEach(news => articlePromises.push(getArticleDetails(news, AXIOS_OPTIONS, 0)));
+        .forEach(news => articlePromises.push(getArticleDetails(news, 0)));
     await Promise.all(articlePromises);
 
     return pageInfo;
@@ -323,7 +305,7 @@ async function getNewLinks(query: string, oldLinks: string[] = [], start: number
 
 export async function getNews(query: string, start: number = 1) {
 
-    let api_url = `https://openapi.naver.com/v1/search/news.json?query=${encodeURI(query)}&display=100`; // JSON 결과
+    let api_url = `https://openapi.naver.com/v1/search/news.json?query=${encodeURI(query)}&display=100&sort=sim`; // JSON 결과
     let options = {
         headers: {
             'X-Naver-Client-Id': process.env["NAVER_CLIENT_ID"],
@@ -366,10 +348,30 @@ export async function sendLinks(query: string) {
     return newLinks;
 }
 
+
+function extractAuthorAndEmail(input: string): { name: string, email: string }[] {
+    const result: { name: string, email: string }[] = [];
+    const emailRegex = /\S+@\S+\.\S+/;
+    const pattern = /(?<name>[\p{L}\p{M}]+[\p{Z}\t]*[\p{L}\p{M}\p{Z}\t]*)[\s\n]*(\(|\b)(?<email>\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b)/ug;
+
+    if(!emailRegex.test(input)){
+        result.push({name: input ? input.replace('기자','').trim() : '', email: ""});
+        return result;
+    }
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(input)) !== null) {
+        const name = match.groups?.name.replace('기자','').trim() || '';
+        const email = match.groups?.email.trim() || '';
+        result.push({ name, email });
+    }
+
+    return result;
+}
+
 function test() {
 
     // 검색할 키워드 설정
-    const queries = ["부동산", "경제", "날씨"];
+    const queries = ["티디아이", "정치"];
 
     for (const query of queries) {
 

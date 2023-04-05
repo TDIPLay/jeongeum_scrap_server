@@ -66,26 +66,14 @@ export const logger = pino({
     }
     return obj;
 }*/
-export const fetch_Object = (raw: any, seqKey: any): any => {
-    const obj = raw.reduce((accumulator, item) => {
-        const key1 = item[seqKey[0]];
-        const key2 = seqKey.length > 1 ? item[seqKey[1]] : null;
-
-        if (!accumulator[key1]) {
-            accumulator[key1] = seqKey.length > 1 ? {} : null;
-        }
-
-        if (key2) {
-            accumulator[key1][key2] = item;
-        } else {
-            accumulator[key1] = item;
-        }
-
-        return accumulator;
-    }, {});
-
-    return obj;
+export const decodeHtmlEntities = (str: string): string => {
+    return str.replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&apos;/g, "'")
+        .replace(/&quot;/g, '"');
 }
+
 /*export const fetch_Object = (raw: any, seqKey: any): any => {
     const obj = {};
 

@@ -49,9 +49,9 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
         news.filter(news => news.link && news.link.includes("http") && !news.link.includes("naver"))
             .forEach(news => articlePromises.push(getArticleMetaDetails(news, AXIOS_OPTIONS, 1)));
         await Promise.all(articlePromises);*/
-
+        // console.log(moment)
         news.filter(news => news.link && news.link.includes("http"))
-            .forEach(news => articlePromises.push(getArticle(news, AXIOS_OPTIONS, 1)));
+            .forEach(news => articlePromises.push(getArticle(news, 1)));
         await Promise.all(articlePromises);
         request.transfer = news;
         done();
