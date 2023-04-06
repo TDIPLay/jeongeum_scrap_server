@@ -1,5 +1,5 @@
 import mysql from "./mysql"
-import {RedisClientType} from 'redis'
+import {getRedis} from './redis'
 import cron from 'node-cron';
 import {getDateString, logger} from "../src/helpers/utils";
 import {xServerError} from "../src/helpers/errors";
@@ -30,14 +30,14 @@ export default class Common_service {
         //sql connection & make dataset
         //redis connection
         cron.schedule("*/10 * * * *", async () => {
-            logger.info(getDateString("default"));
+            logger.info(getDateString(0,'default'));
             await this.module_start();
         });
     }
 
     async module_start() {
         logger.info("init_start")
-        // const redis = await getRedis();
+         const redis = await getRedis();
 
     }
 
