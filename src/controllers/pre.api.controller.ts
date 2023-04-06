@@ -1,23 +1,21 @@
 import {FastifyReply} from "fastify"
 import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
-import {IAnyRequest} from "../interfaces";
+import {IAnyRequest, News} from "../interfaces";
 import rp from 'request-promise'
-import {AXIOS_OPTIONS} from "../helpers/common";
-import {
-    getArticle,
-    getNaverNews,
-    getNaverRealNews,
-    getNews,
-    sendLinks
-} from "./news";
+import {getArticle, getNaverRankNews, getNaverRealNews, getNews, sendLinks} from "./news";
 import {generateChatMessage} from "./openai";
+import moment from "moment/moment";
+import {sleep, utils} from "../helpers/utils";
+import {getRedis} from "../../service/redis";
+import {hgetData, hmsetRedis} from "./worker";
+import {MAX_LINK, RKEYWORD} from "../helpers/common";
 
 
-export const preApiNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
+export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
 
-        const news = await getNaverNews();
+        const news = await getNaverRankNews();
         request.transfer = news;
 
         done();
@@ -38,33 +36,71 @@ export const preApiRealNews = async (request: IAnyRequest, reply: FastifyReply, 
 }
 export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
-        const {query,start} = request.query;
+        const {query, start} = request.query;
 
         const articlePromises: Promise<void>[] = [];
-        const news = await getNews(query,start);
-         /*news.filter(news => news.link && news.link.includes("http") && news.link.includes("naver"))
-             .forEach(news => articlePromises.push(getArticleDetails(news, AXIOS_OPTIONS, 1)));
-         await Promise.all(articlePromises);
 
-        news.filter(news => news.link && news.link.includes("http") && !news.link.includes("naver"))
-            .forEach(news => articlePromises.push(getArticleMetaDetails(news, AXIOS_OPTIONS, 1)));
-        await Promise.all(articlePromises);*/
-        // console.log(moment)
+        let news: News[] = [];
+        for (let i = 1; i < 100; i += 100) {
+            let data = await getNews(query, i);
+            await sleep(100);
+            let timestamp = moment(data[data.length - 1].pubDate).unix();
+            news = [...news, ...data];
+
+            if (utils.getTime() > timestamp) break;
+        }
+
         news.filter(news => news.link && news.link.includes("http"))
-            .forEach(news => articlePromises.push(getArticle(news, 1)));
+            .forEach(news => articlePromises.push(getArticle(news)));
         await Promise.all(articlePromises);
+        /*news.filter(news => news.link && news.link.includes("http") && news.link.includes("naver"))
+            .forEach(news => articlePromises.push(getArticleDetails(news, AXIOS_OPTIONS, 1)));
+        await Promise.all(articlePromises);
+
+       news.filter(news => news.link && news.link.includes("http") && !news.link.includes("naver"))
+           .forEach(news => articlePromises.push(getArticleMetaDetails(news, AXIOS_OPTIONS, 1)));
+       await Promise.all(articlePromises);*/
+        // console.log(moment)
+
         request.transfer = news;
         done();
     } catch (e) {
-        console.log(e)
+        console.error(e)
         handleServerError(reply, e)
     }
 }
 
 export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
-        const {query} = request.query;
-        const news = await sendLinks(query);
+        const {query, start} = request.query;
+        const articlePromises: Promise<void>[] = [];
+        const redis = await getRedis();
+        let oldLinks = await hgetData(redis, "NewAllKeyword", query);
+
+        let news: News[] = [];
+
+        for (let i = 1; i < 100; i += 100) {
+            let data = await sendLinks(query, start, oldLinks);
+            if(!data) break;
+            let timestamp = moment(data[data.length - 1].pubDate).unix();
+            news = [...news, ...data];
+
+            await sleep(100);
+            if (utils.getTime() > timestamp) break;
+        }
+        oldLinks  = await hgetData(redis, RKEYWORD, query);
+
+        if(oldLinks && oldLinks.length > MAX_LINK){
+            oldLinks.splice(-(oldLinks.length - MAX_LINK));
+        }
+
+        const redisData = {[`${query}`]: JSON.stringify(oldLinks)};
+        await hmsetRedis(redis, RKEYWORD, redisData, 0);
+
+        news.filter(news => news.link && news.link.includes("http"))
+            .forEach(news => articlePromises.push(getArticle(news)));
+        await Promise.all(articlePromises);
+
         request.transfer = news;
         done();
     } catch (e) {
@@ -79,7 +115,10 @@ export const preOpenAi = async (request: IAnyRequest, reply: FastifyReply, done)
         const {query} = request.query;
         const response = await generateChatMessage(query)
 
-        request.transfer = response !== null ? {result : "Success" , massage: response} : {result : "Fail" , massage: "기사를 작성 할 수 없습니다."};
+        request.transfer = response !== null ? {result: "Success", massage: response} : {
+            result: "Fail",
+            massage: "기사를 작성 할 수 없습니다."
+        };
         done();
     } catch (e) {
         console.log(e)

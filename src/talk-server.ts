@@ -10,9 +10,9 @@ import process from "process";
 import pmx from "@pm2/io";
 
 loadConfig()
-service.getInstance().module_start();
 
-const port = process.env.API_PORT || 5000;
+
+const port = process.env.API_PORT || 8080;
 const server = fastify({
   logger: logger
 })
@@ -48,7 +48,10 @@ ON_DEATH( () =>{
 
 
 const startServer = async () => {
+
   try {
+    await service.getInstance().module_start();
+
     server.addContentTypeParser('application/json', {parseAs: 'buffer'}, (req, body, done) => {
       if (req.headers['content-encoding'] && req.headers['content-encoding'] === 'gzip') {
         zlib.gunzip(body, function (err, dezipped) {

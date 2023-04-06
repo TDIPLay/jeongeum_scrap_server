@@ -1,10 +1,11 @@
 export interface News {
-    content: string;
-    description: string;
+
     title: string;
     link: string;
-    thumbnail?: string;
     originalLink?: string;
+    thumbnail?: string;
+    content?: string;
+    description: string;
     company?: string;
     author?: string;
     email?: string;
@@ -37,6 +38,6 @@ interface MetaData {
 }
 
 
-export interface PageInfo {
+export interface Scraper {
     [company: string]: News[];
 }

@@ -13,9 +13,8 @@ export const utils = {
         return true
     },
     getTime: () => {
-        const date = new Date()
-        const time = date.getTime()
-        return time
+        const date = new Date().toLocaleDateString();
+        return new Date(date).getTime() / 1000;
     },
     genSalt: (saltRounds, value) => {
         return new Promise((resolve, reject) => {
@@ -74,22 +73,6 @@ export const decodeHtmlEntities = (str: string): string => {
         .replace(/&quot;/g, '"');
 }
 
-/*export const fetch_Object = (raw: any, seqKey: any): any => {
-    const obj = {};
-
-    for (const item of raw) {
-        const key1 = item[seqKey[0]];
-        const key2 = seqKey.length > 1 ? item[seqKey[1]] : null;
-
-        if (!obj[key1]) {
-            obj[key1] = seqKey.length > 1 ? {} : null;
-        }
-        if(key2 != null)
-        obj[key1][key2] = item;
-    }
-
-    return obj;
-}*/
 function replaceVars(raw: any, seqKey: any) {
     let obj;
     obj = raw.reduce((acc, item) => {
@@ -104,12 +87,22 @@ function replaceVars(raw: any, seqKey: any) {
     return obj;
 }
 
-export const getDateString = (dateFormat: string) => {
-    dateFormat = (dateFormat == "default") ? "YYYY-MM-DD||HH:mm:ss" : dateFormat;
-    var return_date = moment().format(dateFormat);
-
-    return return_date;
+export const getDateString = (time: number, type: string) => {
+    if (!time) {
+        return moment().format("YYYY-MM-DD HH:mm:ss")
+    }else{
+        if (type === 'default') {
+            return moment(time).format("YYYY-MM-DD HH:mm:ss");
+        } else {
+            return moment.unix(time).format("YYYY-MM-DD HH:mm:ss");
+        }
+    }
 }
+
+export const sleep = (ms) => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export const getNextMin = (ts: number, min: string) => {
 
     return moment(ts).add("20", "m").format('YYYY-MM-DD HH:mm').slice(0, -1) + "0:00";
