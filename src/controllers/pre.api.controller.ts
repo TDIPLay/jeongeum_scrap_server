@@ -3,20 +3,22 @@ import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
 import {IAnyRequest, News} from "../interfaces";
 import rp from 'request-promise'
-import {getArticle, getNaverRankNews, getNaverRealNews, getNews, sendLinks} from "./news";
+import {getArticle, getNaverRankNews, getNaverRealNews, getNewLinks, getNews, sendLinks} from "./news";
 import {generateChatMessage} from "./openai";
 import moment from "moment/moment";
 import {sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
 import {MAX_LINK, RKEYWORD} from "../helpers/common";
+import {MESSAGE} from "../helpers/constants";
 
 
 export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
 
         const news = await getNaverRankNews();
-        request.transfer = news;
+
+        request.transfer = {result: MESSAGE.SUCCESS, code: 0, message: "SUCCESS", list_count: news.length, data: news};
 
         done();
     } catch (e) {
@@ -27,7 +29,8 @@ export const preApiRealNews = async (request: IAnyRequest, reply: FastifyReply, 
     try {
 
         const news = await getNaverRealNews();
-        request.transfer = news;
+
+        request.transfer = {result: MESSAGE.SUCCESS, code: 0, message: "SUCCESS", list_count: news.length, data: news};
 
         done();
     } catch (e) {
@@ -36,33 +39,45 @@ export const preApiRealNews = async (request: IAnyRequest, reply: FastifyReply, 
 }
 export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
-        const {query, start} = request.query;
+        const {query, page = 1} = request.query;
 
         const articlePromises: Promise<void>[] = [];
-
+        //1 1-100 2 101-200 3 201-300     10 900
+        const start = (page - 1) * 100 + 1;
+        const end = page * 100;
         let news: News[] = [];
-        for (let i = 1; i < 100; i += 100) {
-            let data = await getNews(query, i);
-            await sleep(100);
-            let timestamp = moment(data[data.length - 1].pubDate).unix();
-            news = [...news, ...data];
 
-            if (utils.getTime() > timestamp) break;
+        if (parseInt(page) <= 10) {
+
+            for (let i = start; i < end; i += 100) {
+                let data = null;
+
+                if(i == 1){
+                    data = await getNewLinks(query, start, []);
+                }else{
+                    data = await getNews(query, i);
+                }
+
+                await sleep(100);
+                news = [...news, ...data];
+
+                if (utils.getTime() > moment(data[data.length - 1].pubDate).unix()) break;
+            }
+
+            news.filter(news => news.link && news.link.includes("http"))
+                .forEach(news => articlePromises.push(getArticle(news)));
+            await Promise.all(articlePromises);
+
+            request.transfer = {
+                result: MESSAGE.SUCCESS,
+                code: 0,
+                message: "SUCCESS",
+                list_count: news.length,
+                data: news
+            };
+        } else {
+            request.transfer = {result: MESSAGE.FAIL, code: 400, message: "Over Page"};
         }
-
-        news.filter(news => news.link && news.link.includes("http"))
-            .forEach(news => articlePromises.push(getArticle(news)));
-        await Promise.all(articlePromises);
-        /*news.filter(news => news.link && news.link.includes("http") && news.link.includes("naver"))
-            .forEach(news => articlePromises.push(getArticleDetails(news, AXIOS_OPTIONS, 1)));
-        await Promise.all(articlePromises);
-
-       news.filter(news => news.link && news.link.includes("http") && !news.link.includes("naver"))
-           .forEach(news => articlePromises.push(getArticleMetaDetails(news, AXIOS_OPTIONS, 1)));
-       await Promise.all(articlePromises);*/
-        // console.log(moment)
-
-        request.transfer = news;
         done();
     } catch (e) {
         console.error(e)
@@ -75,22 +90,22 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
         const {query, start} = request.query;
         const articlePromises: Promise<void>[] = [];
         const redis = await getRedis();
-        let oldLinks = await hgetData(redis, "NewAllKeyword", query);
+        let oldLinks = await hgetData(redis, RKEYWORD, query);
 
         let news: News[] = [];
 
         for (let i = 1; i < 100; i += 100) {
             let data = await sendLinks(query, start, oldLinks);
-            if(!data) break;
+            if (!data) break;
             let timestamp = moment(data[data.length - 1].pubDate).unix();
             news = [...news, ...data];
 
             await sleep(100);
             if (utils.getTime() > timestamp) break;
         }
-        oldLinks  = await hgetData(redis, RKEYWORD, query);
+        oldLinks = await hgetData(redis, RKEYWORD, query);
 
-        if(oldLinks && oldLinks.length > MAX_LINK){
+        if (oldLinks && oldLinks.length > MAX_LINK) {
             oldLinks.splice(-(oldLinks.length - MAX_LINK));
         }
 
@@ -101,7 +116,13 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
             .forEach(news => articlePromises.push(getArticle(news)));
         await Promise.all(articlePromises);
 
-        request.transfer = news;
+        request.transfer = request.transfer = {
+            result: MESSAGE.SUCCESS,
+            code: 0,
+            message: "SUCCESS",
+            list_count: news.length,
+            data: news
+        };
         done();
     } catch (e) {
         console.log(e)

@@ -261,7 +261,7 @@ export async function getNaverRealNews(): Promise<Scraper> {
 // - sim: 정확도순으로 내림차순 정렬(기본값)
 // - date: 날짜순으로 내림차순 정렬
 
-async function getNewLinks(query: string, start: number = 1, oldLinks: string[] = []) {
+export async function getNewLinks(query: string, start: number = 1, oldLinks: string[] = []) {
     // (주의) 네이버에서 키워드 검색 - 뉴스 탭 클릭 - 최신순 클릭 상태의 url
     let api_url = `https://openapi.naver.com/v1/search/news.json?query=${encodeURI(query)}&start=${start}&display=100`; // JSON 결과
     let options = {
