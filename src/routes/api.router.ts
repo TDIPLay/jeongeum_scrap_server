@@ -4,7 +4,7 @@ import {
     apiAuth,
     apiMemoryRate,
     apiSyncUp,
-    preApiNews,
+    preApiRankNews,
     preApiRealNews,
     preApiSyncUp,
     preOpenAi,
@@ -24,18 +24,18 @@ async function apiRouter(fastify: FastifyInstance) {
 
     fastify.route({
         method: 'GET',
-        url: '/search',
+        url: '/search_all',
         schema: apiSchema, preHandler: preSearchNews,handler: apiSyncUp
     })
     fastify.route({
         method: 'GET',
-        url: '/search2',
+        url: '/search',
         schema: apiSchema, preHandler: preSearchNewLink,handler: apiSyncUp
     })
     fastify.route({
         method: 'GET',
         url: '/rank',
-        schema: apiSchema, preHandler: preApiNews,handler: apiSyncUp
+        schema: apiSchema, preHandler: preApiRankNews,handler: apiSyncUp
     })
     fastify.route({
         method: 'GET',
