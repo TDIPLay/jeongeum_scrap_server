@@ -66,7 +66,7 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
                 await sleep(100);
                 news = [...news, ...data];
 
-                if (utils.getTime() > moment(data[data.length - 1].pubDate).unix()) break;
+               // if (utils.getTime() > moment(data[data.length - 1].pubDate).unix()) break;
             }
 
             news.filter(news => news.link && news.link.includes("http"))
@@ -99,6 +99,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
 
         let news: News[] = [];
 
+        //최근기사 100건만
         for (let i = 1; i < 100; i += 100) {
             let data = await sendLinks(query, start, oldLinks);
             if (!data || !data.length) break;

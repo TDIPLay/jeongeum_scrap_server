@@ -3,14 +3,16 @@ export interface News {
     title: string;
     link: string;
     originalLink?: string;
+    description: string;
+    pubDate?: string;
     thumbnail?: string;
     content?: string;
-    description: string;
+
     company?: string;
     author?: string;
     email?: string;
     name?: string;
-    pubDate?: string;
+
     timestamp?: number;
 }
 
@@ -36,7 +38,28 @@ interface MetaData {
     twitterTitle: string;
     twitterDescription: string;
 }
+export interface NaverNews {
 
+    title: string;
+    link: string;
+    originalLink?: string;
+    description: string;
+    pubDate?: string;
+}
+
+export interface ICommonOK {
+    result: string,
+    code: 0,
+    message: string,
+    data: any
+}
+
+export interface IConfigFail {
+    result: string,
+    code: number,
+    message: string,
+    data: {}
+}
 
 export interface Scraper {
     [company: string]: News[];
