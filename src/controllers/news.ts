@@ -130,6 +130,7 @@ async function getArticleMetaDetails(news: News): Promise<void> {
         news.email = JSON.stringify(ext.map(x => x.email)) ?? '';
 
         news.company = (data.site_name || data.Copyright) ?? '';
+        news.title = decodeHtmlEntities(news.title);
         news.description = decodeHtmlEntities(news.description) ?? '';
 
         if (news.pubDate) {
