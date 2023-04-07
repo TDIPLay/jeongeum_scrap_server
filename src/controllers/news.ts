@@ -1,6 +1,7 @@
 import axios, {AxiosResponse} from 'axios';
 import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
+import * as puppeteer from 'puppeteer';
 import {CheerioAPI} from 'cheerio';
 import iconv from 'iconv-lite';
 import {News, Scraper, SearchNews} from "../interfaces";
@@ -34,6 +35,7 @@ async function axiosCall(link: string): Promise<CheerioAPI> {
 
     } catch (error) {
         console.error(`Error axiosCall link: ${error.message} => ${link}`);
+        return null;
     }
 }
 
@@ -83,9 +85,10 @@ async function fetchMetadata(url: string): Promise<any> {
     try {
 
         const $ = await axiosCall(url);
+        if($ === null) return null;
 
         const metadata: any = {};
-        const patten = "/\\s/g";
+        //const patten = "/\\s/g";
         // metadata.bady = $('body').find('p').text().trim();
         $('meta').each((i, el) => {
             const name = $(el).attr('name');
@@ -233,9 +236,22 @@ export async function getNaverRealNews(): Promise<Scraper> {
     }
 }
 
-/*async function getNewLinks(query: string, oldLinks: string[] = []) {
+async function getBrowserHtml(query: string, news: News) {
 
-    const url = `https://search.naver.com/search.naver?where=news&query=${query}&sm=tab_opt&sort=1&photo=0&field=0&pd=0&ds=&de=&docid=&related=0&mynews=0&office_type=0&office_section_code=0&news_office_checked=&nso=so%3Add%2Cp%3Aall&is_sug_officeid=0`;
+    const url = `https://search.naver.com/search.naver?where=news&query=${query}`;
+
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto(news.link);
+    const html = await page.evaluate(() => document.documentElement.outerHTML);
+
+    return html;
+}
+
+
+async function getPageNewLinks(query: string, oldLinks: string[] = []) {
+
+    const url = `https://search.naver.com/search.naver?where=news&query=${query}`;
 
     // html 문서 받아서 파싱(parsing)
     const {data} = await axios.get(url);
@@ -252,8 +268,7 @@ export async function getNaverRealNews(): Promise<Scraper> {
     const diffLinks = uniqueLinks.filter((link) => !oldLinks.includes(link));
 
     return diffLinks;
-}*/
-
+}
 
 // query	String	Y	검색어. UTF-8로 인코딩되어야 합니다.
 // display	Integer	N	한 번에 표시할 검색 결과 개수(기본값: 10, 최댓값: 100)
@@ -368,7 +383,7 @@ function test() {
 
         // 주기적 실행과 관련된 코드 (hours는 시, minutes는 분, seconds는 초)
         const job = cron.schedule('*/10 * * * * *', () => {
-            sendLinks(query,1);
+            sendLinks(query, 1);
         });
     }
 }
