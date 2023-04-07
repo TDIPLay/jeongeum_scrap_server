@@ -46,6 +46,7 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
         const start = (page - 1) * 100 + 1;
         const end = page * 100;
         let news: News[] = [];
+        const redis = await getRedis();
 
         if (parseInt(page) <= 10) {
 
@@ -53,11 +54,15 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
                 let data = null;
 
                 if(i == 1){
-                    data = await getNewLinks(query, start, []);
+                    let oldLinks = await hgetData(redis, RKEYWORD, query);
+                    data = await getNewLinks(query, i, oldLinks);
+                    if (!data || !data.length){
+                        data = await getNews(query, i);
+                    }
                 }else{
                     data = await getNews(query, i);
                 }
-
+                if (!data || !data.length) break;
                 await sleep(100);
                 news = [...news, ...data];
 
@@ -96,7 +101,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
 
         for (let i = 1; i < 100; i += 100) {
             let data = await sendLinks(query, start, oldLinks);
-            if (!data) break;
+            if (!data || !data.length) break;
             let timestamp = moment(data[data.length - 1].pubDate).unix();
             news = [...news, ...data];
 
