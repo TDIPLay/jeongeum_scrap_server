@@ -1,7 +1,7 @@
 import axios, {AxiosResponse} from 'axios';
 import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
-import * as puppeteer from 'puppeteer';
+// import * as puppeteer from 'puppeteer';
 import {CheerioAPI} from 'cheerio';
 import iconv from 'iconv-lite';
 import {News, Scraper, SearchNews} from "../interfaces";
@@ -236,7 +236,7 @@ export async function getNaverRealNews(): Promise<Scraper> {
     }
 }
 
-async function getBrowserHtml(query: string, news: News) {
+/*async function getBrowserHtml(query: string, news: News) {
 
     const url = `https://search.naver.com/search.naver?where=news&query=${query}`;
 
@@ -246,7 +246,7 @@ async function getBrowserHtml(query: string, news: News) {
     const html = await page.evaluate(() => document.documentElement.outerHTML);
 
     return html;
-}
+}*/
 
 
 async function getPageNewLinks(query: string, oldLinks: string[] = []) {
