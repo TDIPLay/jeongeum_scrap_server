@@ -53,7 +53,7 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
             for (let i = start; i < end; i += 100) {
                 let data = null;
 
-                if(i == 1){
+                if(i === 1){
                     let oldLinks = await hgetData(redis, RKEYWORD, query);
                     data = await getNewLinks(query, i, oldLinks);
                     if (!data || !data.length){
