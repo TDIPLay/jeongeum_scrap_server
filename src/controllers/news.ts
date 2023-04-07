@@ -124,25 +124,28 @@ async function getArticleMetaDetails(news: News): Promise<void> {
     try {
         const data = await fetchMetadata(news.link);
 
-        news.thumbnail = data.image ?? '';
-        news.author = data.author ?? '';
-        news.content = data.bady ?? '';
+        if(data){
+            news.thumbnail = data.image ?? '';
+            news.author = data.author ?? '';
+            news.content = data.bady ?? '';
 
-        const ext = extractAuthorAndEmail(news.author);
-        news.name = JSON.stringify(ext.map(x => x.name)) ?? '';
-        news.email = JSON.stringify(ext.map(x => x.email)) ?? '';
+            const ext = extractAuthorAndEmail(news.author);
+            news.name = JSON.stringify(ext.map(x => x.name)) ?? '';
+            news.email = JSON.stringify(ext.map(x => x.email)) ?? '';
 
-        news.company = (data.site_name || data.Copyright) ?? '';
-        news.title = decodeHtmlEntities(news.title);
-        news.description = decodeHtmlEntities(news.description) ?? '';
+            news.company = (data.site_name || data.Copyright) ?? '';
+            news.title = decodeHtmlEntities(news.title);
+            news.description = decodeHtmlEntities(news.description) ?? '';
 
-        if (news.pubDate) {
-            news.timestamp = moment(news.pubDate).unix();
-            news.pubDate = getDateString(news.timestamp, 'unit');
-        } else {
-            news.pubDate = data.published_time ? getDateString(new Date(data.published_time).getTime(), 'default') : "";
-            news.timestamp = data.published_time ? new Date(data.published_time).getTime() / 1000 : 0;
+            if (news.pubDate) {
+                news.timestamp = moment(news.pubDate).unix();
+                news.pubDate = getDateString(news.timestamp, 'unit');
+            } else {
+                news.pubDate = data.published_time ? getDateString(new Date(data.published_time).getTime(), 'default') : "";
+                news.timestamp = data.published_time ? new Date(data.published_time).getTime() / 1000 : 0;
+            }
         }
+
     } catch (error) {
         console.error(`Error fetching getArticleMetaDetails: ${error.message} => ${news.title}`);
     }
