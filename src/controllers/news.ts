@@ -4,7 +4,7 @@ import * as cheerio from 'cheerio';
 // import * as puppeteer from 'puppeteer';
 import {CheerioAPI} from 'cheerio';
 import iconv from 'iconv-lite';
-import {News, Scraper, SearchNews} from "../interfaces";
+import {News, NewsItem, Scraper, SearchNews} from "../interfaces";
 import service from "../../service/common_service";
 import {KakaoTalkMessage} from "./kakaotalk";
 import cron from 'node-cron';
@@ -280,7 +280,7 @@ async function getPageNewLinks(query: string, oldLinks: string[] = []) {
 // - sim: 정확도순으로 내림차순 정렬(기본값)
 // - date: 날짜순으로 내림차순 정렬
 
-export async function getNewLinks(query: string, start: number = 1, oldLinks: string[] = []) {
+export async function getNewLinks(query: string, start: number = 1, oldLinks: string[] = []) : Promise<NewsItem[]>{
     // (주의) 네이버에서 키워드 검색 - 뉴스 탭 클릭 - 최신순 클릭 상태의 url
     let api_url = `https://openapi.naver.com/v1/search/news.json?query=${encodeURI(query)}&start=${start}&display=100`; // JSON 결과
     let options = {
@@ -292,6 +292,7 @@ export async function getNewLinks(query: string, start: number = 1, oldLinks: st
     };
 
     const {data} = await axios.get(api_url, options);
+    if(!oldLinks) oldLinks = [];
     // 기존의 링크와 신규 링크를 비교해서 새로운 링크만 저장
     const uniqueLinks = Array.from(new Set(data.items));
 
@@ -305,7 +306,7 @@ export async function getNewLinks(query: string, start: number = 1, oldLinks: st
     return data.items.filter(news => news.link && news.link.includes("http") && !oldLinks.includes(news.link));
 }
 
-export async function getNews(query: string, start: number) {
+export async function getNews(query: string, start: number): Promise<NewsItem[]> {
 
     let api_url = `https://openapi.naver.com/v1/search/news.json?query=${encodeURI(query)}&start=${start}&display=100`; // JSON 결과
     let options = {
@@ -321,7 +322,7 @@ export async function getNews(query: string, start: number) {
 }
 
 
-export async function sendLinks(query: string, start: number, oldLinks: string[] = []) {
+export async function sendLinks(query: string, start: number, oldLinks: string[] = []): Promise<NewsItem[]> {
 
     // 새로운 메시지가 있으면 링크 전송
 

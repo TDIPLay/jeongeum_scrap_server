@@ -7,12 +7,10 @@ export interface News {
     pubDate?: string;
     thumbnail?: string;
     content?: string;
-
     company?: string;
     author?: string;
     email?: string;
     name?: string;
-
     timestamp?: number;
 }
 
@@ -38,7 +36,7 @@ interface MetaData {
     twitterTitle: string;
     twitterDescription: string;
 }
-export interface NaverNews {
+export interface NewsItem {
 
     title: string;
     link: string;
