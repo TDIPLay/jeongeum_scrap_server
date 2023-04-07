@@ -73,6 +73,26 @@ export const decodeHtmlEntities = (str: string): string => {
         .replace(/&quot;/g, '"');
 }
 
+export const  extractAuthorAndEmail = (input: string): { name: string, email: string }[] => {
+    const result: { name: string, email: string }[] = [];
+    const emailRegex = /\S+@\S+\.\S+/;
+    const pattern = /(?<name>[\p{L}\p{M}]+[\p{Z}\t]*[\p{L}\p{M}\p{Z}\t]*)[\s\n]*(\(|\b)(?<email>\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b)/ug;
+
+    if (!emailRegex.test(input)) {
+        result.push({name: input ? input.replace('기자', '').trim() : '', email: ""});
+        return result;
+    }
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(input)) !== null) {
+        const name = match.groups?.name.replace('기자', '').trim() || '';
+        const email = match.groups?.email.trim() || '';
+        result.push({name, email});
+    }
+
+    return result;
+}
+
+
 function replaceVars(raw: any, seqKey: any) {
     let obj;
     obj = raw.reduce((acc, item) => {

@@ -3,13 +3,13 @@ import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
 import {IAnyRequest, News} from "../interfaces";
 import rp from 'request-promise'
-import {getArticle, getNaverRankNews, getNaverRealNews, getNewLinks, getNews, sendLinks} from "./news";
+import {getArticle, getFindNewLinks, getNaverRankNews, getNaverRealNews, getNewLinks, getNews} from "./news";
 import {generateChatMessage} from "./openai";
 import moment from "moment/moment";
 import {sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
-import {hgetData, hmsetRedis} from "./worker";
-import {MAX_LINK, RKEYWORD} from "../helpers/common";
+import {hgetData} from "./worker";
+import {RKEYWORD} from "../helpers/common";
 import {MESSAGE} from "../helpers/constants";
 
 
@@ -42,20 +42,20 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
         const {query, page = 1} = request.query;
 
         const articlePromises: Promise<void>[] = [];
-        //1 1-100 2 101-200 3 201-300     10 900
+        //1 1-100 2 101-200 3 201-300     10 901-1000
         const start = (page - 1) * 100 + 1;
         const end = page * 100;
         let news: News[] = [];
         const redis = await getRedis();
 
         if (parseInt(page) <= 10) {
-
+            //page seq 대한기사  100건만
             for (let i = start; i < end; i += 100) {
                 let data = null;
 
                 if(i === 1){
                     let oldLinks = await hgetData(redis, RKEYWORD, query);
-                    data = await getNewLinks(query, i, oldLinks);
+                    data = await getFindNewLinks(query, i, oldLinks || []);
                     if (!data || !data.length){
                         data = await getNews(query, i);
                     }
@@ -66,7 +66,6 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
                 await sleep(100);
                 news = [...news, ...data];
 
-               // if (utils.getTime() > moment(data[data.length - 1].pubDate).unix()) break;
             }
 
             news.filter(news => news.link && news.link.includes("http"))
@@ -101,7 +100,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
 
         //최근기사 100건만
         for (let i = 1; i < 100; i += 100) {
-            let data = await sendLinks(query, start, oldLinks);
+            let data = await getNewLinks(query, start, oldLinks || []);
             if (!data || !data.length) break;
             let timestamp = moment(data[data.length - 1].pubDate).unix();
             news = [...news, ...data];
@@ -109,14 +108,6 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
             await sleep(100);
             if (utils.getTime() > timestamp) break;
         }
-        oldLinks = await hgetData(redis, RKEYWORD, query);
-
-        if (oldLinks && oldLinks.length > MAX_LINK) {
-            oldLinks.splice(-(oldLinks.length - MAX_LINK));
-        }
-
-        const redisData = {[`${query}`]: JSON.stringify(oldLinks)};
-        await hmsetRedis(redis, RKEYWORD, redisData, 0);
 
         news.filter(news => news.link && news.link.includes("http"))
             .forEach(news => articlePromises.push(getArticle(news)));

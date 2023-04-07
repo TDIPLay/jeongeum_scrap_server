@@ -1,7 +1,7 @@
 import axios, {AxiosResponse} from 'axios';
 import axiosRetry from 'axios-retry';
-import * as cheerio from 'cheerio';
 // import * as puppeteer from 'puppeteer';
+import * as cheerio from 'cheerio';
 import {CheerioAPI} from 'cheerio';
 import iconv from 'iconv-lite';
 import {News, NewsItem, Scraper, SearchNews} from "../interfaces";
@@ -9,8 +9,8 @@ import service from "../../service/common_service";
 import {KakaoTalkMessage} from "./kakaotalk";
 import cron from 'node-cron';
 import moment from 'moment'
-import {AXIOS_OPTIONS, RKEYWORD} from "../helpers/common";
-import {decodeHtmlEntities, getDateString} from "../helpers/utils";
+import {AXIOS_OPTIONS, MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, RKEYWORD} from "../helpers/common";
+import {decodeHtmlEntities, extractAuthorAndEmail, getDateString} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hmsetRedis} from "./worker";
 
@@ -85,7 +85,7 @@ async function fetchMetadata(url: string): Promise<any> {
     try {
 
         const $ = await axiosCall(url);
-        if($ === null) return null;
+        if ($ === null) return null;
 
         const metadata: any = {};
         //const patten = "/\\s/g";
@@ -124,7 +124,7 @@ async function getArticleMetaDetails(news: News): Promise<void> {
     try {
         const data = await fetchMetadata(news.link);
 
-        if(data){
+        if (data) {
             news.thumbnail = data.image ?? '';
             news.author = data.author ?? '';
             news.content = data.bady ?? '';
@@ -154,7 +154,7 @@ async function getArticleMetaDetails(news: News): Promise<void> {
 
 export async function getNaverRankNews(): Promise<Scraper> {
     try {
-        const $ = await axiosCall("https://news.naver.com/main/ranking/popularDay.naver");
+        const $ = await axiosCall(NAVER_RANK_URL);
 
         let scrap: Scraper = {};
 
@@ -202,7 +202,7 @@ export async function getNaverRankNews(): Promise<Scraper> {
 
 export async function getNaverRealNews(): Promise<Scraper> {
     try {
-        const $ = await axiosCall("https://news.naver.com/main/ranking/popularDay.naver");
+        const $ = await axiosCall(NAVER_RANK_URL);
 
         let scrap: Scraper = {};
 
@@ -239,39 +239,6 @@ export async function getNaverRealNews(): Promise<Scraper> {
     }
 }
 
-/*async function getBrowserHtml(query: string, news: News) {
-
-    const url = `https://search.naver.com/search.naver?where=news&query=${query}`;
-
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.goto(news.link);
-    const html = await page.evaluate(() => document.documentElement.outerHTML);
-
-    return html;
-}*/
-
-
-async function getPageNewLinks(query: string, oldLinks: string[] = []) {
-
-    const url = `https://search.naver.com/search.naver?where=news&query=${query}`;
-
-    // html 문서 받아서 파싱(parsing)
-    const {data} = await axios.get(url);
-    const $ = cheerio.load(data);
-
-    // 해당 페이지의 뉴스기사 링크가 포함된 html 요소 추출
-    const newsTitles = $("a.news_tit");
-
-    // 요소에서 링크만 추출해서 리스트로 저장
-    const newLinks = Array.from(newsTitles).map((title) => $(title).attr("href"));
-
-    // 기존의 링크와 신규 링크를 비교해서 새로운 링크만 저장
-    const uniqueLinks = Array.from(new Set(newLinks));
-    const diffLinks = uniqueLinks.filter((link) => !oldLinks.includes(link));
-
-    return diffLinks;
-}
 
 // query	String	Y	검색어. UTF-8로 인코딩되어야 합니다.
 // display	Integer	N	한 번에 표시할 검색 결과 개수(기본값: 10, 최댓값: 100)
@@ -280,9 +247,9 @@ async function getPageNewLinks(query: string, oldLinks: string[] = []) {
 // - sim: 정확도순으로 내림차순 정렬(기본값)
 // - date: 날짜순으로 내림차순 정렬
 
-export async function getNewLinks(query: string, start: number = 1, oldLinks: string[] = []) : Promise<NewsItem[]>{
+export async function getFindNewLinks(query: string, start: number = 1, oldLinks: string[] = []): Promise<NewsItem[]> {
     // (주의) 네이버에서 키워드 검색 - 뉴스 탭 클릭 - 최신순 클릭 상태의 url
-    let api_url = `https://openapi.naver.com/v1/search/news.json?query=${encodeURI(query)}&start=${start}&display=100`; // JSON 결과
+    let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=100`; // JSON 결과
     let options = {
         headers: {
             'X-Naver-Client-Id': process.env["NAVER_CLIENT_ID"],
@@ -292,15 +259,22 @@ export async function getNewLinks(query: string, start: number = 1, oldLinks: st
     };
 
     const {data} = await axios.get(api_url, options);
-    if(!oldLinks) oldLinks = [];
     // 기존의 링크와 신규 링크를 비교해서 새로운 링크만 저장
     const uniqueLinks = Array.from(new Set(data.items));
 
     const diffLinks = uniqueLinks.filter((item: SearchNews) => !oldLinks.includes(item.link));
-    const newLinks = Array.from(diffLinks).map((news: SearchNews) => news?.link);
+    const newLinks = Array.from(diffLinks).map((news: SearchNews) => news?.link) || [];
     const redis = await getRedis();
+    let tempLinks = oldLinks;
+    const listCnt = oldLinks.length + newLinks.length;
 
-    const redisData = {[`${query}`]: JSON.stringify([...newLinks, ...oldLinks])};
+    if (listCnt > MAX_LINK) {
+        tempLinks.splice(-(listCnt - MAX_LINK));
+    }
+    // console.log(`total : ${listCnt}`)
+    // console.log(`newLinks : ${newLinks.length}`)
+    // console.log(`tempLinks : ${tempLinks.length}`)
+    const redisData = {[`${query}`]: JSON.stringify([...newLinks, ...tempLinks])};
     await hmsetRedis(redis, RKEYWORD, redisData, 0);
 
     return data.items.filter(news => news.link && news.link.includes("http") && !oldLinks.includes(news.link));
@@ -308,7 +282,7 @@ export async function getNewLinks(query: string, start: number = 1, oldLinks: st
 
 export async function getNews(query: string, start: number): Promise<NewsItem[]> {
 
-    let api_url = `https://openapi.naver.com/v1/search/news.json?query=${encodeURI(query)}&start=${start}&display=100`; // JSON 결과
+    let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=100`; // JSON 결과
     let options = {
         headers: {
             'X-Naver-Client-Id': process.env["NAVER_CLIENT_ID"],
@@ -322,18 +296,15 @@ export async function getNews(query: string, start: number): Promise<NewsItem[]>
 }
 
 
-export async function sendLinks(query: string, start: number, oldLinks: string[] = []): Promise<NewsItem[]> {
+export async function getNewLinks(query: string, start: number, oldLinks: string[] = []): Promise<NewsItem[]> {
 
     // 새로운 메시지가 있으면 링크 전송
-
-    const newLinks = await getNewLinks(query, start, oldLinks || []);
+    const newLinks = await getFindNewLinks(query, start, oldLinks || []);
     /*console.log(`====================================old url (${oldLinks.length})=================================================`)
-    //console.log(oldLinks)
-    /!*console.log(newLinks)
-    console.log("=====================================================================================")*!/
-
-    console.log(`====================================new url(${newLinks.length})=================================================`)*/
-    //console.log(Array.from(newLinks).map((news: SearchNews) => news?.link))
+    console.log(oldLinks)
+    console.log(newLinks)
+    console.log(`====================================new url(${newLinks.length})=================================================`)
+    console.log(Array.from(newLinks).map((news: SearchNews) => news?.link))*/
 
     if (newLinks.length > 0) {
         if (service.kakao_a_key) {
@@ -355,25 +326,37 @@ export async function sendLinks(query: string, start: number, oldLinks: string[]
     return newLinks;
 }
 
+async function getPageNewLinks(query: string, oldLinks: string[] = []) {
 
-function extractAuthorAndEmail(input: string): { name: string, email: string }[] {
-    const result: { name: string, email: string }[] = [];
-    const emailRegex = /\S+@\S+\.\S+/;
-    const pattern = /(?<name>[\p{L}\p{M}]+[\p{Z}\t]*[\p{L}\p{M}\p{Z}\t]*)[\s\n]*(\(|\b)(?<email>\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b)/ug;
+    const url = `https://search.naver.com/search.naver?where=news&query=${query}`;
 
-    if (!emailRegex.test(input)) {
-        result.push({name: input ? input.replace('기자', '').trim() : '', email: ""});
-        return result;
-    }
-    let match: RegExpExecArray | null;
-    while ((match = pattern.exec(input)) !== null) {
-        const name = match.groups?.name.replace('기자', '').trim() || '';
-        const email = match.groups?.email.trim() || '';
-        result.push({name, email});
-    }
+    // html 문서 받아서 파싱(parsing)
+    const {data} = await axios.get(url);
+    const $ = cheerio.load(data);
 
-    return result;
+    // 해당 페이지의 뉴스기사 링크가 포함된 html 요소 추출
+    const newsTitles = $("a.news_tit");
+
+    // 요소에서 링크만 추출해서 리스트로 저장
+    const newLinks = Array.from(newsTitles).map((title) => $(title).attr("href"));
+
+    // 기존의 링크와 신규 링크를 비교해서 새로운 링크만 저장
+    const uniqueLinks = Array.from(new Set(newLinks));
+
+    return uniqueLinks.filter((link) => !oldLinks.includes(link));
 }
+
+/*async function getBrowserHtml(query: string, news: News) {
+
+    const url = `https://search.naver.com/search.naver?where=news&query=${query}`;
+
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto(news.link);
+    const html = await page.evaluate(() => document.documentElement.outerHTML);
+
+    return html;
+}*/
 
 function test() {
 
@@ -387,7 +370,7 @@ function test() {
 
         // 주기적 실행과 관련된 코드 (hours는 시, minutes는 분, seconds는 초)
         const job = cron.schedule('*/10 * * * * *', () => {
-            sendLinks(query, 1);
+            getFindNewLinks(query, 1).then();
         });
     }
 }
