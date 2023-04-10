@@ -10,7 +10,7 @@ import {sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData} from "./worker";
 import {RKEYWORD} from "../helpers/common";
-import {MESSAGE} from "../helpers/constants";
+import {ERROR400, MESSAGE, STANDARD} from "../helpers/constants";
 
 
 export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
@@ -18,9 +18,9 @@ export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, 
 
         const news = await getNaverRankNews();
 
-        request.transfer = {result: MESSAGE.SUCCESS, code: 0, message: "SUCCESS", list_count: news.length, data: news};
-
+        request.transfer = {result: MESSAGE.SUCCESS, code: STANDARD.SUCCESS, message: "SUCCESS", list_count: news.length, data: news};
         done();
+
     } catch (e) {
         handleServerError(reply, e)
     }
@@ -30,13 +30,14 @@ export const preApiRealNews = async (request: IAnyRequest, reply: FastifyReply, 
 
         const news = await getNaverRealNews();
 
-        request.transfer = {result: MESSAGE.SUCCESS, code: 0, message: "SUCCESS", list_count: news.length, data: news};
-
+        request.transfer = {result: MESSAGE.SUCCESS, code: STANDARD.SUCCESS, message: "SUCCESS", list_count: news.length, data: news};
         done();
+
     } catch (e) {
         handleServerError(reply, e)
     }
 }
+
 export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
         const {query, page = 1} = request.query;
@@ -74,13 +75,13 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
 
             request.transfer = {
                 result: MESSAGE.SUCCESS,
-                code: 0,
+                code: STANDARD.SUCCESS,
                 message: "SUCCESS",
                 list_count: news.length,
                 data: news
             };
         } else {
-            request.transfer = {result: MESSAGE.FAIL, code: 400, message: "Over Page"};
+            request.transfer = {result: MESSAGE.FAIL, code: ERROR400.statusCode, message: "Over Page"};
         }
         done();
     } catch (e) {
@@ -115,7 +116,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
 
         request.transfer = request.transfer = {
             result: MESSAGE.SUCCESS,
-            code: 0,
+            code: STANDARD.SUCCESS,
             message: "SUCCESS",
             list_count: news.length,
             data: news

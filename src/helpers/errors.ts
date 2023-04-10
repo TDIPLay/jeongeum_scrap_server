@@ -1,5 +1,5 @@
 import { FastifyReply } from "fastify"
-import { ERROR500 } from "./constants"
+import {ERROR400, ERROR500, MESSAGE} from "./constants"
 import {logger} from "./utils";
 
 export const ERRORS = {
@@ -12,7 +12,7 @@ export const ERRORS = {
 
 export function handleServerError(reply: FastifyReply, error: any) {
   logger.error({ error },"err handler")
-  return reply.status(ERROR500.statusCode).send(ERROR500);
+  return reply.status(ERROR400.statusCode).send({result: MESSAGE.FAIL, code: ERROR400.statusCode, message: ERROR400});
 }
 
 

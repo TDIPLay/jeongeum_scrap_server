@@ -1,6 +1,8 @@
 import axios, {AxiosRequestConfig} from 'axios';
 import Common_service from "../../service/common_service";
 import service from "../../service/common_service";
+import {hmsetRedis} from "./worker";
+import {RKEYWORD} from "../helpers/common";
 
 // 카카오톡 API를 호출할 때 필요한 인증 토큰
 const ACCESS_TOKEN = 'X5m8-mV575fdhrqUV4YFn3uI2Xz1BpHASBrb5gVkCj11WgAAAYcsJDHs';
@@ -64,16 +66,18 @@ async function getKakaoAccessToken(clientId: string, clientSecret: string, redir
     };
 
     const response = await axios.post<KakaoAccessTokenResponse>(KAKAO_OAUTH_API_URL, data, config);
-
+    console.log(response)
     return response.data.access_token;
 }
 
 //사용자 front 인증 사용 예시
-//https://kauth.kakao.com/oauth/authorize?client_id=96f2967cf5c2dae1406caa81992e511f&response_type=code&redirect_uri=http://121.138.215.176:8080/tdi/talk/v1/oauth&scope=talk_message
+//https://kauth.kakao.com/oauth/authorize?client_id=96f2967cf5c2dae1406caa81992e511f&response_type=code&redirect_uri=http://127.0.0.1:8080/tdi/talk/v1/oauth&scope=talk_message
 
-export async function exampleUsage(code: string): Promise<string> {
+export async function exampleUsage(code: string,userId :string): Promise<string> {
     console.log("code: =>" + code)
     const ACCESS_TOKEN = await getKakaoAccessToken(process.env.KAKAO_CLIENT_ID, '', process.env.KAKAO_AUTH_POST_URL, code);
+    // const redisData = {[`${userId}`]: JSON.stringify([...newLinks, ...tempLinks])};
+    // await hmsetRedis(redis, RKEYWORD, redisData, 0);
     console.log("ACCESS_TOKEN: =>" + ACCESS_TOKEN)
     return ACCESS_TOKEN;
 }

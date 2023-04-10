@@ -2,7 +2,7 @@ export interface News {
 
     title: string;
     link: string;
-    originalLink?: string;
+    originallink?: string;
     description: string;
     pubDate?: string;
     thumbnail?: string;

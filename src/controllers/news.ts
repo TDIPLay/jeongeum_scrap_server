@@ -2,7 +2,6 @@ import axios, {AxiosResponse} from 'axios';
 import axiosRetry from 'axios-retry';
 // import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
-import {CheerioAPI} from 'cheerio';
 import iconv from 'iconv-lite';
 import {News, NewsItem, Scraper, SearchNews} from "../interfaces";
 import service from "../../service/common_service";
@@ -15,7 +14,7 @@ import {getRedis} from "../../service/redis";
 import {hmsetRedis} from "./worker";
 
 
-async function axiosCall(link: string): Promise<CheerioAPI> {
+async function axiosCall(link: string): Promise<cheerio.CheerioAPI> {
     try {
 
         axiosRetry(axios, {
@@ -55,10 +54,10 @@ async function getArticleDetails(news: News): Promise<void> {
         const description = news.description || `${$('meta[property^="og:description"]').attr('content')}...`
         const company = news.company || $('meta[name^="twitter:creator"]').attr('content');
         const thumbnail = news.thumbnail || $('meta[property^="og:image"]').attr('content');
-        const originalLink = news.originalLink || $(main).find('a').attr('href');
+        const originallink = news.originallink || $(main).find('a').attr('href');
 
         if (news.title) news.title = decodeHtmlEntities(news.title);
-        if (originalLink) news.originalLink = originalLink;
+        if (originallink) news.originallink = originallink;
         if (thumbnail) news.thumbnail = thumbnail;
         if (company) news.company = company;
         if (description) news.description = decodeHtmlEntities(description);
@@ -167,7 +166,7 @@ export async function getNaverRankNews(): Promise<Scraper> {
                 return {
                     title: $(news).find(".list_content > a").text().trim(),
                     link: $(news).find("a").attr("href") ?? '',
-                    originalLink: '',
+                    originallink: '',
                     thumbnail: $(news).find("a > img").attr("src") ?? '',
                     company: articleID,
                     content: '',
@@ -215,7 +214,7 @@ export async function getNaverRealNews(): Promise<Scraper> {
                 return {
                     title: $(news).find(".cc_text_item > a").text().trim(),
                     link: $(news).find("a").attr("href") ?? '',
-                    originalLink: '',
+                    originallink: '',
                     //   thumbnail: $(news).find("a > img").attr("src") ?? '',
                     company: articleID,
                     content: '',
