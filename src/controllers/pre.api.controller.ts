@@ -1,7 +1,7 @@
 import {FastifyReply} from "fastify"
 import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
-import {IAnyRequest, News} from "../interfaces";
+import {IAnyRequest, KakaoAccessTokenResponse, News} from "../interfaces";
 import rp from 'request-promise'
 import {getArticle, getFindNewLinks, getNaverRankNews, getNaverRealNews, getNewLinks, getNews} from "./news";
 import {generateChatMessage} from "./openai";
@@ -9,8 +9,9 @@ import moment from "moment/moment";
 import {sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData} from "./worker";
-import {RKEYWORD} from "../helpers/common";
+import {RKEYWORD, RTOTEN_KAKAO} from "../helpers/common";
 import {ERROR400, MESSAGE, STANDARD} from "../helpers/constants";
+import {KakaoTalkMessage, sendKakaoTalkMessage} from "./kakaotalk";
 
 
 export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
@@ -18,7 +19,13 @@ export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, 
 
         const news = await getNaverRankNews();
 
-        request.transfer = {result: MESSAGE.SUCCESS, code: STANDARD.SUCCESS, message: "SUCCESS", list_count: news.length, data: news};
+        request.transfer = {
+            result: MESSAGE.SUCCESS,
+            code: STANDARD.SUCCESS,
+            message: "SUCCESS",
+            list_count: news.length,
+            data: news
+        };
         done();
 
     } catch (e) {
@@ -30,7 +37,13 @@ export const preApiRealNews = async (request: IAnyRequest, reply: FastifyReply, 
 
         const news = await getNaverRealNews();
 
-        request.transfer = {result: MESSAGE.SUCCESS, code: STANDARD.SUCCESS, message: "SUCCESS", list_count: news.length, data: news};
+        request.transfer = {
+            result: MESSAGE.SUCCESS,
+            code: STANDARD.SUCCESS,
+            message: "SUCCESS",
+            list_count: news.length,
+            data: news
+        };
         done();
 
     } catch (e) {
@@ -54,13 +67,13 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
             for (let i = start; i < end; i += 100) {
                 let data = null;
 
-                if(i === 1){
+                if (i === 1) {
                     let oldLinks = await hgetData(redis, RKEYWORD, query);
                     data = await getFindNewLinks(query, i, oldLinks || []);
-                    if (!data || !data.length){
+                    if (!data || !data.length || data.length < 50) {
                         data = await getNews(query, i);
                     }
-                }else{
+                } else {
                     data = await getNews(query, i);
                 }
                 if (!data || !data.length) break;
@@ -113,6 +126,23 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
         news.filter(news => news.link && news.link.includes("http"))
             .forEach(news => articlePromises.push(getArticle(news)));
         await Promise.all(articlePromises);
+        let user: KakaoAccessTokenResponse = await hgetData(redis, RTOTEN_KAKAO, "ygkwang");
+        for (let i = 0; i < news.length; i += 4) {
+            if(i === 4) break;
+            let talk = {
+                object_type: 'text',
+                text: news[i].title,
+                link: {
+                    web_url: `${process.env.LINK_PASS_URL}?url=${news[i].originallink}`,
+                    mobile_web_url: `${process.env.LINK_PASS_URL}?url=${news[i].originallink}`,
+                },
+                button_title: "바로 확인"
+            };
+            console.log(talk)
+            await sleep(10);
+            sendKakaoTalkMessage(user.access_token, talk)
+        }
+
 
         request.transfer = request.transfer = {
             result: MESSAGE.SUCCESS,

@@ -19,9 +19,17 @@ export const apiSyncUp = async (request: IAnyRequest, reply: FastifyReply) => {
 
 export const apiAuth = async (request: IAnyRequest, reply: FastifyReply) => {
     try {
-        const {code,user_id} = request.query
-        service.kakao_a_key = await exampleUsage(code,user_id);
+        const {code,state} = request.query
+        service.kakao_a_key = await exampleUsage(code,state);
         reply.status(STANDARD.SUCCESS).send(service.kakao_a_key)
+    } catch (e) {
+        handleServerError(reply, e)
+    }
+}
+export const passUrl = async (request: IAnyRequest, reply: FastifyReply) => {
+    try {
+        const {url} = request.query
+        reply.redirect(url)
     } catch (e) {
         handleServerError(reply, e)
     }

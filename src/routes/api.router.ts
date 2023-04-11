@@ -3,7 +3,7 @@ import {apiSchema, signupSchema} from '../schema'
 import {
     apiAuth,
     apiMemoryRate,
-    apiSyncUp,
+    apiSyncUp, passUrl,
     preApiRankNews,
     preApiRealNews,
     preApiSyncUp,
@@ -56,6 +56,11 @@ async function apiRouter(fastify: FastifyInstance) {
         method: 'GET',
         url: '/oauth',
         schema: apiSchema, handler: apiAuth
+    })
+    fastify.route({
+        method: 'GET',
+        url: '/redirect',
+        schema: apiSchema, handler: passUrl
     })
 
     fastify.route({
