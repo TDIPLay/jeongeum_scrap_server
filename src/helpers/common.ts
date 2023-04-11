@@ -14,12 +14,4 @@ export const DEVICE_STATUS = {
     unknown: 'UNKNOWN'
 }
 
-export const AXIOS_OPTIONS = {
-    headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
-    },
-    encoding: null,
-    method: "GET",
-    timeout: 5000,
-    responseType: "arraybuffer" as ResponseType,
-};
+

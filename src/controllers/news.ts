@@ -8,16 +8,30 @@ import service from "../../service/common_service";
 import {KakaoTalkMessage} from "./kakaotalk";
 import cron from 'node-cron';
 import moment from 'moment'
-import {AXIOS_OPTIONS, MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, RKEYWORD} from "../helpers/common";
+import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, RKEYWORD} from "../helpers/common";
 import {decodeHtmlEntities, extractAuthorAndEmail, getDateString} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hmsetRedis} from "./worker";
+import {ResponseType} from "axios/index";
 
+const AXIOS_OPTIONS = {
+    headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
+    },
+    encoding: null,
+    method: "GET",
+    timeout: 5000,
+    maxRedirects: 3,
+    onRedirect: (redirectRequest, redirectResponse) => {
+        console.log(`Redirected to: ${redirectResponse.headers.location}`);
+    },
+    responseType: "arraybuffer" as ResponseType,
+};
 
 async function axiosCall(link: string): Promise<cheerio.CheerioAPI> {
     try {
 
-        axiosRetry(axios, {
+       axiosRetry(axios, {
             retries: 2,
             retryDelay: (retryCount) => {
                 return retryCount * 1000; // 1초, 2초, 3초
