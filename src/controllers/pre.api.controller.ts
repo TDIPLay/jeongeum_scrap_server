@@ -80,7 +80,6 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
                 if (!data || !data.length) break;
                 await sleep(100);
                 news = [...news, ...data];
-
             }
 
             news.filter(news => news.link && news.link.includes("http"))
@@ -127,18 +126,21 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
         news.filter(news => news.link && news.link.includes("http"))
             .forEach(news => articlePromises.push(getArticle(news)));
         await Promise.all(articlePromises);
-        /* let html = generateHTML(news);
 
-        const emailSender = new EmailSender({
-            user: process.env.GOOGLE_MAIL_ID,
-            pass: process.env.GOOGLE_MAIL_PW,
-        });
-        emailSender.sendEmail({
-            from: process.env.GOOGLE_MAIL_ID,
-            to: 'tdiplaydev@nsmg21.com',
-            subject: '[정음]오늘의 뉴스',
-            html: html,
-        });*/
+        if(news.length > 0){
+            let html = generateHTML(news);
+            const emailSender = new EmailSender({
+                user: process.env.GOOGLE_MAIL_ID,
+                pass: process.env.GOOGLE_MAIL_PW,
+            });
+            emailSender.sendEmail({
+                from: process.env.GOOGLE_MAIL_ID,
+                to: 'tdiplaydev@nsmg21.com',
+                subject: '[정음]오늘의 뉴스',
+                html: html,
+            });
+        }
+
 
 
         /*let user: KakaoAccessTokenResponse = await hgetData(redis, RTOTEN_KAKAO, "ygkwang");

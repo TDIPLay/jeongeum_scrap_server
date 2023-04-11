@@ -31,7 +31,7 @@ const AXIOS_OPTIONS = {
 async function axiosCall(link: string): Promise<cheerio.CheerioAPI> {
     try {
 
-       axiosRetry(axios, {
+        axiosRetry(axios, {
             retries: 2,
             retryDelay: (retryCount) => {
                 return retryCount * 1000; // 1초, 2초, 3초
@@ -67,12 +67,12 @@ async function getArticleDetails(news: News): Promise<void> {
         // const content = $('#dic_area').first().text().replace(/\s/g, ' ').trim();
         const description = news.description || `${$('meta[property^="og:description"]').attr('content')}...`
         const company = news.company || $('meta[name^="twitter:creator"]').attr('content');
-        const thumbnail = news.thumbnail || $('meta[property^="og:image"]').attr('content');
+        const thumbnail = $('meta[property^="twitter:image"]').attr('content') || $('meta[property^="og:image"]').attr('content');
         const originallink = news.originallink || $(main).find('a').attr('href');
 
         if (news.title) news.title = decodeHtmlEntities(news.title);
         if (originallink) news.originallink = originallink;
-        if (thumbnail) news.thumbnail = thumbnail;
+        if (thumbnail) news.thumbnail = thumbnail ;
         if (company) news.company = company;
         if (description) news.description = decodeHtmlEntities(description);
         if (author) news.author = author;
@@ -102,7 +102,7 @@ async function fetchMetadata(url: string): Promise<any> {
 
         const metadata: any = {};
         //const patten = "/\\s/g";
-        // metadata.bady = $('body').find('p').text().trim();
+        // metadata.body = $('body').find('p').text().trim();
         $('meta').each((i, el) => {
             const name = $(el).attr('name');
             const property = $(el).attr('property');
@@ -113,6 +113,12 @@ async function fetchMetadata(url: string): Promise<any> {
                 metadata[key] = content;
             }
         });
+        const emailLink = $("a[href^='mailto:']");
+
+        if (emailLink.length > 0) {
+            metadata['email'] = emailLink.attr("href").replace("mailto:", "");
+            // console.log(`${url} => ${metadata['email']}` )
+        }
 
         return metadata;
 
@@ -140,15 +146,14 @@ async function getArticleMetaDetails(news: News): Promise<void> {
         if (data) {
             news.thumbnail = data.image ?? '';
             news.author = data.author ?? '';
-            news.content = data.bady ?? '';
+            news.content = data.body ?? '';
 
             const ext = extractAuthorAndEmail(news.author);
             news.name = JSON.stringify(ext.map(x => x.name)) ?? '';
-            news.email = JSON.stringify(ext.map(x => x.email)) ?? '';
-
+            news.email = data.email;
             news.company = (data.site_name || data.Copyright) ?? '';
             news.title = decodeHtmlEntities(news.title);
-            news.description = decodeHtmlEntities(news.description) ?? '';
+            news.description = decodeHtmlEntities(news.description) || '';
 
             if (news.pubDate) {
                 news.timestamp = moment(news.pubDate).unix();

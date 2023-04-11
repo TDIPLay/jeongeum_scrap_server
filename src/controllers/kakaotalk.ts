@@ -71,7 +71,7 @@ async function getKakaoAccessToken(clientId: string, clientSecret: string, redir
 
 export async function userOAuth(code: string,userId :string): Promise<string> {
     console.log("code: =>" + code)
-    const data = await getKakaoAccessToken(process.env.KAKAO_CLIENT_ID, '', process.env.KAKAO_AUTH_POST_URL, code);
+    const data = await getKakaoAccessToken(process.env["KAKAO_CLIENT_ID"], '', process.env["KAKAO_AUTH_POST_URL"], code);
     if(data){
         const redisData = {[`${userId}`]: JSON.stringify(data)};
         await hmsetRedis(await getRedis(), RTOTEN_KAKAO, redisData, 0);
@@ -81,10 +81,11 @@ export async function userOAuth(code: string,userId :string): Promise<string> {
         return null;
     }
 }
+
 export async function exampleUsage(code: string,userId :string): Promise<string> {
     console.log("code: =>" + code)
     console.log("userId: =>" + userId)
-    const data = await getKakaoAccessToken(process.env.KAKAO_CLIENT_ID, '', process.env.KAKAO_AUTH_POST_URL, code);
+    const data = await getKakaoAccessToken(process.env["KAKAO_CLIENT_ID"], '', process.env["KAKAO_AUTH_POST_URL"], code);
     if(data){
         const redisData = {[`${userId}`]: JSON.stringify(data)};
         await hmsetRedis(await getRedis(), RTOTEN_KAKAO, redisData, 0);

@@ -1,4 +1,5 @@
 import nodemailer, { Transporter } from 'nodemailer';
+import {News} from "../interfaces";
 
 interface MailOptions {
     from: string;
@@ -16,7 +17,6 @@ export class EmailSender {
     private readonly transporter: Transporter;
 
     constructor(emailConfig: EmailConfig) {
-        console.log(emailConfig)
         this.transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
@@ -41,7 +41,7 @@ export class EmailSender {
 
 
 
-export function generateHTML(data: any[]): string {
+export function generateHTML(data: News[]): string {
     const template = data.map(
         (item) => `
       <div style="margin-bottom: 10px;">
