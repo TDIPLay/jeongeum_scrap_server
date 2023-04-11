@@ -67,7 +67,7 @@ async function getArticleDetails(news: News): Promise<void> {
         // const content = $('#dic_area').first().text().replace(/\s/g, ' ').trim();
         const description = news.description || `${$('meta[property^="og:description"]').attr('content')}...`
         const company = news.company || $('meta[name^="twitter:creator"]').attr('content');
-        const thumbnail = $('meta[property^="twitter:image"]').attr('content') || $('meta[property^="og:image"]').attr('content');
+        const thumbnail = $('meta[property^="twitter:image"], meta[property^="og:image"]').first().attr('content') || '';
         const originallink = news.originallink || $(main).find('a').attr('href');
 
         if (news.title) news.title = decodeHtmlEntities(news.title);
@@ -117,9 +117,11 @@ async function fetchMetadata(url: string): Promise<any> {
 
         if (emailLink.length > 0) {
             metadata['email'] = emailLink.attr("href").replace("mailto:", "");
-            // console.log(`${url} => ${metadata['email']}` )
+            // const nameElement = emailLink.clone().children().remove().end();
+            // console.log(nameElement.html())
+            // const name = nameElement.text().trim() || '';
+            // const email = emailLink.attr('href')?.replace('mailto:', '') || '';
         }
-
         return metadata;
 
     } catch (error) {

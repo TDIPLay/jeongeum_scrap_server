@@ -127,7 +127,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
             .forEach(news => articlePromises.push(getArticle(news)));
         await Promise.all(articlePromises);
 
-        if(news.length > 0){
+        /*if(news.length > 0){
             let html = generateHTML(news);
             const emailSender = new EmailSender({
                 user: process.env.GOOGLE_MAIL_ID,
@@ -139,7 +139,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
                 subject: '[정음]오늘의 뉴스',
                 html: html,
             });
-        }
+        }*/
 
 
 
