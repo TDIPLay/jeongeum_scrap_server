@@ -28,9 +28,10 @@ const AXIOS_OPTIONS = {
     responseType: "arraybuffer" as ResponseType,
 };
 
+const noTypePress = ['finomy.com']
 async function axiosCall(link: string): Promise<cheerio.CheerioAPI> {
-    try {
 
+    try {
         axiosRetry(axios, {
             retries: 2,
             retryDelay: (retryCount) => {
@@ -41,7 +42,9 @@ async function axiosCall(link: string): Promise<cheerio.CheerioAPI> {
 
         const response: AxiosResponse = await axios.get(link, AXIOS_OPTIONS);
         const content_type = response.headers['content-type'].match(/charset=(.+)/i);
-        const encoding = content_type && content_type.length ? content_type[1] : "utf-8";
+        const no_type = noTypePress.some(x => link.includes(x))
+        const encoding = content_type && content_type.length ? content_type[1] : no_type ? "euc-kr" : "utf-8";
+
         const data = encoding.toLowerCase() !== 'utf-8' ? iconv.decode(response.data, encoding) : response.data;
 
         return cheerio.load(data);
@@ -116,7 +119,7 @@ async function fetchMetadata(url: string): Promise<any> {
         const emailLink = $("a[href^='mailto:']");
 
         if (emailLink.length > 0) {
-            metadata['email'] = emailLink.attr("href").replace("mailto:", "");
+            metadata['email'] = [emailLink.attr("href").replace("mailto:", "")];
             // const nameElement = emailLink.clone().children().remove().end();
             // console.log(nameElement.html())
             // const name = nameElement.text().trim() || '';
@@ -152,7 +155,7 @@ async function getArticleMetaDetails(news: News): Promise<void> {
 
             const ext = extractAuthorAndEmail(news.author);
             news.name = JSON.stringify(ext.map(x => x.name)) ?? '';
-            news.email = data.email;
+            news.email = JSON.stringify(data.email);
             news.company = (data.site_name || data.Copyright) ?? '';
             news.title = decodeHtmlEntities(news.title);
             news.description = decodeHtmlEntities(news.description) || '';
@@ -266,10 +269,10 @@ export async function getNaverRealNews(): Promise<Scraper> {
 // sort	String	N	검색 결과 정렬 방법
 // - sim: 정확도순으로 내림차순 정렬(기본값)
 // - date: 날짜순으로 내림차순 정렬
-
+//검색어에 +넣으면 &연산 -넣으면 or연산 다음에 추가
 export async function getFindNewLinks(query: string, start: number = 1, oldLinks: string[] = []): Promise<NewsItem[]> {
     // (주의) 네이버에서 키워드 검색 - 뉴스 탭 클릭 - 최신순 클릭 상태의 url
-    let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=100`; // JSON 결과
+    let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=100&`; // JSON 결과
     let options = {
         headers: {
             'X-Naver-Client-Id': process.env["NAVER_CLIENT_ID"],
@@ -320,6 +323,7 @@ export async function getNewLinks(query: string, start: number, oldLinks: string
 
     // 새로운 메시지가 있으면 링크 전송
     const newLinks = await getFindNewLinks(query, start, oldLinks || []);
+
     /*console.log(`====================================old url (${oldLinks.length})=================================================`)
     console.log(oldLinks)
     console.log(newLinks)

@@ -114,32 +114,42 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
 
         //최근기사 100건만
         for (let i = 1; i < 100; i += 100) {
-            let data = await getNewLinks(query, start, oldLinks || []);
-            if (!data || !data.length) break;
-            let timestamp = moment(data[data.length - 1].pubDate).unix();
-            news = [...news, ...data];
+            let newList = await getNewLinks(query, start, oldLinks || []);
+            if (!newList || !newList.length) break;
+            let tm = moment(newList[newList.length - 1].pubDate).unix();
+            news = [...news, ...newList];
 
             await sleep(100);
-            if (utils.getTime() > timestamp) break;
+            if (utils.getTime() > tm) break;
         }
 
-        news.filter(news => news.link && news.link.includes("http"))
+
+        const uniqueNews = Array.from(new Set(news.filter(n => n.link?.startsWith("http"))));
+        const sortedNews = uniqueNews.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
+
+        sortedNews.forEach(news => articlePromises.push(getArticle(news)));
+        await Promise.all(articlePromises);
+
+
+       /* news.filter(news => news.link && news.link.includes("http"))
             .forEach(news => articlePromises.push(getArticle(news)));
         await Promise.all(articlePromises);
 
-        /*if(news.length > 0){
-            let html = generateHTML(news);
-            const emailSender = new EmailSender({
+        news.sort((a, b) => b.timestamp - a.timestamp);*/
+
+        if(sortedNews.length > 0){
+            const content = generateHTML(news);
+            //console.log(content)
+            await new EmailSender({
                 user: process.env.GOOGLE_MAIL_ID,
                 pass: process.env.GOOGLE_MAIL_PW,
-            });
-            emailSender.sendEmail({
+            }).sendEmail({
                 from: process.env.GOOGLE_MAIL_ID,
-                to: 'tdiplaydev@nsmg21.com',
-                subject: '[정음]오늘의 뉴스',
-                html: html,
+                to: 'ygkwang@nsmg21.com',
+                subject: `[정음]오늘의 뉴스(#${query})`,
+                html: content,
             });
-        }*/
+        }
 
 
 
@@ -166,7 +176,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
             code: STANDARD.SUCCESS,
             message: "SUCCESS",
             list_count: news.length,
-            data: news
+            data: sortedNews
         };
         done();
     } catch (e) {

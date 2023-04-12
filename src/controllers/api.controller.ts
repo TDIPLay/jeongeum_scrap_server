@@ -26,6 +26,17 @@ export const apiAuth = async (request: IAnyRequest, reply: FastifyReply) => {
         handleServerError(reply, e)
     }
 }
+
+export const apiValidationMail = async (request: IAnyRequest, reply: FastifyReply) => {
+    try {
+        const {code,state} = request.query
+        service.kakao_a_key = await exampleUsage(code,state);
+        reply.status(STANDARD.SUCCESS).send(service.kakao_a_key)
+    } catch (e) {
+        handleServerError(reply, e)
+    }
+}
+
 export const passUrl = async (request: IAnyRequest, reply: FastifyReply) => {
     try {
         const {url} = request.query

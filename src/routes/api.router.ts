@@ -3,7 +3,7 @@ import {apiSchema, signupSchema} from '../schema'
 import {
     apiAuth,
     apiMemoryRate,
-    apiSyncUp, passUrl,
+    apiSyncUp, apiValidationMail, passUrl,
     preApiRankNews,
     preApiRealNews,
     preApiSyncUp,
@@ -54,8 +54,13 @@ async function apiRouter(fastify: FastifyInstance) {
     })
     fastify.route({
         method: 'GET',
-        url: '/oauth',
+        url: '/social/:social',
         schema: apiSchema, handler: apiAuth
+    })
+    fastify.route({
+        method: 'GET',
+        url: '/send_mail',
+        schema: apiSchema, handler: apiValidationMail
     })
     fastify.route({
         method: 'GET',

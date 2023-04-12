@@ -1,4 +1,4 @@
-import nodemailer, { Transporter } from 'nodemailer';
+import nodemailer, {Transporter} from 'nodemailer';
 import {News} from "../interfaces";
 
 interface MailOptions {
@@ -26,8 +26,8 @@ export class EmailSender {
         });
     }
 
-    public sendEmail(mailOptions: MailOptions): void {
-        this.transporter.sendMail(mailOptions, (err, info) => {
+    public async sendEmail(options: MailOptions): Promise<void> {
+        await this.transporter.sendMail(options, (err, info) => {
             if (err) {
                 console.error('Send Mail error : ', err);
             } else {
@@ -38,24 +38,31 @@ export class EmailSender {
 }
 
 
-
-
-
 export function generateHTML(data: News[]): string {
-    const template = data.map(
-        (item) => `
-      <div style="margin-bottom: 10px;">
-        <a href="${item.link}" style="text-decoration: none;">
-          <img src="${item.thumbnail}" alt="${item.title}" style="float: left; margin-right: 10px; width: 70px; height: 70px;">
-          <div style="overflow: hidden;">
-            <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">${item.title}</div>
-            <div style="font-size: 12px; color: #757575;">${item.company} | ${item.pubDate}</div>
-            <div style="font-size: 12px; margin-top: 5px; color: #757575;">${item.description}</div>
-          </div>
-        </a>
-      </div>
-    `
-    ).join("");
+    const template = data.map((item) => {
+        const title = item.title ? item.title.replace(/"/g, "`") : "";
+        const description = item.description ? item.description.replace(/"/g, "`") : "";
+        const company = item.company ? item.company.replace(/"/g, "`") : "";
+
+        return `
+        <div style="margin-bottom: 10px;">
+          <a href="${item.link}" style="text-decoration: none;">
+            <img src="${item.thumbnail}" alt="${title}" style="float: left; margin-right: 10px; width: 70px; height: 70px;"/>
+            <div style="overflow: hidden;">
+              <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">
+                ${title}
+              </div>
+              <div style="font-size: 12px; color: #757575;">
+                ${company} | ${item.pubDate}
+              </div>
+              <div style="font-size: 12px; margin-top: 5px; color: #757575;">
+                ${description}
+              </div>
+            </div>
+          </a>
+        </div>
+      `;
+    }).join("");
 
     return `
     <html>
