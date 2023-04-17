@@ -61,7 +61,7 @@ export const getGoogleUserInfo = async (accessToken: string): Promise<any> => {
 };
 
 
-export async function validateGoogleToken(token: string): Promise<boolean> {
+export async function validateGoogleToken(accessToken: string): Promise<boolean> {
    /* const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, `${process.env.SOCIAL_POSTBACK}/google`);
 
     try {
