@@ -280,7 +280,7 @@ export const preSocial = async (request: IAnyRequest, reply: FastifyReply, done)
         if (!token || !(await validateToken(token.access_token))) {
             switch (social) {
                 case 'kakao' :
-                    request.transfer = `${process.env.KAKAO_AUTH.replace("${KAKAO_CLIENT_ID}", process.env.KAKAO_CLIENT_ID)}&redirect_uri=${process.env.SOCIAL_POSTBACK}${social}&state=${social}`;
+                    request.transfer = `${process.env.KAKAO_AUTH.replace("${KAKAO_CLIENT_ID}", process.env.KAKAO_CLIENT_ID)}&redirect_uri=${process.env.SOCIAL_POSTBACK}/${social}&state=${social}`;
                     break;
                 case 'naver' :
                     request.transfer = `${process.env.KAKAO_AUTH}&redirect_uri=${process.env.SOCIAL_POSTBACK}${social}&state=test`;
