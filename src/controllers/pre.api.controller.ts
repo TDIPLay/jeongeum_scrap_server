@@ -2,7 +2,7 @@ import {FastifyReply} from "fastify"
 import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
 import {IAnyRequest, News} from "../interfaces";
-import rp from 'request-promise-native'
+//import rp from 'request-promise-native'
 import {getArticle, getFindNewLinks, getNaverRankNews, getNaverRealNews, getNewLinks, getNews} from "./news";
 import {generateChatMessage} from "./openai";
 import moment from "moment/moment";
@@ -322,14 +322,14 @@ export const preSocialLogin = async (request: IAnyRequest, reply: FastifyReply, 
 export const preApiSyncUp = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
 
-        const options = {method: 'GET'};
-        const requests = service.server_info.map((value) => {
-            const url = `http://${value.ip}/tdi/v1/set_sync`;
-            return rp(url, options).catch(() => 'err');
-        });
-
-        const results = await Promise.all(requests);
-        service.err_cnt += results.filter((res) => res === 'err').length;
+        // const options = {method: 'GET'};
+        // const requests = service.server_info.map((value) => {
+        //     const url = `http://${value.ip}/tdi/v1/set_sync`;
+        //     return rp(url, options).catch(() => 'err');
+        // });
+        //
+        // const results = await Promise.all(requests);
+        // service.err_cnt += results.filter((res) => res === 'err').length;
 
         request.transfer = {'err': service.err_cnt}
 
