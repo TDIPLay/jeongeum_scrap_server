@@ -41,7 +41,7 @@
     "fastify": "^3.28.0",
     "fastify-auth": "^1.1.0",
     "fastify-autoload": "^3.12.0",
-    "fastify-cli": "^2.15.0",
+    "fastify-cli": "^5.7.1",
     "fastify-cors": "^6.0.3",
     "fastify-file-upload": "^3.0.1",
     "fastify-formbody": "^5.2.0",
@@ -65,7 +65,7 @@
     "pino": "^7.10.0",
     "puppeteer": "^19.8.5",
     "redis": "^3.1.2",
-    "request-promise": "^4.2.6"
+    "request-promise-native": "^1.0.9"
   },
   "devDependencies": {
     "@types/charset": "^1.0.2",
@@ -77,6 +77,7 @@
     "@types/mysql": "^2.15.21",
     "@types/node": "17.0.25",
     "@types/node-cron": "^3.0.7",
+    "@types/nodemailer": "^6.4.7",
     "@types/nodemon": "1.19.1",
     "@types/pino": "7.0.4",
     "@types/prettier": "2.6.0",
