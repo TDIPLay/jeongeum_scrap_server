@@ -107,7 +107,7 @@ async function getKakaoAccessToken(clientId: string, clientSecret: string, redir
 //사용자 front 인증 사용 예시
 //https://kauth.kakao.com/oauth/authorize?client_id=96f2967cf5c2dae1406caa81992e511f&response_type=code&redirect_uri=http://192.168.56.1:8080/tdi/talk/v1/oauth&scope=talk_message&state=test
 
-export async function userKakaoOAuth(code: string): Promise<KakaoAccessTokenResponse> {
+export async function userKakaoOAuth(code: string): Promise<any> {
     console.log("code: =>" + code)
     const tokens = await getKakaoAccessToken(process.env["KAKAO_CLIENT_ID"], '',`${process.env.SOCIAL_POSTBACK}/kakao`, code);
 
