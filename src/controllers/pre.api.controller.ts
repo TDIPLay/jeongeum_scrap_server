@@ -236,12 +236,14 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
                 if(email){
                     userObj.division = "modify"
                     console.log("id 중복 modify")
+                    console.log(userObj)
                     const res = await createUser(userObj);
                     if (res.data.result) {
                         request.transfer = `?id=${email}&type=${state}`;
                     }
                 }
             }
+
         }
         done();
     } catch (e) {
