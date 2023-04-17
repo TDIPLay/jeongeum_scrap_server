@@ -62,7 +62,7 @@ export const getGoogleUserInfo = async (accessToken: string): Promise<any> => {
 
 
 export async function validateGoogleToken(token: string): Promise<boolean> {
-    const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, `${process.env.SOCIAL_POSTBACK}/google`);
+   /* const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, `${process.env.SOCIAL_POSTBACK}/google`);
 
     try {
         const ticket = await client.verifyIdToken({
@@ -74,8 +74,20 @@ export async function validateGoogleToken(token: string): Promise<boolean> {
 
         // 체크하고자 하는 토큰에 대한 정보
         const userEmail = payload?.email;
-        const userFullName = payload?.name;
+        const userFullName = payload?.name;*/
+    try {
+    const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, `${process.env.SOCIAL_POSTBACK}/google`);
+    // Google OAuth2 클라이언트 설정
+    client.setCredentials({ access_token: accessToken });
 
+    // 구글 API 클라이언트 생성
+    const googleClient = google.people({ version: 'v1', auth: client });
+
+    // 구글 API 호출
+    const { data } = await googleClient.people.get({
+        resourceName: 'people/me',
+        personFields: 'names,emailAddresses',
+    });
         return true; // 토큰이 유효한 경우
     } catch (error) {
         console.error(error);
