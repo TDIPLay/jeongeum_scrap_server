@@ -235,6 +235,7 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
             } else {
                 if(email){
                     userObj.division = "modify"
+                    console.log("id 중복 modify")
                     const res = await createUser(userObj);
                     if (res.data.result) {
                         request.transfer = `?id=${email}&type=${state}`;
