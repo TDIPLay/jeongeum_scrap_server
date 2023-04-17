@@ -1,19 +1,20 @@
 import {FastifyReply} from "fastify"
 import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
-import {IAnyRequest, KakaoAccessTokenResponse, News} from "../interfaces";
+import {IAnyRequest, News} from "../interfaces";
 import rp from 'request-promise'
 import {getArticle, getFindNewLinks, getNaverRankNews, getNaverRealNews, getNewLinks, getNews} from "./news";
 import {generateChatMessage} from "./openai";
 import moment from "moment/moment";
 import {sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
-import {hgetData} from "./worker";
-import {RKEYWORD, RTOTEN_KAKAO} from "../helpers/common";
-import {ERROR400, MESSAGE, STANDARD} from "../helpers/constants";
-import {KakaoTalkMessage, sendKakaoTalkMessage} from "./kakaotalk";
+import {hgetData, hmsetRedis} from "./worker";
+import {RKEYWORD, RTOTEN} from "../helpers/common";
+import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
+import {getUserInfo, userKakaoOAuth, validateToken} from "./kakaotalk";
 import {EmailSender, generateHTML} from "./mailer";
-
+import {v4 as uuid_v4} from "uuid";
+import {createUser} from "./user";
 
 export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
@@ -131,13 +132,13 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
         await Promise.all(articlePromises);
 
 
-       /* news.filter(news => news.link && news.link.includes("http"))
-            .forEach(news => articlePromises.push(getArticle(news)));
-        await Promise.all(articlePromises);
+        /* news.filter(news => news.link && news.link.includes("http"))
+             .forEach(news => articlePromises.push(getArticle(news)));
+         await Promise.all(articlePromises);
 
-        news.sort((a, b) => b.timestamp - a.timestamp);*/
+         news.sort((a, b) => b.timestamp - a.timestamp);*/
 
-        if(sortedNews.length > 0){
+        if (sortedNews.length > 0) {
             const content = generateHTML(news);
             //console.log(content)
             await new EmailSender({
@@ -150,7 +151,6 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
                 html: content,
             });
         }
-
 
 
         /*let user: KakaoAccessTokenResponse = await hgetData(redis, RTOTEN_KAKAO, "ygkwang");
@@ -171,7 +171,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
         }*/
 
 
-        request.transfer = request.transfer = {
+        request.transfer = {
             result: MESSAGE.SUCCESS,
             code: STANDARD.SUCCESS,
             message: "SUCCESS",
@@ -201,7 +201,122 @@ export const preOpenAi = async (request: IAnyRequest, reply: FastifyReply, done)
         handleServerError(reply, e)
     }
 }
+let i = 0;
 
+//콜백시 sns로그인페이지로 id 전달
+export const preSocialCallback = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const {code, state} = request.query
+        const token = await userKakaoOAuth(code, state);
+        if (token.access_token) {
+            const user = await getUserInfo(token.access_token);
+            const {id, kakao_account: {profile: {nickname}, email}} = user;
+
+            console.log(`User ID: ${id}`);
+            console.log(`Nickname: ${nickname}`);
+            console.log(`Profile Image URL: ${email}`);
+
+            const redisData = {[`${email}`]: JSON.stringify(token)};
+            await hmsetRedis(await getRedis(), RTOTEN, redisData, 8650454);
+            console.log("ACCESS_TOKEN: =>" + token.access_token)
+            const userObj = {
+                'email': `${email}`+(i++),
+                'name': nickname,
+                'token': token.access_token,
+                'type': state,
+            }
+
+            const res = await createUser(userObj);
+            console.log(res.data.result)
+
+            if (res.data.result) {
+                request.transfer = `?id=${email}&type=${state}`;
+            } else {
+                request.transfer = {};
+            }
+        } else {
+            request.transfer = {};
+        }
+        done();
+    } catch (e) {
+        console.log(e)
+        handleServerError(reply, e)
+    }
+}
+
+export const preSocial = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const uuid = `${uuid_v4()}`;
+        const {social} = request.params;
+        const {id} = request.query;
+        let token = id ? await hgetData(await getRedis(), RTOTEN, id) : null;
+
+        if (!token ||!(await validateToken(token.access_token))) {
+            switch (social) {
+                case 'kakao' :
+                    request.transfer = `${process.env.KAKAO_AUTH.replace("${KAKAO_CLIENT_ID}", process.env.KAKAO_CLIENT_ID)}&redirect_uri=${process.env.SOCIAL_POSTBACK}${social}&state=${social}`;
+                    break;
+                case 'naver' :
+                    request.transfer = `${process.env.KAKAO_AUTH}&redirect_uri=${process.env.SOCIAL_POSTBACK}${social}&state=test`;
+                    break;
+                case 'google' :
+                    request.transfer = `${process.env.KAKAO_AUTH}&redirect_uri=${process.env.SOCIAL_POSTBACK}${social}&state=test`;
+                    break;
+                default:
+                    break;
+            }
+            console.log(request.transfer)
+        }
+        done();
+    } catch (e) {
+        console.log(e)
+        handleServerError(reply, e)
+    }
+}
+
+
+
+export const preSocialLogin = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const uuid = `${uuid_v4()}`;
+        const {social} = request.params;
+        const {id} = request.query;
+        const {account_id,sns_type,sns_token} = request.body;
+
+        /* //토큰이 없으면 social 토큰 요청
+         let token = null
+         if(id){
+             token = await hgetData(await getRedis(), RTOTEN, id);
+         }*/
+        console.log("vendor")
+        console.log(social)
+        console.log(account_id)
+        console.log(sns_type)
+        console.log(sns_token)
+        let result;
+        if (sns_token && await validateToken(sns_token)) {
+            request.transfer = request.transfer = {
+                result: MESSAGE.SUCCESS,
+                code: STANDARD.SUCCESS,
+                message: "SUCCESS",
+                token_status: true
+            };
+        }else{
+            request.transfer = request.transfer = {
+                result: MESSAGE.FAIL,
+                code: ERROR403.statusCode,
+                message: "FAIL",
+                token_status: false
+            };
+
+        }
+
+        done();
+    } catch (e) {
+        console.log(e)
+        handleServerError(reply, e)
+    }
+}
 //서버 시스템 동기화
 export const preApiSyncUp = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {

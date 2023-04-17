@@ -18,6 +18,7 @@ export interface IAnyRequest extends FastifyRequest {
     transfer: any;
     body: any,
     query: any
+    params: any
 }
 export interface Array<T> {
     // narrowing

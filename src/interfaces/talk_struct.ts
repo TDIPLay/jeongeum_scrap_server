@@ -19,6 +19,7 @@ export interface KakaoAccessTokenResponse {
     expires_in: number;
     refresh_token: string;
     scope: string;
+    vendor?:string;
 }
 export interface SearchNews {
     title: string;

@@ -4,11 +4,9 @@ import apiRouter from './routes/api.router';
 import loadConfig from './config'
 import ON_DEATH from "death";
 import zlib from "zlib";
-
 import service from '../service/common_service'
 import process from "process";
 import pmx from "@pm2/io";
-
 loadConfig()
 
 
@@ -114,4 +112,3 @@ const startServer = async () => {
 }
 
 startServer()
-

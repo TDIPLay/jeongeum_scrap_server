@@ -1,5 +1,5 @@
 import {FastifyReply} from "fastify"
-import {STANDARD} from "../helpers/constants"
+import {ERROR403, STANDARD} from "../helpers/constants"
 import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
 import {IAnyRequest, IUserRequest} from "../interfaces";
@@ -19,14 +19,32 @@ export const apiSyncUp = async (request: IAnyRequest, reply: FastifyReply) => {
 
 export const apiAuth = async (request: IAnyRequest, reply: FastifyReply) => {
     try {
-        const {code,state} = request.query
-        service.kakao_a_key = await exampleUsage(code,state);
-        reply.status(STANDARD.SUCCESS).send(service.kakao_a_key)
+        //const {code,state} = request.query
+        //service.kakao_a_key = await exampleUsage(code,state);
+        if(request.transfer){
+            reply.redirect(request.transfer)
+        }else{
+            reply.status(ERROR403.statusCode).send(ERROR403.message)
+        }
+
     } catch (e) {
+
         handleServerError(reply, e)
     }
 }
+export const apiLogin = async (request: IAnyRequest, reply: FastifyReply) => {
+    try {
+        if(request.transfer){
+            reply.redirect(`${process.env['HOMEPAGE']}${request.transfer}`)
+        }else{
+            reply.status(ERROR403.statusCode).send(ERROR403.message)
+        }
 
+    } catch (e) {
+
+        handleServerError(reply, e)
+    }
+}
 export const apiValidationMail = async (request: IAnyRequest, reply: FastifyReply) => {
     try {
         const {code,state} = request.query

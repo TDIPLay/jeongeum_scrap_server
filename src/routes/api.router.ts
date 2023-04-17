@@ -1,7 +1,7 @@
 import {FastifyInstance} from 'fastify'
 import {apiSchema, signupSchema} from '../schema'
 import {
-    apiAuth,
+    apiAuth, apiLogin,
     apiMemoryRate,
     apiSyncUp, apiValidationMail, passUrl,
     preApiRankNews,
@@ -9,7 +9,7 @@ import {
     preApiSyncUp,
     preOpenAi,
     preSearchNewLink,
-    preSearchNews,
+    preSearchNews, preSocial, preSocialCallback, preSocialLogin,
     signUp
 } from "../controllers";
 
@@ -53,9 +53,19 @@ async function apiRouter(fastify: FastifyInstance) {
         schema: apiSchema, preHandler: preOpenAi,handler: apiSyncUp
     })
     fastify.route({
+        method: 'POST',
+        url: '/social',
+        schema: apiSchema, preHandler: preSocialLogin,handler: apiSyncUp
+    })
+    fastify.route({
         method: 'GET',
         url: '/social/:social',
-        schema: apiSchema, handler: apiAuth
+        schema: apiSchema, preHandler: preSocial,handler: apiAuth
+    })
+    fastify.route({
+        method: 'GET',
+        url: '/social/oauth/:social',
+        schema: apiSchema, preHandler: preSocialCallback,handler: apiLogin
     })
     fastify.route({
         method: 'GET',
