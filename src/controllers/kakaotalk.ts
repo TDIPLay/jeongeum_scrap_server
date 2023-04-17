@@ -107,19 +107,19 @@ async function getKakaoAccessToken(clientId: string, clientSecret: string, redir
 //사용자 front 인증 사용 예시
 //https://kauth.kakao.com/oauth/authorize?client_id=96f2967cf5c2dae1406caa81992e511f&response_type=code&redirect_uri=http://192.168.56.1:8080/tdi/talk/v1/oauth&scope=talk_message&state=test
 
-export async function userKakaoOAuth(code: string): Promise<KakaoAccessTokenResponse> {
+export async function userKakaoOAuth(code: string,userId :string): Promise<KakaoAccessTokenResponse> {
     console.log("code: =>" + code)
-    const tokens = await getKakaoAccessToken(process.env["KAKAO_CLIENT_ID"], '',`${process.env.SOCIAL_POSTBACK}/kakao`, code);
-
-    if(tokens){
-        return tokens;
+    const data = await getKakaoAccessToken(process.env["KAKAO_CLIENT_ID"], '',`${process.env.SOCIAL_POSTBACK}kakao`, code);
+    if(data){
+        data.vendor = "kakao";
+        return data;
     }else{
         return null;
     }
 }
 
 
-export const getKakaoUserInfo = async (accessToken: string) : Promise<any> => {
+export const getUserInfo = async (accessToken: string) : Promise<UserInfoResponse> => {
     const apiUrl = 'https://kapi.kakao.com/v2/user/me';
 
     const headers = {
@@ -128,14 +128,12 @@ export const getKakaoUserInfo = async (accessToken: string) : Promise<any> => {
 
     try {
         const response = await axios.get(apiUrl, { headers });
-        const {id, kakao_account: {profile: {nickname}, email}} =  response.data;
+        const { id, kakao_account: { profile: { nickname, thumbnail_image_url } } } = response.data;
         console.log(response.data);
         console.log(`User ID: ${id}`);
         console.log(`Nickname: ${nickname}`);
-        return {
-            name: nickname,
-            email: email,
-        };
+        console.log(`Profile Image URL: ${thumbnail_image_url}`);
+        return response.data;
     } catch (error) {
         console.error(error);
     }
