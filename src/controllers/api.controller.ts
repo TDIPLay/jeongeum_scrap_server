@@ -37,7 +37,7 @@ export const apiLogin = async (request: IAnyRequest, reply: FastifyReply) => {
         if(request.transfer){
             reply.redirect(`${process.env['HOMEPAGE']}${request.transfer}`)
         }else{
-            reply.status(ERROR403.statusCode).send(ERROR403.message)
+            reply.redirect(`${process.env['HOMEPAGE']}`)
         }
 
     } catch (e) {

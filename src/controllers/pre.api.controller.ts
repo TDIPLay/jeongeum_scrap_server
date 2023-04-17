@@ -219,13 +219,13 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
             const redisData = {[`${email}`]: JSON.stringify(token)};
             await hmsetRedis(await getRedis(), RTOTEN, redisData, 8650454);
             console.log("ACCESS_TOKEN: =>" + token.access_token)
-            const userObj = {
-                'email': `${email}`+(i++),
+            let userObj = {
+                division: 'regist',
+                'email': `${email}`,
                 'name': nickname,
                 'token': token.access_token,
                 'type': state,
             }
-
             const res = await createUser(userObj);
             console.log(res.data)
 
@@ -233,10 +233,14 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
             if (res.data.result) {
                 request.transfer = `?id=${email}&type=${state}`;
             } else {
-                request.transfer = {};
+                if(email){
+                    userObj.division = "modify"
+                    const res = await createUser(userObj);
+                    if (res.data.result) {
+                        request.transfer = `?id=${email}&type=${state}`;
+                    }
+                }
             }
-        } else {
-            request.transfer = {};
         }
         done();
     } catch (e) {

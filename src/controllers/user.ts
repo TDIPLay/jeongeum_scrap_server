@@ -10,7 +10,7 @@ const AXIOS_OPTIONS = {
 export async function createUser(user: any): Promise<any> {
     try {
         const objParams = {
-            division: 'regist',
+            division: user.division,
             account_id: user.email,
             name: user.name,
             sns_token: user.token,
@@ -18,10 +18,7 @@ export async function createUser(user: any): Promise<any> {
             account_type: 1,
             auth_level: 2,
         }
-        console.log(objParams)
         const res = await axios.post(`${process.env['NEWS_API']}/User/ManagerSnsProcess`, objParams ,AXIOS_OPTIONS);
-        console.log(res)
-
 
         return res.data;
     } catch (error) {
