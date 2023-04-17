@@ -2,7 +2,7 @@ import {FastifyReply} from "fastify"
 import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
 import {IAnyRequest, News} from "../interfaces";
-import rp from 'request-promise'
+import rp from 'request-promise-native'
 import {getArticle, getFindNewLinks, getNaverRankNews, getNaverRealNews, getNewLinks, getNews} from "./news";
 import {generateChatMessage} from "./openai";
 import moment from "moment/moment";
@@ -227,7 +227,8 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
             }
 
             const res = await createUser(userObj);
-            console.log(res.data.result)
+            console.log(res.data)
+
 
             if (res.data.result) {
                 request.transfer = `?id=${email}&type=${state}`;
