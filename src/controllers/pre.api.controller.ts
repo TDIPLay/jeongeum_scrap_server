@@ -313,7 +313,6 @@ export const preSocialLogin = async (request: IAnyRequest, reply: FastifyReply, 
              token = await hgetData(await getRedis(), RTOTEN, id);
          }*/
         console.log("vendor")
-        console.log(social)
         console.log(account_id)
         console.log(sns_type)
         console.log(sns_token)
