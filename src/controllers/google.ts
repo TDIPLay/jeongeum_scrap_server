@@ -28,7 +28,7 @@ export const loginWithGoogle = (): string => {
 
 // 콜백 함수에서 토큰을 받아오는 함수
 export const userGoogleOAuth = async (code: string): Promise<Credentials> => {
-    const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, `${process.env.SOCIAL_POSTBACK}/google`);
+    const client = new OAuth2Client(CLIENT_ID);
 
     const { tokens } = await client.getToken(code);
     console.log("tokens")
@@ -40,7 +40,7 @@ export const userGoogleOAuth = async (code: string): Promise<Credentials> => {
 
 // 유저 정보를 가져오는 함수
 export const getGoogleUserInfo = async (accessToken: string): Promise<any> => {
-    const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, `${process.env.SOCIAL_POSTBACK}/google`);
+    const client = new OAuth2Client(CLIENT_ID);
     // Google OAuth2 클라이언트 설정
     client.setCredentials({ access_token: accessToken });
 
@@ -59,3 +59,26 @@ export const getGoogleUserInfo = async (accessToken: string): Promise<any> => {
         email: data.emailAddresses?.[0].value,
     };
 };
+
+
+export async function validateGoogleToken(token: string): Promise<boolean> {
+    const client = new OAuth2Client(CLIENT_ID);
+
+    try {
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+
+        // 체크하고자 하는 토큰에 대한 정보
+        const userEmail = payload?.email;
+        const userFullName = payload?.name;
+
+        return true; // 토큰이 유효한 경우
+    } catch (error) {
+        console.error(error);
+        return false; // 토큰이 유효하지 않은 경우
+    }
+}

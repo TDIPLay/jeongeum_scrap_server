@@ -141,7 +141,7 @@ export const getKakaoUserInfo = async (accessToken: string) : Promise<any> => {
     }
 };
 
-export async function validateToken(accessToken: string): Promise<boolean> {
+export async function validateKakaoToken(accessToken: string): Promise<boolean> {
     try {
 
         if(!accessToken) return false;

@@ -11,11 +11,11 @@ import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
 import {RKEYWORD, RTOTEN} from "../helpers/common";
 import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
-import {getKakaoUserInfo, userKakaoOAuth, validateToken} from "./kakaotalk";
+import {getKakaoUserInfo, userKakaoOAuth, validateKakaoToken} from "./kakaotalk";
 import {EmailSender, generateHTML} from "./mailer";
 import {v4 as uuid_v4} from "uuid";
 import {createUser} from "./user";
-import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth} from "./google";
+import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken} from "./google";
 
 export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
@@ -275,9 +275,7 @@ export const preSocial = async (request: IAnyRequest, reply: FastifyReply, done)
         const uuid = `${uuid_v4()}`;
         const {social} = request.params;
         const {id} = request.query;
-        let token = id ? await hgetData(await getRedis(), RTOTEN, id) : null;
-
-        if (!token || !(await validateToken(token.access_token))) {
+        //let token = id ? await hgetData(await getRedis(), RTOTEN, id) : null;
             switch (social) {
                 case 'kakao' :
                     request.transfer = `${process.env.KAKAO_AUTH.replace("${KAKAO_CLIENT_ID}", process.env.KAKAO_CLIENT_ID)}&redirect_uri=${process.env.SOCIAL_POSTBACK}/${social}&state=${social}`;
@@ -292,7 +290,6 @@ export const preSocial = async (request: IAnyRequest, reply: FastifyReply, done)
                     break;
                 default:
                     break;
-            }
             console.log(request.transfer)
         }
         done();
@@ -320,24 +317,39 @@ export const preSocialLogin = async (request: IAnyRequest, reply: FastifyReply, 
         console.log(account_id)
         console.log(sns_type)
         console.log(sns_token)
-        let result;
-        if (sns_token && await validateToken(sns_token)) {
-            request.transfer = request.transfer = {
-                result: MESSAGE.SUCCESS,
-                code: STANDARD.SUCCESS,
-                message: "SUCCESS",
-                token_status: true
-            };
-        } else {
-            request.transfer = request.transfer = {
-                result: MESSAGE.FAIL,
-                code: ERROR403.statusCode,
-                message: "FAIL",
-                token_status: false
-            };
+        let checkFlag =  false;
+        if (sns_token) {
+            switch (social) {
+                case 'kakao' :
+                    checkFlag = await validateKakaoToken(sns_token);
+                    break;
+                case 'naver' :
+                    checkFlag = await validateKakaoToken(sns_token);
+                    break;
+                case 'google' :
+                    checkFlag = await validateGoogleToken(sns_token);
+                    break;
+                default:
+                    break;
+            }
 
+            if (checkFlag) {
+                request.transfer = request.transfer = {
+                    result: MESSAGE.SUCCESS,
+                    code: STANDARD.SUCCESS,
+                    message: "SUCCESS",
+                    token_status: true
+                };
+            } else {
+                request.transfer = request.transfer = {
+                    result: MESSAGE.FAIL,
+                    code: ERROR403.statusCode,
+                    message: "FAIL",
+                    token_status: false
+                };
+
+            }
         }
-
         done();
     } catch (e) {
         console.log(e)
