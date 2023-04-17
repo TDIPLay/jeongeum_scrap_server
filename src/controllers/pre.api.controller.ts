@@ -246,7 +246,7 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
             division: 'regist',
             'email': `${email}`,
             'name': name,
-            'token': token.access_token,
+            'token': social == 'google'? token : token.access_token,
             'type': state,
         }
         const res = await createUser(userObj);
