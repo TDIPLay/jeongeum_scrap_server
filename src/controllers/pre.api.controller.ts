@@ -11,10 +11,11 @@ import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
 import {RKEYWORD, RTOTEN} from "../helpers/common";
 import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
-import {getUserInfo, userKakaoOAuth, validateToken} from "./kakaotalk";
+import {getKakaoUserInfo, userKakaoOAuth, validateToken} from "./kakaotalk";
 import {EmailSender, generateHTML} from "./mailer";
 import {v4 as uuid_v4} from "uuid";
 import {createUser} from "./user";
+import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth} from "./google";
 
 export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
@@ -207,43 +208,61 @@ let i = 0;
 export const preSocialCallback = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
         const {code, state} = request.query
-        const token = await userKakaoOAuth(code, state);
-        if (token.access_token) {
-            const user = await getUserInfo(token.access_token);
-            const {id, kakao_account: {profile: {nickname}, email}} = user;
+        const {social} = request.params
+        let token, user;
 
-            console.log(`User ID: ${id}`);
-            console.log(`Nickname: ${nickname}`);
-            console.log(`Profile Image URL: ${email}`);
+        switch (social) {
+            case 'kakao' :
+                token = await userKakaoOAuth(code);
+                if (token.access_token) {
+                    user = await getKakaoUserInfo(token.access_token);
+                }
 
-            const redisData = {[`${email}`]: JSON.stringify(token)};
-            await hmsetRedis(await getRedis(), RTOTEN, redisData, 8650454);
-            console.log("ACCESS_TOKEN: =>" + token.access_token)
-            let userObj = {
-                division: 'regist',
-                'email': `${email}`,
-                'name': nickname,
-                'token': token.access_token,
-                'type': state,
-            }
-            const res = await createUser(userObj);
-            console.log(res.data)
+                break;
+            case 'naver' :
+                token = await userKakaoOAuth(code);
+                if (token.access_token) {
+                    user = await getKakaoUserInfo(token.access_token);
+                }
+                break;
+            case 'google' :
+                token = await userGoogleOAuth(code);
+                if (token.access_token) {
+                    user = await getGoogleUserInfo(token.access_token);
+                }
+                break;
+            default:
+                break;
+        }
+        const {name, email} = user;
 
+        console.log(`User ID: ${email}`);
+        console.log(`Nickname: ${name}`);
 
-            if (res.data.result) {
-                request.transfer = `?id=${email}&type=${state}`;
-            } else {
-                if(email){
-                    userObj.division = "modify"
-                    console.log("id 중복 modify")
-                    console.log(userObj)
-                    const res = await createUser(userObj);
-                    if (res.data.result) {
-                        request.transfer = `?id=${email}&type=${state}`;
-                    }
+        const redisData = {[`${email}`]: JSON.stringify(token)};
+        await hmsetRedis(await getRedis(), RTOTEN, redisData, 8650454);
+        console.log("ACCESS_TOKEN: =>" + token.access_token)
+        let userObj = {
+            division: 'regist',
+            'email': `${email}`,
+            'name': name,
+            'token': token.access_token,
+            'type': state,
+        }
+        const res = await createUser(userObj);
+
+        if (res.data.result) {
+            request.transfer = `?id=${email}&type=${social}`;
+        } else {
+            if (email) {
+                userObj.division = "modify"
+                console.log("id 중복 modify")
+                console.log(userObj)
+                const res = await createUser(userObj);
+                if (res.data.result) {
+                    request.transfer = `?id=${email}&type=${social}`;
                 }
             }
-
         }
         done();
     } catch (e) {
@@ -251,7 +270,6 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
         handleServerError(reply, e)
     }
 }
-
 export const preSocial = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
         const uuid = `${uuid_v4()}`;
@@ -259,7 +277,7 @@ export const preSocial = async (request: IAnyRequest, reply: FastifyReply, done)
         const {id} = request.query;
         let token = id ? await hgetData(await getRedis(), RTOTEN, id) : null;
 
-        if (!token ||!(await validateToken(token.access_token))) {
+        if (!token || !(await validateToken(token.access_token))) {
             switch (social) {
                 case 'kakao' :
                     request.transfer = `${process.env.KAKAO_AUTH.replace("${KAKAO_CLIENT_ID}", process.env.KAKAO_CLIENT_ID)}&redirect_uri=${process.env.SOCIAL_POSTBACK}${social}&state=${social}`;
@@ -268,7 +286,9 @@ export const preSocial = async (request: IAnyRequest, reply: FastifyReply, done)
                     request.transfer = `${process.env.KAKAO_AUTH}&redirect_uri=${process.env.SOCIAL_POSTBACK}${social}&state=test`;
                     break;
                 case 'google' :
-                    request.transfer = `${process.env.KAKAO_AUTH}&redirect_uri=${process.env.SOCIAL_POSTBACK}${social}&state=test`;
+                    const google_auth_url = loginWithGoogle()
+                    console.log(google_auth_url)
+                    request.transfer = `${google_auth_url}&state=${social}`;
                     break;
                 default:
                     break;
@@ -283,13 +303,12 @@ export const preSocial = async (request: IAnyRequest, reply: FastifyReply, done)
 }
 
 
-
 export const preSocialLogin = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
         const uuid = `${uuid_v4()}`;
         const {social} = request.params;
         const {id} = request.query;
-        const {account_id,sns_type,sns_token} = request.body;
+        const {account_id, sns_type, sns_token} = request.body;
 
         /* //토큰이 없으면 social 토큰 요청
          let token = null
@@ -309,7 +328,7 @@ export const preSocialLogin = async (request: IAnyRequest, reply: FastifyReply, 
                 message: "SUCCESS",
                 token_status: true
             };
-        }else{
+        } else {
             request.transfer = request.transfer = {
                 result: MESSAGE.FAIL,
                 code: ERROR403.statusCode,
