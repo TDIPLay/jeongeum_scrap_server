@@ -319,7 +319,7 @@ export const preSocialLogin = async (request: IAnyRequest, reply: FastifyReply, 
         console.log(sns_token)
         let checkFlag =  false;
         if (sns_token) {
-            switch (social) {
+            switch (sns_type) {
                 case 'kakao' :
                     checkFlag = await validateKakaoToken(sns_token);
                     break;
