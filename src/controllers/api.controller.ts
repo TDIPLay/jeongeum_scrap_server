@@ -1,12 +1,9 @@
 import {FastifyReply} from "fastify"
 import {ERROR403, STANDARD} from "../helpers/constants"
 import {handleServerError} from "../helpers/errors"
-import service from '../../service/common_service'
 import {IAnyRequest, IUserRequest} from "../interfaces";
 import * as JWT from 'jsonwebtoken'
 import {utils} from "../helpers/utils";
-import {exampleUsage} from "./kakaotalk";
-import Common_service from "../../service/common_service";
 
 
 export const apiSyncUp = async (request: IAnyRequest, reply: FastifyReply) => {
@@ -42,15 +39,6 @@ export const apiLogin = async (request: IAnyRequest, reply: FastifyReply) => {
 
     } catch (e) {
 
-        handleServerError(reply, e)
-    }
-}
-export const apiValidationMail = async (request: IAnyRequest, reply: FastifyReply) => {
-    try {
-        const {code,state} = request.query
-        service.kakao_a_key = await exampleUsage(code,state);
-        reply.status(STANDARD.SUCCESS).send(service.kakao_a_key)
-    } catch (e) {
         handleServerError(reply, e)
     }
 }

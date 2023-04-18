@@ -5,7 +5,7 @@ import * as cheerio from 'cheerio';
 import iconv from 'iconv-lite';
 import {News, NewsItem, Scraper, SearchNews} from "../interfaces";
 import service from "../../service/common_service";
-import {KakaoTalkMessage} from "./kakaotalk";
+import {KakaoTalkMessage} from "./kakaoauth";
 import cron from 'node-cron';
 import moment from 'moment'
 import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, RKEYWORD} from "../helpers/common";
@@ -134,7 +134,7 @@ async function fetchMetadata(url: string): Promise<any> {
 
 export async function getArticle(news: News): Promise<void> {
     try {
-        if (news.link.includes("naver")) {
+        if (news.link.includes("naverauth.ts")) {
             await getArticleDetails(news);
         } else {
             await getArticleMetaDetails(news);
@@ -315,7 +315,7 @@ export async function getNews(query: string, start: number): Promise<NewsItem[]>
     };
     const {data} = await axios.get(api_url, options);
     // const result = data.items.map(item => item.title ? {...item, "title": `${item.title}_${start}`} : '')
-    return data.items.filter(news => news.link && news.link.includes("http") /*&& news.link.includes("naver")*/);
+    return data.items.filter(news => news.link && news.link.includes("http") /*&& news.link.includes("naverauth.ts")*/);
 }
 
 

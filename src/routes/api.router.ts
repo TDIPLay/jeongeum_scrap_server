@@ -1,15 +1,20 @@
 import {FastifyInstance} from 'fastify'
 import {apiSchema, signupSchema} from '../schema'
 import {
-    apiAuth, apiLogin,
+    apiAuth,
+    apiLogin,
     apiMemoryRate,
-    apiSyncUp, apiValidationMail, passUrl,
+    apiSyncUp,
+    passUrl,
     preApiRankNews,
     preApiRealNews,
     preApiSyncUp,
     preOpenAi,
     preSearchNewLink,
-    preSearchNews, preSocial, preSocialCallback, preSocialLogin,
+    preSearchNews,
+    preSocial,
+    preSocialCallback,
+    preSocialLogin,
     signUp
 } from "../controllers";
 
@@ -25,22 +30,22 @@ async function apiRouter(fastify: FastifyInstance) {
     fastify.route({
         method: 'GET',
         url: '/search_all',
-        schema: apiSchema, preHandler: preSearchNews,handler: apiSyncUp
+        schema: apiSchema, preHandler: preSearchNews, handler: apiSyncUp
     })
     fastify.route({
         method: 'GET',
         url: '/search',
-        schema: apiSchema, preHandler: preSearchNewLink,handler: apiSyncUp
+        schema: apiSchema, preHandler: preSearchNewLink, handler: apiSyncUp
     })
     fastify.route({
         method: 'GET',
         url: '/rank',
-        schema: apiSchema, preHandler: preApiRankNews,handler: apiSyncUp
+        schema: apiSchema, preHandler: preApiRankNews, handler: apiSyncUp
     })
     fastify.route({
         method: 'GET',
         url: '/real',
-        schema: apiSchema, preHandler: preApiRealNews,handler: apiSyncUp
+        schema: apiSchema, preHandler: preApiRealNews, handler: apiSyncUp
     })
     fastify.route({
         method: 'GET',
@@ -50,28 +55,24 @@ async function apiRouter(fastify: FastifyInstance) {
     fastify.route({
         method: 'GET',
         url: '/ai',
-        schema: apiSchema, preHandler: preOpenAi,handler: apiSyncUp
+        schema: apiSchema, preHandler: preOpenAi, handler: apiSyncUp
     })
     fastify.route({
         method: 'POST',
         url: '/social',
-        schema: apiSchema, preHandler: preSocialLogin,handler: apiSyncUp
+        schema: apiSchema, preHandler: preSocialLogin, handler: apiSyncUp
     })
     fastify.route({
         method: 'GET',
         url: '/social/:social',
-        schema: apiSchema, preHandler: preSocial,handler: apiAuth
+        schema: apiSchema, preHandler: preSocial, handler: apiAuth
     })
     fastify.route({
         method: 'GET',
         url: '/social/oauth/:social',
-        schema: apiSchema, preHandler: preSocialCallback,handler: apiLogin
+        schema: apiSchema, preHandler: preSocialCallback, handler: apiLogin
     })
-    fastify.route({
-        method: 'GET',
-        url: '/send_mail',
-        schema: apiSchema, handler: apiValidationMail
-    })
+
     fastify.route({
         method: 'GET',
         url: '/redirect',

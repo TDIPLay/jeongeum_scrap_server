@@ -129,10 +129,9 @@ export const getKakaoUserInfo = async (accessToken: string) : Promise<any> => {
     try {
         const response = await axios.get(apiUrl, { headers });
         const {id, kakao_account: {profile: {nickname}, email}} =  response.data;
-        console.log(response.data);
-        console.log(`User ID: ${id}`);
-        console.log(`Nickname: ${nickname}`);
+
         return {
+            id: id,
             name: nickname,
             email: email,
         };
@@ -161,18 +160,5 @@ export async function validateKakaoToken(accessToken: string): Promise<boolean> 
     }
 }
 
-export async function exampleUsage(code: string, userId :string): Promise<string> {
-    console.log("code: =>" + code)
-    console.log("userId: =>" + userId)
-    const data = await getKakaoAccessToken(process.env["KAKAO_CLIENT_ID"], '', process.env["KAKAO_AUTH_POST_URL"], code);
-    if(data){
-        const redisData = {[`${userId}`]: JSON.stringify(data)};
-        await hmsetRedis(await getRedis(), RTOTEN, redisData, 0);
-        console.log("ACCESS_TOKEN: =>" + data.access_token)
-        return data.access_token;
-    }else{
-        return null;
-    }
-}
 
 

@@ -11,11 +11,12 @@ import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
 import {RKEYWORD, RTOTEN} from "../helpers/common";
 import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
-import {getKakaoUserInfo, userKakaoOAuth, validateKakaoToken} from "./kakaotalk";
+import {getKakaoUserInfo, userKakaoOAuth, validateKakaoToken} from "./kakaoauth";
 import {EmailSender, generateHTML} from "./mailer";
 import {v4 as uuid_v4} from "uuid";
 import {createUser} from "./user";
-import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken} from "./google";
+import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken} from "./googleauth";
+import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth";
 
 export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
@@ -219,10 +220,10 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
                 }
 
                 break;
-            case 'naver' :
-                token = await userKakaoOAuth(code);
+            case 'naverauth.ts' :
+                token = await userNaverOAuth(code);
                 if (token.access_token) {
-                    user = await getKakaoUserInfo(token.access_token);
+                    user = await getNaverUserInfo(token.access_token);
                 }
                 break;
             case 'google' :
@@ -234,14 +235,16 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
             default:
                 break;
         }
-        const {name, email} = user;
-
+        const {name, email, mobile, image} = user;
+        console.log(`${social}_ACCESS_TOKEN: => ${token.access_token}`)
         console.log(`User ID: ${email}`);
         console.log(`Nickname: ${name}`);
+        console.log(`Phone: ${user?.mobile}`);
+        console.log(`ProfilImg: ${user?.image}`);
 
         const redisData = {[`${email}`]: JSON.stringify(token)};
         await hmsetRedis(await getRedis(), RTOTEN, redisData, 8650454);
-        console.log("ACCESS_TOKEN: =>" + token.access_token)
+
         let userObj = {
             division: 'regist',
             'email': `${email}`,
@@ -278,14 +281,13 @@ export const preSocial = async (request: IAnyRequest, reply: FastifyReply, done)
         //let token = id ? await hgetData(await getRedis(), RTOTEN, id) : null;
             switch (social) {
                 case 'kakao' :
-                    request.transfer = `${process.env.KAKAO_AUTH.replace("${KAKAO_CLIENT_ID}", process.env.KAKAO_CLIENT_ID)}&redirect_uri=${process.env.SOCIAL_POSTBACK}/${social}&state=${social}`;
+                    request.transfer = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${process.env.KAKAO_CLIENT_ID}&redirect_uri=${process.env.SOCIAL_POSTBACK}/${social}&state=${social}`;
                     break;
                 case 'naver' :
-                    request.transfer = `${process.env.KAKAO_AUTH}&redirect_uri=${process.env.SOCIAL_POSTBACK}${social}&state=test`;
+                    request.transfer = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${process.env.NAVER_CLIENT_ID}&redirect_uri=${process.env.SOCIAL_POSTBACK}/${social}&state=${social}`
                     break;
                 case 'google' :
                     const google_auth_url = loginWithGoogle()
-                    console.log(google_auth_url)
                     request.transfer = `${google_auth_url}&state=${social}`;
                     break;
                 default:
@@ -317,13 +319,14 @@ export const preSocialLogin = async (request: IAnyRequest, reply: FastifyReply, 
         console.log(sns_type)
         console.log(sns_token)
         let checkFlag =  false;
+
         if (sns_token) {
             switch (sns_type) {
                 case 'kakao' :
                     checkFlag = await validateKakaoToken(sns_token);
                     break;
                 case 'naver' :
-                    checkFlag = await validateKakaoToken(sns_token);
+                    checkFlag = await validateNaverToken(sns_token);
                     break;
                 case 'google' :
                     checkFlag = await validateGoogleToken(sns_token);
