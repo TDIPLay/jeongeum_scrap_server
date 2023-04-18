@@ -99,7 +99,7 @@ async function requestCall(link: string): Promise<any> {
 async function axiosCall(link: string): Promise<cheerio.CheerioAPI> {
     try {
         let response = await requestCall(link)
-        const content_type = response.headers["content-type"].match(/charset=(.+)/i);
+        const content_type = response.headers["content-type"].match(/charset=([\w-]+)/i);
         const no_type = noTypePress.some((x) => link.includes(x));
         const encoding = content_type && content_type.length ? content_type[1] : no_type ? "euc-kr" : "utf-8";
 
@@ -117,10 +117,7 @@ async function getArticleDetails(news: News): Promise<void> {
     try {
 
         const $ = await axiosCall(news.link);
-        if (news.link.includes("609/0000714375?sid=106")) {
-           //    console.log($.html())
 
-        }
         const main = $('div.media_end_head_info.nv_notrans');
         let author = $('.byline_s').first().text().trim() || $('.byline_p').first().text().trim()
 
