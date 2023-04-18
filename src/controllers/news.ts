@@ -13,6 +13,19 @@ import {decodeHtmlEntities, extractAuthorAndEmail, getDateString} from "../helpe
 import {getRedis} from "../../service/redis";
 import {hmsetRedis} from "./worker";
 import {ResponseType} from "axios/index";
+import request from "request";
+
+const REQUEST_OPTIONS = {
+    headers: {
+        "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
+    },
+    encoding: null,
+    timeout: 5000,
+    followRedirect: true,
+    maxRedirects: 3,
+};
+
 
 const AXIOS_OPTIONS = {
     headers: {
@@ -29,7 +42,7 @@ const AXIOS_OPTIONS = {
 };
 
 const noTypePress = ['finomy.com']
-async function axiosCall(link: string): Promise<cheerio.CheerioAPI> {
+async function axiosCall2(link: string): Promise<cheerio.CheerioAPI> {
 
     try {
         axiosRetry(axios, {
@@ -40,7 +53,17 @@ async function axiosCall(link: string): Promise<cheerio.CheerioAPI> {
             shouldResetTimeout: true,
         });
 
-        const response: AxiosResponse = await axios.get(link, AXIOS_OPTIONS);
+        let response = await axios.get(link, AXIOS_OPTIONS);
+        if (link != response.request.res.responseUrl) {
+            console.log(`ori_${link}`)
+            console.log(`new_${response.request.res.responseUrl}`)
+            response = await axios.get(response.request.res.responseUrl, AXIOS_OPTIONS);
+        }
+        if (link.includes("https://n.news.naver.com/mnews/article/047/0002389240?sid=100")) {
+            console.log(response)
+            console.log(`new2_${response.request.res.responseUrl}`)
+
+        }
         const content_type = response.headers['content-type'].match(/charset=(.+)/i);
         const no_type = noTypePress.some(x => link.includes(x))
         const encoding = content_type && content_type.length ? content_type[1] : no_type ? "euc-kr" : "utf-8";
@@ -55,14 +78,52 @@ async function axiosCall(link: string): Promise<cheerio.CheerioAPI> {
     }
 }
 
+
+
+async function requestCall(link: string): Promise<any> {
+    try {
+        return await new Promise<any>((resolve, reject) => {
+            request.get(link, REQUEST_OPTIONS, (err, res) => {
+                if (err) {
+                    return reject(err);
+                }
+                resolve(res);
+            });
+        });
+    } catch (error) {
+        console.error(`Error requestCall link: ${error.message} => ${link}`);
+        return null;
+    }
+}
+
+async function axiosCall(link: string): Promise<cheerio.CheerioAPI> {
+    try {
+        let response = await requestCall(link)
+        const content_type = response.headers["content-type"].match(/charset=(.+)/i);
+        const no_type = noTypePress.some((x) => link.includes(x));
+        const encoding = content_type && content_type.length ? content_type[1] : no_type ? "euc-kr" : "utf-8";
+
+        const data = encoding.toLowerCase() !== "utf-8" ? iconv.decode(response.body, encoding) : response.body.toString();
+
+        return cheerio.load(data);
+    } catch (error) {
+        console.error(`Error requestCall link: ${error.message} => ${link}`);
+        return null;
+    }
+}
+
 async function getArticleDetails(news: News): Promise<void> {
 
     try {
 
         const $ = await axiosCall(news.link);
+        if (news.link.includes("609/0000714375?sid=106")) {
+           //    console.log($.html())
 
+        }
         const main = $('div.media_end_head_info.nv_notrans');
-        const author = $('.byline_s').first().text();
+        let author = $('.byline_s').first().text().trim() || $('.byline_p').first().text().trim()
+
         const result = extractAuthorAndEmail(author);
         const name = result.map(x => x.name)
         const email = result.map(x => x.email)
@@ -75,7 +136,7 @@ async function getArticleDetails(news: News): Promise<void> {
 
         if (news.title) news.title = decodeHtmlEntities(news.title);
         if (originallink) news.originallink = originallink;
-        if (thumbnail) news.thumbnail = thumbnail ;
+        if (thumbnail) news.thumbnail = thumbnail;
         if (company) news.company = company;
         if (description) news.description = decodeHtmlEntities(description);
         if (author) news.author = author;
@@ -134,7 +195,7 @@ async function fetchMetadata(url: string): Promise<any> {
 
 export async function getArticle(news: News): Promise<void> {
     try {
-        if (news.link.includes("naverauth.ts")) {
+        if (news.link.includes("naver")) {
             await getArticleDetails(news);
         } else {
             await getArticleMetaDetails(news);

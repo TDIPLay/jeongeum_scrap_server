@@ -1,3 +1,4 @@
+/*
 import { IGetPresign, IPutPresign } from '../interfaces'
 import { S3 } from 'aws-sdk'
 import { awsBucketName, awsConfig, linkExpireTime } from 'config'
@@ -24,3 +25,4 @@ export const putPresginUrl = async (data: IPutPresign) => {
     Expires: linkExpireTime,
   })
 }
+*/

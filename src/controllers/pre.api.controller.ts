@@ -12,7 +12,7 @@ import {hgetData, hmsetRedis} from "./worker";
 import {RKEYWORD, RTOTEN} from "../helpers/common";
 import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
 import {getKakaoUserInfo, userKakaoOAuth, validateKakaoToken} from "./kakaoauth";
-import {EmailSender, generateHTML} from "./mailer";
+import {sendMail} from "./mailer";
 import {v4 as uuid_v4} from "uuid";
 import {createUser} from "./user";
 import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken} from "./googleauth";
@@ -36,6 +36,7 @@ export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, 
         handleServerError(reply, e)
     }
 }
+
 export const preApiRealNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
 
@@ -126,32 +127,15 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
             if (utils.getTime() > tm) break;
         }
 
-
         const uniqueNews = Array.from(new Set(news.filter(n => n.link?.startsWith("http"))));
         const sortedNews = uniqueNews.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
 
         sortedNews.forEach(news => articlePromises.push(getArticle(news)));
         await Promise.all(articlePromises);
 
-
-        /* news.filter(news => news.link && news.link.includes("http"))
-             .forEach(news => articlePromises.push(getArticle(news)));
-         await Promise.all(articlePromises);
-
-         news.sort((a, b) => b.timestamp - a.timestamp);*/
-
         if (sortedNews.length > 0) {
-            const content = generateHTML(news);
-            //console.log(content)
-            await new EmailSender({
-                user: process.env.GOOGLE_MAIL_ID,
-                pass: process.env.GOOGLE_MAIL_PW,
-            }).sendEmail({
-                from: process.env.GOOGLE_MAIL_ID,
-                to: 'ygkwang@nsmg21.com',
-                subject: `[정음]오늘의 뉴스(#${query})`,
-                html: content,
-            });
+            await sendMail('ygkwang@nsmg21.com',news,query);
+
         }
 
 
@@ -203,9 +187,8 @@ export const preOpenAi = async (request: IAnyRequest, reply: FastifyReply, done)
         handleServerError(reply, e)
     }
 }
-let i = 0;
 
-//콜백시 sns로그인페이지로 id 전달
+//콜백시 sns로그인 페이지로 id 전달
 export const preSocialCallback = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
         const {code, state} = request.query
@@ -218,7 +201,6 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
                 if (token.access_token) {
                     user = await getKakaoUserInfo(token.access_token);
                 }
-
                 break;
             case 'naver' :
                 token = await userNaverOAuth(code);
@@ -236,12 +218,6 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
                 break;
         }
         const {name, email, mobile, image} = user;
-        console.log(`${social}_ACCESS_TOKEN: => ${token.access_token}`)
-        console.log(`User ID: ${email}`);
-        console.log(`Nickname: ${name}`);
-        console.log(`Phone: ${user?.mobile}`);
-        console.log(`ProfilImg: ${user?.image}`);
-
         const redisData = {[`${email}`]: JSON.stringify(token)};
         await hmsetRedis(await getRedis(), RTOTEN, redisData, 8650454);
 
@@ -253,6 +229,8 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
             'token': token.access_token,
             'type': state,
         }
+
+        console.log(`${social}_ACCESS_TOKEN: => ${userObj}`)
         const res = await createUser(userObj);
 
         if (res.data.result) {
@@ -274,6 +252,7 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
         handleServerError(reply, e)
     }
 }
+
 export const preSocial = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
         const uuid = `${uuid_v4()}`;
@@ -302,23 +281,9 @@ export const preSocial = async (request: IAnyRequest, reply: FastifyReply, done)
     }
 }
 
-
 export const preSocialLogin = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
-        const uuid = `${uuid_v4()}`;
-        const {social} = request.params;
-        const {id} = request.query;
-        const {account_id, sns_type, sns_token} = request.body;
-
-        /* //토큰이 없으면 social 토큰 요청
-         let token = null
-         if(id){
-             token = await hgetData(await getRedis(), RTOTEN, id);
-         }*/
-        console.log("vendor")
-        console.log(account_id)
-        console.log(sns_type)
-        console.log(sns_token)
+        const {sns_type, sns_token} = request.body;
         let checkFlag =  false;
 
         if (sns_token) {

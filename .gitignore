@@ -61,3 +61,5 @@ build/
 .husky
 
 .env
+ecosystem.config.js
+/src/controllers/kakaofriend.ts

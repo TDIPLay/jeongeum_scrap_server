@@ -13,7 +13,7 @@ interface EmailConfig {
     pass: string;
 }
 
-export class EmailSender {
+class EmailSender {
     private readonly transporter: Transporter;
 
     constructor(emailConfig: EmailConfig) {
@@ -37,8 +37,21 @@ export class EmailSender {
     }
 }
 
+export async function sendMail(user: string, news: News[], query: string) {
+    const content = generateHTML(news);
 
-export function generateHTML(data: News[]): string {
+    await new EmailSender({
+        user: process.env.GOOGLE_MAIL_ID,
+        pass: process.env.GOOGLE_MAIL_PW,
+    }).sendEmail({
+        from: process.env.GOOGLE_MAIL_ID,
+        to: user,
+        subject: `[정음]오늘의 뉴스(#${query})`,
+        html: content,
+    });
+}
+
+function generateHTML(data: News[]): string {
     const template = data.map((item) => {
         const title = item.title ? item.title.replace(/"/g, "`") : "";
         const description = item.description ? item.description.replace(/"/g, "`") : "";
