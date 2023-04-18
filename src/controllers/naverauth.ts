@@ -56,30 +56,24 @@ export async function validateNaverToken(accessToken: string): Promise<boolean> 
 
     if(!accessToken) return false;
 
-    const verifyReqParams = {
-      accessToken,
-      client_id: process.env["NAVER_CLIENT_ID"],
-      client_secret: process.env["NAVER_CLIENT_SECRET"],
+    const apiUrl = 'https://openapi.naver.com/v1/nid/me';
+
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
     };
-    const verifyRes = await axios.get<TokenInfo>(
-        'https://nid.naver.com/oauth2.0/token/introspect',
-        {
-          params: verifyReqParams,
-        },
-    );
 
-    // access token이 유효한 경우
-    if (verifyRes.data) {
-      console.log("토큰이 유효합니다!");
-      return true;
-    }
+      const response = await axios.get(apiUrl, { headers });
+      if(response.data.response.id){
+        console.log("토큰이 유효합니다!");
+        return true;
+      }else{
+        console.log("토큰이 유효하지 않습니다.");
+        return false;
+      }
 
-    // access token이 유효하지 않은 경우
-    console.log("토큰이 유효하지 않습니다.");
-    return false;
   } catch (error) {
     console.log("토큰이 유효하지 않습니다.");
-    console.log(error.response.data);
+    console.log(error);
     return false;
   }
 }
