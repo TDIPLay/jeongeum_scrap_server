@@ -220,7 +220,7 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
                 }
 
                 break;
-            case 'naverauth.ts' :
+            case 'naver' :
                 token = await userNaverOAuth(code);
                 if (token.access_token) {
                     user = await getNaverUserInfo(token.access_token);
