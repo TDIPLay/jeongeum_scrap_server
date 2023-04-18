@@ -249,7 +249,7 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
             division: 'regist',
             'email': `${email}`,
             'name': name,
-            'mobile': mobile,
+            'mobile': mobile ? mobile.replace(/-/g, " ") : '',
             'token': token.access_token,
             'type': state,
         }
