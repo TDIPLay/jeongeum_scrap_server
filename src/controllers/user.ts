@@ -15,7 +15,7 @@ export async function createUser(user: any): Promise<any> {
             name: user.name,
             sns_token: user.token,
             sns_type: user.type,
-            phone_number: user.mobile.replace("-",""),
+            phone_number: user.mobile.replaceAll("-",""),
             account_type: 3,
             auth_level: 2,
         }
