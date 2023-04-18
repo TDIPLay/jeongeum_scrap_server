@@ -134,6 +134,8 @@ export const getKakaoUserInfo = async (accessToken: string) : Promise<any> => {
             id: id,
             name: nickname,
             email: email,
+            mobile: '',
+            image: ''
         };
     } catch (error) {
         console.error(error);

@@ -98,7 +98,7 @@ export const getNaverUserInfo = async (accessToken: string) : Promise<any> => {
       id: id,
       name: nickname,
       email: email,
-      phone: mobile,
+      mobile: mobile,
       image: profileImage,
     };
   } catch (error) {

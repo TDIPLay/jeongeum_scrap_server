@@ -54,6 +54,8 @@ export const getGoogleUserInfo = async (accessToken: string): Promise<any> => {
     return {
         name: data.names?.[0].displayName,
         email: data.emailAddresses?.[0].value,
+        mobile: '',
+        image: ''
     };
 };
 
