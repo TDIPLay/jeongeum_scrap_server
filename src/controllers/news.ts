@@ -54,7 +54,7 @@ async function axiosCall2(link: string): Promise<cheerio.CheerioAPI> {
         });
 
         let response = await axios.get(link, AXIOS_OPTIONS);
-        if (link != response.request.res.responseUrl) {
+        /*if (link != response.request.res.responseUrl) {
             console.log(`ori_${link}`)
             console.log(`new_${response.request.res.responseUrl}`)
             response = await axios.get(response.request.res.responseUrl, AXIOS_OPTIONS);
@@ -63,7 +63,7 @@ async function axiosCall2(link: string): Promise<cheerio.CheerioAPI> {
             console.log(response)
             console.log(`new2_${response.request.res.responseUrl}`)
 
-        }
+        }*/
         const content_type = response.headers['content-type'].match(/charset=(.+)/i);
         const no_type = noTypePress.some(x => link.includes(x))
         const encoding = content_type && content_type.length ? content_type[1] : no_type ? "euc-kr" : "utf-8";
