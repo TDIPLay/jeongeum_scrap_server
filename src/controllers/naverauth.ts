@@ -75,6 +75,7 @@ export async function validateNaverToken(accessToken: string): Promise<boolean> 
     }
 
     // access token이 유효하지 않은 경우
+    console.log("토큰이 유효하지 않습니다.");
     return false;
   } catch (error) {
     console.log("토큰이 유효하지 않습니다.");
@@ -84,7 +85,7 @@ export async function validateNaverToken(accessToken: string): Promise<boolean> 
 }
 
 export const getNaverUserInfo = async (accessToken: string) : Promise<any> => {
-  const apiUrl = 'https://nid.naver.com/oauth2.0/token';
+  const apiUrl = 'https://openapi.naver.com/v1/nid/me';
 
   const headers = {
     Authorization: `Bearer ${accessToken}`,
