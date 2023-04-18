@@ -14,9 +14,10 @@ import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
 import {getKakaoUserInfo, userKakaoOAuth, validateKakaoToken} from "./kakaoauth";
 import {sendMail} from "./mailer";
 import {v4 as uuid_v4} from "uuid";
-import {createUser} from "./user";
+import {createUser, getAlarmsUser} from "./user";
 import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken} from "./googleauth";
 import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth";
+import Common_service from "../../service/common_service";
 
 export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
@@ -134,8 +135,8 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
         await Promise.all(articlePromises);
 
         if (sortedNews.length > 0) {
-            await sendMail('ygkwang@nsmg21.com',news,query);
-
+            const users = getAlarmsUser(query, Common_service.alarm_info)
+            await sendMail(users.join(','),news,query);
         }
 
 

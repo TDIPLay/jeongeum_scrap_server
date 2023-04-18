@@ -51,6 +51,24 @@ export interface NewsItem {
     description: string;
     pubDate?: string;
 }
+export interface AlarmData {
+    user_keyword_no: number;
+    keyword: string;
+    alarm_start_time: string;
+    alarm_end_time: string;
+    alarm_type: string;
+    alarm_mail: string;
+    alarm_phone_number: string;
+}
+
+export interface KeywordAlarm {
+    start_time: number;
+    end_time: number;
+    keyword: string[];
+}
+export interface AlarmMailKeywords {
+    [key: string]: string[];
+}
 
 export interface ICommonOK {
     result: string,

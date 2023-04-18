@@ -5,15 +5,15 @@ import {getDateString, logger} from "../src/helpers/utils";
 import {xServerError} from "../src/helpers/errors";
 import {getNewsScap} from "../src/controllers/engine"
 import {initRedisHmSet} from "../src/controllers/worker";
+import Mysql from "./mysql";
+import {getAlarmsUser, processKeywordAlarms} from "../src/controllers/user";
+import {AlarmData, KeywordAlarm} from "../src/interfaces";
 
 export default class Common_service {
 
     private static INSTANCE: Common_service;
-    //  static ads: { [key: string]: IAds };
     static server_info: any = {};
-    static kakao_a_key = "";
-    static oldLinks: string[] = [];
-    static sys_update_time = 0;
+    static alarm_info : {[p: string]: KeywordAlarm} = {};
     static err_cnt = 0;
     static debug_flag_log = false;
     static system_flag = false;
@@ -37,8 +37,26 @@ export default class Common_service {
 
     async module_start() {
         logger.info("init_start")
-         const redis = await getRedis();
 
+         const mysql = Mysql.getInstance()
+        const query = "SELECT \n" +
+            "KA.user_keyword_no, \n" +
+            "UK.keyword,\n" +
+            "KA.alarm_start_time, \n" +
+            "KA.alarm_end_time, \n" +
+            "KA.alarm_type, \n" +
+            "KA.alarm_mail, \n" +
+            "KA.alarm_phone_number \n" +
+            "FROM \n" +
+            "keyword_alarm KA\n" +
+            "LEFT JOIN\n" +
+            "user_keyword UK\n" +
+            "ON\n" +
+            "KA.user_keyword_no = UK.keyword_no\n" +
+            "WHERE \n" +
+            "KA.alarm_type = 1"
+        const result : AlarmData[] = JSON.parse(JSON.stringify(await mysql.query(query)));
+        Common_service.alarm_info  =  processKeywordAlarms(result)
     }
 
     async engine_start() {

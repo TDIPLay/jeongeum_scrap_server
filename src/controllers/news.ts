@@ -96,7 +96,7 @@ async function requestCall(link: string): Promise<any> {
     }
 }
 
-async function axiosCall(link: string): Promise<cheerio.CheerioAPI> {
+async function newsCall(link: string): Promise<cheerio.CheerioAPI> {
     try {
         let response = await requestCall(link)
         const content_type = response.headers["content-type"].match(/charset=([\w-]+)/i);
@@ -116,7 +116,7 @@ async function getArticleDetails(news: News): Promise<void> {
 
     try {
 
-        const $ = await axiosCall(news.link);
+        const $ = await newsCall(news.link);
 
         const main = $('div.media_end_head_info.nv_notrans');
         let author = $('.byline_s').first().text().trim() || $('.byline_p').first().text().trim()
@@ -158,7 +158,7 @@ async function getArticleDetails(news: News): Promise<void> {
 async function fetchMetadata(url: string): Promise<any> {
     try {
 
-        const $ = await axiosCall(url);
+        const $ = await newsCall(url);
         if ($ === null) return null;
 
         const metadata: any = {};
@@ -171,7 +171,7 @@ async function fetchMetadata(url: string): Promise<any> {
 
             if (content && (name || property)) {
                 const key = name ? name.split(':').pop() : property.split(':').pop();
-                metadata[key] = content;
+                metadata[key.toLowerCase()] = content;
             }
         });
         const emailLink = $("a[href^='mailto:']");
@@ -205,7 +205,9 @@ export async function getArticle(news: News): Promise<void> {
 async function getArticleMetaDetails(news: News): Promise<void> {
     try {
         const data = await fetchMetadata(news.link);
-
+        if(news.link.includes("https://www.kgnews.co.kr/news/article.html?no=744865")){
+            console.log(data)
+        }
         if (data) {
             news.thumbnail = data.image ?? '';
             news.author = data.author ?? '';
@@ -214,7 +216,7 @@ async function getArticleMetaDetails(news: News): Promise<void> {
             const ext = extractAuthorAndEmail(news.author);
             news.name = JSON.stringify(ext.map(x => x.name)) ?? '';
             news.email = JSON.stringify(data.email);
-            news.company = (data.site_name || data.Copyright) ?? '';
+            news.company = (data.site_name || data.copyright) ?? '';
             news.title = decodeHtmlEntities(news.title);
             news.description = decodeHtmlEntities(news.description) || '';
 
@@ -235,7 +237,7 @@ async function getArticleMetaDetails(news: News): Promise<void> {
 
 export async function getNaverRankNews(): Promise<Scraper> {
     try {
-        const $ = await axiosCall(NAVER_RANK_URL);
+        const $ = await newsCall(NAVER_RANK_URL);
 
         let scrap: Scraper = {};
 
@@ -283,7 +285,7 @@ export async function getNaverRankNews(): Promise<Scraper> {
 
 export async function getNaverRealNews(): Promise<Scraper> {
     try {
-        const $ = await axiosCall(NAVER_RANK_URL);
+        const $ = await newsCall(NAVER_RANK_URL);
 
         let scrap: Scraper = {};
 
@@ -388,7 +390,7 @@ export async function getNewLinks(query: string, start: number, oldLinks: string
     console.log(`====================================new url(${newLinks.length})=================================================`)
     console.log(Array.from(newLinks).map((news: SearchNews) => news?.link))*/
 
-    if (newLinks.length > 0) {
+    /*if (newLinks.length > 0) {
         if (service.kakao_a_key) {
             newLinks.forEach((item: SearchNews) => {
                 const message: KakaoTalkMessage = {
@@ -404,7 +406,7 @@ export async function getNewLinks(query: string, start: number, oldLinks: string
             });
 
         }
-    }
+    }*/
     return newLinks;
 }
 

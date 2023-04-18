@@ -48,7 +48,7 @@ ON_DEATH( () =>{
 const startServer = async () => {
 
   try {
-    await service.getInstance().module_start();
+
 
     server.addContentTypeParser('application/json', {parseAs: 'buffer'}, (req, body, done) => {
       if (req.headers['content-encoding'] && req.headers['content-encoding'] === 'gzip') {
@@ -105,6 +105,7 @@ const startServer = async () => {
       }
     }
     await server.listen(port,process.env.API_HOST)
+    await service.getInstance().module_start();
   } catch (e) {
     console.error("server........")
     console.error(e)
