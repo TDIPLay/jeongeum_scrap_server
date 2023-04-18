@@ -136,7 +136,9 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
 
         if (sortedNews.length > 0) {
             const users = getAlarmsUser(query, Common_service.alarm_info)
-            await sendMail(users.join(','),news,query);
+            if(users){
+                await sendMail(users.join(','),news,query);
+            }
         }
 
 
