@@ -14,7 +14,7 @@ interface UserInfo {
 // 로그인 페이지로 이동하는 함수
 export const loginWithGoogle = (): string => {
     const REDIRECT_URI = `${process.env.SOCIAL_POSTBACK}/google`;
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, REDIRECT_URI);
     const url = client.generateAuthUrl({
         access_type: 'offline',
         scope: ['email', 'profile'],
@@ -25,7 +25,7 @@ export const loginWithGoogle = (): string => {
 
 // 콜백 함수에서 토큰을 받아오는 함수
 export const userGoogleOAuth = async (code: string): Promise<Credentials> => {
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, `${process.env.SOCIAL_POSTBACK}/google`);
 
     const { tokens } = await client.getToken(code);
     console.log("tokens")
@@ -37,7 +37,7 @@ export const userGoogleOAuth = async (code: string): Promise<Credentials> => {
 
 // 유저 정보를 가져오는 함수
 export const getGoogleUserInfo = async (accessToken: string): Promise<any> => {
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, `${process.env.SOCIAL_POSTBACK}/google`);
     // Google OAuth2 클라이언트 설정
         client.setCredentials({ access_token: accessToken });
 
@@ -73,7 +73,7 @@ export async function validateGoogleToken(accessToken: string): Promise<boolean>
         const userEmail = payload?.email;
         const userFullName = payload?.name;*/
     try {
-        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, `${process.env.SOCIAL_POSTBACK}/google`);
     // Google OAuth2 클라이언트 설정
     client.setCredentials({ access_token: accessToken });
 
