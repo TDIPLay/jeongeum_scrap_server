@@ -19,6 +19,7 @@ export async function createUser(user: any): Promise<any> {
             account_type: 3,
             auth_level: 2,
         }
+        console.log(objParams)
         const res = await axios.post(`${process.env['NEWS_API']}/User/ManagerSnsProcess`, objParams ,AXIOS_OPTIONS);
 
         return res.data;
