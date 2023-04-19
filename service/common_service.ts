@@ -54,8 +54,18 @@ export default class Common_service {
         if (!await initAPIResource()) {
             console.log("initAPIResource error");
         }
+
         if ((Common_service.search_api_idx = await searchApiIdx()) === -1) {
             console.log("searchApiIdx none");
+        }
+
+        const apiIdx = await searchApiIdx();
+        if (apiIdx > -1) {
+            if(Common_service.search_api_idx !== apiIdx){
+                console.log(`${Common_service.search_api[Common_service.search_api_idx] } Changed => ${Common_service.search_api[apiIdx] }`);
+                Common_service.search_api_idx = apiIdx;
+            }
+
         }
     }
 
