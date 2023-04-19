@@ -1,19 +1,22 @@
 import mysql from "./mysql"
-import {getRedis} from './redis'
 import cron from 'node-cron';
 import {getDateString, logger} from "../src/helpers/utils";
 import {xServerError} from "../src/helpers/errors";
-import {getNewsScap} from "../src/controllers/engine"
-import {initRedisHmSet} from "../src/controllers/worker";
-import Mysql from "./mysql";
-import {getAlarmsUser, processKeywordAlarms} from "../src/controllers/user";
-import {AlarmData, KeywordAlarm} from "../src/interfaces";
+import {initAPIResource, searchApiIdx} from "../src/controllers/engine"
+import {hgetData, hmsetRedis, initRedisHmSet} from "../src/controllers/worker";
+import {processKeywordAlarms} from "../src/controllers/user";
+import {AlarmData, KeywordAlarm, SearchApi} from "../src/interfaces";
+import {QUERY, RKEYWORD, RSEARCHAPI, RTOTEN} from "../src/helpers/common";
+import {getRedis} from "./redis";
 
 export default class Common_service {
 
+
     private static INSTANCE: Common_service;
     static server_info: any = {};
-    static alarm_info : {[p: string]: KeywordAlarm} = {};
+    static alarm_info: { [p: string]: KeywordAlarm } = {};
+    static search_api:SearchApi[]= [];
+    static search_api_idx = -1;
     static err_cnt = 0;
     static debug_flag_log = false;
     static system_flag = false;
@@ -28,50 +31,35 @@ export default class Common_service {
 
     constructor() {
         //sql connection & make dataset
-        //redis connection
         cron.schedule("*/10 * * * *", async () => {
-            logger.info(getDateString(0,'default'));
+            logger.info(getDateString(0, 'default'));
             await this.module_start();
         });
     }
 
     async module_start() {
         logger.info("init_start")
+        try {
+            const result: AlarmData[] = JSON.parse(JSON.stringify(await mysql.getInstance().query(QUERY.Alarm)));
+            Common_service.alarm_info = processKeywordAlarms(result)
 
-         const mysql = Mysql.getInstance()
-        const query = "SELECT \n" +
-            "KA.user_keyword_no, \n" +
-            "UK.keyword,\n" +
-            "KA.alarm_start_time, \n" +
-            "KA.alarm_end_time, \n" +
-            "KA.alarm_type, \n" +
-            "KA.alarm_mail, \n" +
-            "KA.alarm_phone_number \n" +
-            "FROM \n" +
-            "keyword_alarm KA\n" +
-            "LEFT JOIN\n" +
-            "user_keyword UK\n" +
-            "ON\n" +
-            "KA.user_keyword_no = UK.keyword_no\n" +
-            "WHERE \n" +
-            "KA.alarm_type = 1"
-        const result : AlarmData[] = JSON.parse(JSON.stringify(await mysql.query(query)));
-        Common_service.alarm_info  =  processKeywordAlarms(result)
+            await this.engine_start();
+        } catch (e) {
+            logger.error(e)
+            logger.info("init_err")
+        }
     }
 
     async engine_start() {
-
-        //jab 돌릴예정
-        if (!await getNewsScap()) {
-            console.log("getNewsScap error");
+        if (!await initAPIResource()) {
+            console.log("initAPIResource error");
         }
-
+        if ((Common_service.search_api_idx = await searchApiIdx()) === -1) {
+            console.log("searchApiIdx none");
+        }
     }
 
-    async update_data() {
-
-    }
-
+//{"client_id": "QrfAfnf3E2JLwgfT2HwP", "client_secret": "xTnEl_Vq9f"}
     private async initDataSet(key: string, query: string, sort_key: any, redis, expire: number) {
         try {
             await mysql.getInstance().query(query).then(async (raws) => {
@@ -95,4 +83,5 @@ export default class Common_service {
     sql_release() {
         mysql.getInstance().release().then(err => console.log(err))
     }
+
 }

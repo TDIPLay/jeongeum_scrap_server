@@ -61,6 +61,15 @@ export interface AlarmData {
     alarm_phone_number: string;
 }
 
+export interface SearchApi {
+    api_name: string;
+    api_limit: number;
+    api_key: ApiKey;
+}
+interface ApiKey {
+    client_id: string;
+    client_secret: string;
+}
 export interface KeywordAlarm {
     start_time: number;
     end_time: number;

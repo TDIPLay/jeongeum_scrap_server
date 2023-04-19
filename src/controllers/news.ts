@@ -8,12 +8,13 @@ import service from "../../service/common_service";
 import {KakaoTalkMessage} from "./kakaoauth";
 import cron from 'node-cron';
 import moment from 'moment'
-import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, RKEYWORD} from "../helpers/common";
+import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, RKEYWORD, RSEARCHAPI} from "../helpers/common";
 import {decodeHtmlEntities, extractAuthorAndEmail, getDateString} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hmsetRedis} from "./worker";
 import {ResponseType} from "axios/index";
 import request from "request";
+import {getApiClientKey} from "./engine";
 
 const REQUEST_OPTIONS = {
     headers: {
@@ -331,12 +332,14 @@ export async function getNaverRealNews(): Promise<Scraper> {
 // - date: 날짜순으로 내림차순 정렬
 //검색어에 +넣으면 &연산 -넣으면 or연산 다음에 추가
 export async function getFindNewLinks(query: string, start: number = 1, oldLinks: string[] = []): Promise<NewsItem[]> {
-    // (주의) 네이버에서 키워드 검색 - 뉴스 탭 클릭 - 최신순 클릭 상태의 url
+
+    const clientInfo = await getApiClientKey();
+
     let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=100&`; // JSON 결과
     let options = {
         headers: {
-            'X-Naver-Client-Id': process.env["NAVER_CLIENT_ID"],
-            'X-Naver-Client-Secret': process.env["NAVER_CLIENT_SECRET"],
+            'X-Naver-Client-Id': clientInfo.client_id,
+            'X-Naver-Client-Secret': clientInfo.client_secret,
             withCredentials: true
         }
     };
@@ -347,7 +350,7 @@ export async function getFindNewLinks(query: string, start: number = 1, oldLinks
 
     const diffLinks = uniqueLinks.filter((item: SearchNews) => !oldLinks.includes(item.link));
     const newLinks = Array.from(diffLinks).map((news: SearchNews) => news?.link) || [];
-    const redis = await getRedis();
+
     let tempLinks = oldLinks;
     const listCnt = oldLinks.length + newLinks.length;
 
@@ -358,22 +361,24 @@ export async function getFindNewLinks(query: string, start: number = 1, oldLinks
     // console.log(`newLinks : ${newLinks.length}`)
     // console.log(`tempLinks : ${tempLinks.length}`)
     const redisData = {[`${query}`]: JSON.stringify([...newLinks, ...tempLinks])};
-    await hmsetRedis(redis, RKEYWORD, redisData, 0);
+    await hmsetRedis(await getRedis(), RKEYWORD, redisData, 0);
 
     return data.items.filter(news => news.link && news.link.includes("http") && !oldLinks.includes(news.link));
 }
 
 export async function getNews(query: string, start: number): Promise<NewsItem[]> {
-
+    const clientInfo = await getApiClientKey();
     let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=100`; // JSON 결과
     let options = {
         headers: {
-            'X-Naver-Client-Id': process.env["NAVER_CLIENT_ID"],
-            'X-Naver-Client-Secret': process.env["NAVER_CLIENT_SECRET"],
+            'X-Naver-Client-Id': clientInfo.client_id,
+            'X-Naver-Client-Secret': clientInfo.client_secret,
             withCredentials: true
         }
     };
     const {data} = await axios.get(api_url, options);
+
+
     // const result = data.items.map(item => item.title ? {...item, "title": `${item.title}_${start}`} : '')
     return data.items.filter(news => news.link && news.link.includes("http") /*&& news.link.includes("naverauth.ts")*/);
 }

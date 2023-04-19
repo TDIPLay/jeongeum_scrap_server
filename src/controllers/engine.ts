@@ -3,19 +3,67 @@ import mysql from "../../service/mysql";
 import moment from "moment";
 import {getRedis} from "../../service/redis";
 import {promisify} from "util";
+import {QUERY, RSEARCHAPI} from "../helpers/common";
+import service from "../../service/common_service"
+import {SearchApi} from "../interfaces";
+import {hgetData, hmsetRedis} from "./worker";
 
-export async function getNewsScap(): Promise<boolean> {
+export async function initAPIResource(): Promise<boolean> {
+    const result = JSON.parse(JSON.stringify(await mysql.getInstance().query(QUERY.Search_API)));
+    service.search_api = result.map(obj => {
+        obj.api_key = JSON.parse(obj.api_key);
+        return obj;
+    });
+    const per_hours: number = new Date().getHours();
+    const per_min: number = new Date().getMinutes();
+    const search_api:SearchApi[] = service.search_api;
 
-
-    const redis = await getRedis();
-    // initRedisHmSet("Scrap", redis, JSON.stringify(obj), 368000);
-
+    if (per_hours === 0 && per_min === 0) {
+        const redis = await getRedis();
+        for (const key in search_api) {
+            await hmsetRedis(redis, RSEARCHAPI, {[`${search_api[key].api_name}`]: 0}, 0);
+        }
+    }
     return true;
 }
 
+export async function searchApiIdx(): Promise<number> {
+    const search_api: SearchApi[] = service.search_api;
 
-
-
+    if (service.search_api.length > 0) {
+        const redis = await getRedis();
+        let selectIdx = 0;
+        let minReqCnt = Infinity;
+        for (let i = 0; i < search_api.length; i++) {
+            const reqCnt = await hgetData(redis, RSEARCHAPI, search_api[i].api_name);
+            if (reqCnt === null) {
+                await hmsetRedis(await getRedis(), RSEARCHAPI, {[`${search_api[i].api_name}`]: 0}, 0);
+                selectIdx = i;
+                break;
+            } else {
+                if (reqCnt < minReqCnt) {
+                    selectIdx = i;
+                    minReqCnt = reqCnt;
+                }
+            }
+        }
+        if (minReqCnt >= 24000) {
+            console.log("limit cnt Over 24000");
+        }
+        return selectIdx;
+    }
+    return -1;
+}
+export async function getApiClientKey(): Promise<{ client_id: string, client_secret: string }> {
+    if (service.search_api_idx !== -1) {
+        const {client_id, client_secret} = service.search_api[service.search_api_idx].api_key;
+        const redis = await getRedis();
+        redis.hincrbyfloat(RSEARCHAPI, service.search_api[service.search_api_idx].api_name, 1)
+        return {client_id, client_secret};
+    }
+    const {NAVER_CLIENT_ID, NAVER_CLIENT_SECRET} = process.env;
+    return {client_id: NAVER_CLIENT_ID, client_secret: NAVER_CLIENT_SECRET};
+}
 
 
 export async function init_Transaction(): Promise<boolean> {
