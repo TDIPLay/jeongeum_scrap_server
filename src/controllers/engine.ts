@@ -9,20 +9,20 @@ import {SearchApi} from "../interfaces";
 import {hgetData, hmsetRedis} from "./worker";
 
 export async function initAPIResource(): Promise<boolean> {
-    const result = JSON.parse(JSON.stringify(await mysql.getInstance().query(QUERY.Search_API)));
-    service.search_api = result.map(obj => {
-        obj.api_key = JSON.parse(obj.api_key);
-        return obj;
-    });
-    const per_hours: number = new Date().getHours();
-    const per_min: number = new Date().getMinutes();
-    const search_api:SearchApi[] = service.search_api;
+    const result = await mysql.getInstance().query(QUERY.Search_API);
+    service.search_api = result.map(obj => ({
+        ...obj,
+        api_key: JSON.parse(obj.api_key),
+    }));
 
-    if (per_hours === 0 && per_min === 0) {
+    const now = new Date();
+    if (now.getHours() === 0 && now.getMinutes() === 0) {
         const redis = await getRedis();
-        for (const key in search_api) {
-            await hmsetRedis(redis, RSEARCHAPI, {[`${search_api[key].api_name}`]: 0}, 0);
+        const hash: Record<string, number> = {};
+        for (const api of service.search_api) {
+            hash[api.api_name] = 0;
         }
+        await hmsetRedis(redis, RSEARCHAPI, hash, 0);
     }
     return true;
 }

@@ -40,7 +40,7 @@ export default class Common_service {
     async module_start() {
         logger.info("init_start")
         try {
-            const result: AlarmData[] = JSON.parse(JSON.stringify(await mysql.getInstance().query(QUERY.Alarm)));
+            const result: AlarmData[] = await mysql.getInstance().query(QUERY.Alarm);
             Common_service.alarm_info = processKeywordAlarms(result)
 
             await this.engine_start();

@@ -32,7 +32,7 @@ export default class Mysql {
         // this.connection.connect();
      }
 
-    query(sqlString: string, values = []): Promise<Query> {
+    query(sqlString: string, values = []): Promise<any> {
         return new Promise(async (resolve, reject) => {
             try {
                 return this.connection.query(sqlString, values, (err, results) => {
