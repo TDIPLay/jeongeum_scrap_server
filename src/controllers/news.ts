@@ -119,7 +119,7 @@ async function getArticleDetails(news: News): Promise<void> {
         const $ = await newsCall(news.link);
 
         const main = $('div.media_end_head_info.nv_notrans');
-        let author = $('.byline_s').first().text().trim() || $('.byline_p').first().text().trim()
+        let author = $('.byline_s').first().text().trim() || $('.byline_p').first().text().trim() || $('.byline').first().text().trim()
 
         const result = extractAuthorAndEmail(author);
         const name = result.map(x => x.name)
