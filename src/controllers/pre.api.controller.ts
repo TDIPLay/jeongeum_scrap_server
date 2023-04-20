@@ -18,7 +18,7 @@ import {createUser, getAlarmsUser} from "./user";
 import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken} from "./googleauth";
 import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth";
 import Common_service from "../../service/common_service";
-import {alimtalkSend, generateTalk} from "./aligoxkakao";
+import {alimtalkSend, generateTalkTemplate} from "./aligoxkakao";
 
 export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
@@ -155,13 +155,13 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
                     tpl_code: 2,
                     sender: alarmTalkUser.join(','),
                 }
-                const template = generateTalk(news);
+                const template = generateTalkTemplate(news);
                 for (let i =0 ; i <alarmTalkUser.length; i++){
                     talkUser[`receiver_${i+1}`] = alarmTalkUser[i]
                     talkUser[`subject_${i+1}`] = `[정음]오늘의 뉴스(#${query})`
                     talkUser[`message_${i+1}`] = template;
                 }
-                console.log(talkUser)
+               // console.log(talkUser)
                 //await alimtalkSend(talkUser, news);
             }
         }
