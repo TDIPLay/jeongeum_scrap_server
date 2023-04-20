@@ -9,7 +9,7 @@ import moment from "moment/moment";
 import {sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
-import {RKEYWORD, RTOTEN} from "../helpers/common";
+import {ALARM, RKEYWORD, RTOTEN} from "../helpers/common";
 import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
 import {getKakaoUserInfo, userKakaoOAuth, validateKakaoToken} from "./kakaoauth";
 import {sendMail} from "./mailer";
@@ -18,6 +18,7 @@ import {createUser, getAlarmsUser} from "./user";
 import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken} from "./googleauth";
 import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth";
 import Common_service from "../../service/common_service";
+import {alimtalkSend, generateTalk} from "./aligoxkakao";
 
 export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
@@ -135,11 +136,33 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
         await Promise.all(articlePromises);
 
         if (sortedNews.length > 0) {
-            const users = getAlarmsUser(query, Common_service.alarm_info)
+            const {alarmEmailUser, alarmTalkUser} = getAlarmsUser(query, Common_service.alarm_info);
 
-            if(users.length > 0){
-                console.log(`send mail User :  ${users}`)
-                await sendMail(users.join(','),news,query);
+            if (alarmEmailUser.length > 0) {
+                console.log(`send mail User :  ${alarmEmailUser}`)
+                await sendMail(alarmEmailUser.join(','), news, query);
+            }
+            if (alarmTalkUser.length > 0) {
+                console.log(`send talk User :  ${alarmTalkUser}`)
+                // senderkey: 발신프로필 키
+                // tpl_code: 템플릿 코드
+                // sender: 발신자 연락처
+                // receiver_1: 수신자 연락처
+                // subject_1: 알림톡 제목
+                // message_1: 알림톡 내용
+                let talkUser = {
+                    senderkey: 3,
+                    tpl_code: 2,
+                    sender: alarmTalkUser.join(','),
+                }
+                const template = generateTalk(news);
+                for (let i =0 ; i <alarmTalkUser.length; i++){
+                    talkUser[`receiver_${i+1}`] = alarmTalkUser[i]
+                    talkUser[`subject_${i+1}`] = `[정음]오늘의 뉴스(#${query})`
+                    talkUser[`message_${i+1}`] = template;
+                }
+                console.log(talkUser)
+                //await alimtalkSend(talkUser, news);
             }
         }
 
@@ -264,20 +287,20 @@ export const preSocial = async (request: IAnyRequest, reply: FastifyReply, done)
         const {social} = request.params;
         const {id} = request.query;
         //let token = id ? await hgetData(await getRedis(), RTOTEN, id) : null;
-            switch (social) {
-                case 'kakao' :
-                    request.transfer = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${process.env.KAKAO_CLIENT_ID}&redirect_uri=${process.env.SOCIAL_POSTBACK}/${social}&state=${social}`;
-                    break;
-                case 'naver' :
-                    request.transfer = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${process.env.NAVER_CLIENT_ID}&redirect_uri=${process.env.SOCIAL_POSTBACK}/${social}&state=${social}`
-                    break;
-                case 'google' :
-                    const google_auth_url = loginWithGoogle()
-                    request.transfer = `${google_auth_url}&state=${social}`;
-                    break;
-                default:
-                    break;
-            console.log(request.transfer)
+        switch (social) {
+            case 'kakao' :
+                request.transfer = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${process.env.KAKAO_CLIENT_ID}&redirect_uri=${process.env.SOCIAL_POSTBACK}/${social}&state=${social}`;
+                break;
+            case 'naver' :
+                request.transfer = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${process.env.NAVER_CLIENT_ID}&redirect_uri=${process.env.SOCIAL_POSTBACK}/${social}&state=${social}`
+                break;
+            case 'google' :
+                const google_auth_url = loginWithGoogle()
+                request.transfer = `${google_auth_url}&state=${social}`;
+                break;
+            default:
+                break;
+                console.log(request.transfer)
         }
         done();
     } catch (e) {
@@ -289,7 +312,7 @@ export const preSocial = async (request: IAnyRequest, reply: FastifyReply, done)
 export const preSocialLogin = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
         const {sns_type, sns_token} = request.body;
-        let checkFlag =  false;
+        let checkFlag = false;
 
         if (sns_token) {
             switch (sns_type) {

@@ -73,6 +73,7 @@ interface ApiKey {
 export interface KeywordAlarm {
     start_time: number;
     end_time: number;
+    alarm_type: string;
     keyword: string[];
 }
 export interface AlarmMailKeywords {

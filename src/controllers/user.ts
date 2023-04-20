@@ -1,6 +1,7 @@
 import axios, {AxiosRequestConfig, ResponseType} from 'axios';
 import moment from "moment";
 import {AlarmData, KeywordAlarm} from "../interfaces";
+import {ALARM} from "../helpers/common";
 
 
 const AXIOS_OPTIONS = {
@@ -11,8 +12,7 @@ const AXIOS_OPTIONS = {
 };
 
 
-
-export function processKeywordAlarms(alarms: AlarmData[]): {[p: string]: KeywordAlarm} {
+export function processKeywordAlarms(alarms: AlarmData[]): { [p: string]: KeywordAlarm } {
     const keywordAlarms: { [email: string]: KeywordAlarm } = {};
 
     // 각 알람에 대해
@@ -20,35 +20,42 @@ export function processKeywordAlarms(alarms: AlarmData[]): {[p: string]: Keyword
         // 알람의 시작 시간과 종료 시간을 Timestamp로 변환
         const start_time = moment(alarm.alarm_start_time, "HH:mm:ss.SSSSSS").valueOf();
         const end_time = moment(alarm.alarm_end_time, "HH:mm:ss.SSSSSS").valueOf();
+        const alarm_type = alarm.alarm_type;
+        // 알람 메일 주소/ 폰전화번호를 key로 하는 object에 해당 키워드 알람을 추가
+        const key = alarm_type === ALARM.email ? alarm.alarm_mail : alarm.alarm_phone_number;
 
-        // 알람 메일 주소를 key로 하는 object에 해당 키워드 알람을 추가
-        if (!keywordAlarms[alarm.alarm_mail]) {
-            keywordAlarms[alarm.alarm_mail] = {
+        if (!keywordAlarms[key]) {
+            keywordAlarms[key] = {
                 start_time,
                 end_time,
+                alarm_type,
                 keyword: []
             };
         }
-
-        keywordAlarms[alarm.alarm_mail].keyword.push(alarm.keyword);
+        keywordAlarms[key].keyword.push(alarm.keyword);
     }
+    console.log(keywordAlarms)
     return keywordAlarms;
 }
 
-export function getAlarmsUser(query:string, keywordAlarms: { [email: string]: KeywordAlarm }) {
+export function getAlarmsUser( query: string, keywordAlarms: { [email: string]: KeywordAlarm }) {
     const now = moment().valueOf();
 
-    let alarmUser = []
-    for (const email in keywordAlarms) {
-        const keywordAlarmList: KeywordAlarm  = keywordAlarms[email];
-
+    let alarmEmailUser = []
+    let alarmTalkUser = []
+    for (const alarmKey in keywordAlarms) {
+        const keywordAlarmList: KeywordAlarm = keywordAlarms[alarmKey];
         const activeKeywordAlarms = now >= keywordAlarmList.start_time && now <= keywordAlarmList.end_time
-        if(activeKeywordAlarms){
-            const shouldSendEmail = keywordAlarmList.keyword.indexOf(query);
-            if(shouldSendEmail > -1) alarmUser.push(email)
+        if (activeKeywordAlarms) {
+            const shouldSend = keywordAlarmList.keyword.indexOf(query);
+            if (keywordAlarmList.alarm_type === ALARM.email) {
+                if (shouldSend > -1) alarmEmailUser.push(alarmKey)
+            } else if (keywordAlarmList.alarm_type === ALARM.kakao) {
+                if (shouldSend > -1) alarmTalkUser.push(alarmKey)
+            }
         }
     }
-    return alarmUser
+    return {alarmEmailUser, alarmTalkUser}
 }
 
 export async function createUser(user: any): Promise<any> {
@@ -64,7 +71,7 @@ export async function createUser(user: any): Promise<any> {
             auth_level: 2,
         }
         console.log(objParams)
-        const res = await axios.post(`${process.env['NEWS_API']}/User/ManagerSnsProcess`, objParams ,AXIOS_OPTIONS);
+        const res = await axios.post(`${process.env['NEWS_API']}/User/ManagerSnsProcess`, objParams, AXIOS_OPTIONS);
 
         return res.data;
     } catch (error) {

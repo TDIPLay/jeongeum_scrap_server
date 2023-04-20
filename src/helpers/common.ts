@@ -10,6 +10,12 @@ export const MAX_LINK = 200		                    // MAX_LINK
 export const NAVER_API_URL = "https://openapi.naver.com/v1/search/news.json"
 export const NAVER_RANK_URL = "https://news.naver.com/main/ranking/popularDay.naver"
 
+
+export enum ALARM {
+    email = '1',
+    kakao = '2',
+}
+
 export const QUERY = {
     Alarm: "SELECT \n" +
         "KA.user_keyword_no, \n" +
@@ -26,7 +32,7 @@ export const QUERY = {
         "ON\n" +
         "KA.user_keyword_no = UK.keyword_no\n" +
         "WHERE \n" +
-        "KA.alarm_type = 1",
+        "KA.alarm_type != 0",
 
     Search_API: "SELECT " +
         "api_name," +

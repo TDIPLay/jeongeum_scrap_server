@@ -22,7 +22,7 @@ const REQUEST_OPTIONS = {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
     },
     encoding: null,
-    timeout: 5000,
+    timeout: 7000,
     followRedirect: true,
     maxRedirects: 3,
 };
@@ -128,14 +128,14 @@ async function getArticleDetails(news: News): Promise<void> {
         // const content = $('body').find('p').text().trim();
         // const content = $('#dic_area').first().text().replace(/\s/g, ' ').trim();
         const description = news.description || `${$('meta[property^="og:description"]').attr('content')}...`
-        const company = news.company || $('meta[name^="twitter:creator"]').attr('content');
+        let company = news.company || $('meta[name^="twitter:creator"]').attr('content')|| $('meta[property^="og:article:author"]').attr('content');
         const thumbnail = $('meta[property^="twitter:image"], meta[property^="og:image"]').first().attr('content') || '';
         const originallink = news.originallink || $(main).find('a').attr('href');
 
         if (news.title) news.title = decodeHtmlEntities(news.title);
         if (originallink) news.originallink = originallink;
         if (thumbnail) news.thumbnail = thumbnail;
-        if (company) news.company = company;
+        if (company) news.company = company.includes("|") ? company.split("|")[1].trim() : company.trim();
         if (description) news.description = decodeHtmlEntities(description);
         if (author) news.author = author;
         if (name) news.name = JSON.stringify(name);
