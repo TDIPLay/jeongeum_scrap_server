@@ -156,12 +156,12 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
                     sender: alarmTalkUser.join(','),
                 }
                 const template = generateTalkTemplate(news);
-                for (let i =0 ; i <alarmTalkUser.length; i++){
-                    talkUser[`receiver_${i+1}`] = alarmTalkUser[i]
-                    talkUser[`subject_${i+1}`] = `[정음]오늘의 뉴스(#${query})`
-                    talkUser[`message_${i+1}`] = template;
+                for (let i = 0; i < alarmTalkUser.length; i++) {
+                    talkUser[`receiver_${i + 1}`] = alarmTalkUser[i]
+                    talkUser[`subject_${i + 1}`] = `[정음]오늘의 뉴스(#${query})`
+                    talkUser[`message_${i + 1}`] = template;
                 }
-               // console.log(talkUser)
+                // console.log(talkUser)
                 //await alimtalkSend(talkUser, news);
             }
         }

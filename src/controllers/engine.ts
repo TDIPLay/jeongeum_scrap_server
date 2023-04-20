@@ -16,14 +16,13 @@ export async function initAPIResource(): Promise<boolean> {
     }));
 
     const now = new Date();
-    if (now.getHours() === 10 && now.getMinutes() === 30) {
+    if (now.getHours() === 0 && now.getMinutes() === 0) {
         const redis = await getRedis();
         const hash: Record<string, number> = {};
         for (const api of service.search_api) {
             hash[api.api_name] = 0;
         }
-        console.log("카운트 초기화")
-        console.log(hash)
+        console.log("Serach_Api 카운트 초기화")
         await hmsetRedis(redis, RSEARCHAPI, hash, 0);
     }
     return true;
