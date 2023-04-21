@@ -58,6 +58,71 @@ type DailyData = {
     daily: PeriodData[];
 };
 
+/*export async function getSearchRate(query, start, end) {
+    const clientInfo = await getApiClientKey();
+    let api_url = `https://openapi.naver.com/v1/datalab/search`; // JSON 결과
+    let options = {
+        headers: {
+            'X-Naver-Client-Id': clientInfo.client_id,
+            'X-Naver-Client-Secret': clientInfo.client_secret,
+            'Content-Type': 'application/json'
+        }
+    };
+
+    const startDate = start || moment().subtract(1, 'day').format('YYYY-MM-DD');
+    const endDate = end || moment().format('YYYY-MM-DD');
+    let data = {
+        "startDate": startDate,
+        "endDate": endDate,
+        "timeUnit": "date",
+        "device": 'mo',
+        "keywordGroups": [
+            {
+                "groupName": query,
+                "keywords": query.split(',')
+            }
+        ],
+        "ages": [],
+        "gender": ""
+    };
+    //남성, 여성
+
+    try {
+        //mo
+        const response_mo = await axios.post(api_url, data, options);
+        const results_mo = response_mo.data.results[0].data;
+        //pc
+        data.device = 'pc';
+        const response_pc = await axios.post(api_url, data, options);
+        const results_pc = response_pc.data.results[0].data;
+
+        //전체데이터  여성
+        data.timeUnit = "month";
+        data.device = '';
+        data.gender = 'f';
+        const response_female = await axios.post(api_url, data, options);
+        const results_female = response_pc.data.results[0].data;
+
+        data.gender = 'm';
+        const response_male = await axios.post(api_url, data, options);
+        const results_male = response_pc.data.results[0].data;
+        //10대,20대,30대,40대,50대
+        data.device = '';
+        data.gender = '';
+        data.ages.push("1","2")
+        const response_10 = await axios.post(api_url, data, options);
+        const results_10 = response_pc.data.results[0].data;
+
+
+        console.log(results_mo)
+
+        return {"data": {"mobile": results_mo, "pc": results_pc}};
+    } catch (error) {
+        console.error(error);
+    }
+}*/
+
+
 async function getSearchRate(query: string, start?: string, end?: string) {
     const { client_id, client_secret } = await getApiClientKey();
     const api_url = 'https://openapi.naver.com/v1/datalab/search'; // JSON 결과
@@ -92,14 +157,26 @@ async function getSearchRate(query: string, start?: string, end?: string) {
         axios.post(api_url, { ...data, device: 'pc' }, options).then(response => response.data.results[0].data),
         axios.post(api_url, { ...data, timeUnit: 'month', device: '', gender: 'f' }, options).then(response => response.data.results[0].data),
         axios.post(api_url, { ...data, timeUnit: 'month', device: '', gender: 'm' }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, { ...data, timeUnit: 'month',device: '', gender: '', ages: ["1","2"] }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, { ...data, timeUnit: 'month',device: '', gender: '', ages: ["3","4"] }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, { ...data, timeUnit: 'month',device: '', gender: '', ages: ["5","6"] }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, { ...data, timeUnit: 'month',device: '', gender: '', ages: ["7","8"] }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, { ...data, timeUnit: 'month',device: '', gender: '', ages: ["9","10"] }, options).then(response => response.data.results[0].data),
+        axios.post(api_url, { ...data, timeUnit: 'month', device: '', gender: '', ages: ["1","2"] }, options).then(response => response.data.results[0].data),
+        axios.post(api_url, { ...data, timeUnit: 'month', device: '', gender: '', ages: ["3","4"] }, options).then(response => response.data.results[0].data),
+        axios.post(api_url, { ...data, timeUnit: 'month', device: '', gender: '', ages: ["5","6"] }, options).then(response => response.data.results[0].data),
+        axios.post(api_url, { ...data, timeUnit: 'month', device: '', gender: '', ages: ["7","8"] }, options).then(response => response.data.results[0].data),
+        axios.post(api_url, { ...data, timeUnit: 'month', device: '', gender: '', ages: ["9","10"] }, options).then(response => response.data.results[0].data),
     ]);
 
     return {
+        mobile: results_mo,
+        pc: results_pc,
+        female: results_female,
+        male: results_male,
+        age_10: results_10,
+        age_20: results_20,
+        age_30: results_30,
+        age_40: results_40,
+        age_50: results_50
+    };
+
+    /*return {
         mobile: results_mo,
         pc: results_pc,
         female: results_female.map(({ ratio }) => ({ ratio })),
@@ -109,7 +186,7 @@ async function getSearchRate(query: string, start?: string, end?: string) {
         age_30: results_30.map(({ ratio }) => ({ ratio })),
         age_40: results_40.map(({ ratio }) => ({ ratio })),
         age_50: results_50.map(({ ratio }) => ({ ratio }))
-    };
+    };*/
 }
 
 // {"api_key": "0100000000141b6de97be2e0dc28b53c8478a7be307a14984163150d8bc486a094903beb33", "secret_key": "AQAAAAAUG23pe+Lg3Ci1PIR4p74wzaSaga4fm2MuG0k9oSuf1w==", "customer_id": "2660230"}
