@@ -321,56 +321,13 @@ const generateTalkTemplate = (data: News[]) => {
         const description = item.description ? item.description.replace(/"/g, "`") : "";
         const company = item.company ? item.company.replace(/"/g, "`") : "";
 
-        return {
-            "imageUrl": item.thumbnail,
-            "altText": title,
-            "link": {
-                "web": item.link
-            },
-            "contents": [
-                {
-                    "type": "text",
-                    "text": title,
-                    "weight": "bold",
-                    "size": "md",
-                    "wrap": true
-                },
-                {
-                    "type": "text",
-                    "text": `${company} | ${item.pubDate}`,
-                    "size": "sm",
-                    "color": "#aaaaaa",
-                    "wrap": true
-                },
-                {
-                    "type": "text",
-                    "text": description,
-                    "size": "sm",
-                    "color": "#555555",
-                    "wrap": true
-                }
-            ]
-        };
-    });
-
-    return {
-        "template": {
-            "outputs": [
-                {
-                    "simpleImage": {
-                        "imageUrl": "https://i.ibb.co/cD19xzt/news-header.png",
-                        "altText": "오늘의 뉴스"
-                    }
-                },
-                {
-                    "carousel": {
-                        "type": "basicCard",
-                        "items": template
-                    }
-                }
-            ]
-        }
-    };
+        return `
+        ▶ title: ${title}
+        ▶ link : ${item.link}
+        ▶ press|author|data : ${company} | ${item.author} | ${item.pubDate}
+        `;
+    }).join("");
+    return `${template}`
 };
 export {
     token,

@@ -2,10 +2,12 @@ import {FastifyInstance} from 'fastify'
 import {apiSchema, signupSchema} from '../schema'
 import {
     apiAuth,
+    apiBriefingMail,
     apiLogin,
     apiMemoryRate,
     apiSyncUp,
     passUrl,
+    preApiDataLab,
     preApiRankNews,
     preApiRealNews,
     preApiSyncUp,
@@ -72,6 +74,19 @@ async function apiRouter(fastify: FastifyInstance) {
         url: '/social/oauth/:social',
         schema: apiSchema, preHandler: preSocialCallback, handler: apiLogin
     })
+
+
+    fastify.route({
+        method: 'GET',
+        url: '/datalab',
+        schema: apiSchema, preHandler: preApiDataLab, handler: apiSyncUp
+    })
+    fastify.route({
+        method: 'POST',
+        url: '/sendmail',
+        handler: apiBriefingMail,
+    })
+
 
     fastify.route({
         method: 'GET',

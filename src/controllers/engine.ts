@@ -1,12 +1,24 @@
-import {logger} from "../helpers/utils";
+import {getDomain, logger} from "../helpers/utils";
 import mysql from "../../service/mysql";
 import moment from "moment";
 import {getRedis} from "../../service/redis";
 import {promisify} from "util";
-import {QUERY, RSEARCHAPI} from "../helpers/common";
+import {QUERY, RPRESS, RSEARCHAPI} from "../helpers/common";
 import service from "../../service/common_service"
 import {SearchApi} from "../interfaces";
 import {hgetData, hmsetRedis} from "./worker";
+
+export async function initPress(): Promise<boolean> {
+    const press = await mysql.getInstance().query(QUERY.Press);
+
+    const redis = await getRedis();
+    const hash: Record<string, number> = {};
+    for (const api of press) {
+        hash[api.press_id] = api.press_name;
+    }
+    await hmsetRedis(redis, RPRESS, hash, 0);
+    return true;
+}
 
 export async function initAPIResource(): Promise<boolean> {
     const result = await mysql.getInstance().query(QUERY.Search_API);
@@ -36,7 +48,7 @@ export async function searchApiIdx(): Promise<number> {
         let selectIdx = 0;
         let minReqCnt = Infinity;
         for (let i = 0; i < search_api.length; i++) {
-            const reqCnt = await hgetData(redis, RSEARCHAPI, search_api[i].api_name);
+            const reqCnt = await hgetData(redis, RSEARCHAPI,"json", search_api[i].api_name);
             if (reqCnt === null) {
                 await hmsetRedis(await getRedis(), RSEARCHAPI, {[`${search_api[i].api_name}`]: 0}, 0);
                 selectIdx = i;
@@ -55,6 +67,7 @@ export async function searchApiIdx(): Promise<number> {
     }
     return -1;
 }
+
 export async function getApiClientKey(): Promise<{ client_id: string, client_secret: string }> {
     if (service.search_api_idx !== -1) {
         const {client_id, client_secret} = service.search_api[service.search_api_idx].api_key;
@@ -89,7 +102,7 @@ export async function init_Transaction(): Promise<boolean> {
                                 redis.hdel('Transaction', rediskey);
                                 console.log(`deleted => ${rediskey}_time:${tm - uData.tm}`);
                             }
-                        }catch (e) {
+                        } catch (e) {
                             console.log(e)
                         }
                     }

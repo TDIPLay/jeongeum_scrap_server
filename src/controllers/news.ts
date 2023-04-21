@@ -8,10 +8,10 @@ import service from "../../service/common_service";
 import {KakaoTalkMessage} from "./kakaoauth";
 import cron from 'node-cron';
 import moment from 'moment'
-import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, RKEYWORD, RSEARCHAPI} from "../helpers/common";
-import {decodeHtmlEntities, extractAuthorAndEmail, getDateString} from "../helpers/utils";
+import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, RKEYWORD, RPRESS, RSEARCHAPI} from "../helpers/common";
+import {decodeHtmlEntities, extractAuthorAndEmail, getDateString, getDomain} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
-import {hmsetRedis} from "./worker";
+import {getRedisPress, hgetData, hmsetRedis, setRedisPress} from "./worker";
 import {ResponseType} from "axios/index";
 import request from "request";
 import {getApiClientKey} from "./engine";
@@ -42,7 +42,7 @@ const AXIOS_OPTIONS = {
     responseType: "arraybuffer" as ResponseType,
 };
 
-const noTypePress = ['finomy.com']
+const noTypePress = ['finomy.com','ikunkang.com','www.rapportian.com']
 async function axiosCall2(link: string): Promise<cheerio.CheerioAPI> {
 
     try {
@@ -127,21 +127,23 @@ async function getArticleDetails(news: News): Promise<void> {
         const email = result.map(x => x.email)
         // const content = $('body').find('p').text().trim();
         // const content = $('#dic_area').first().text().replace(/\s/g, ' ').trim();
-        const description = news.description || `${$('meta[property^="og:description"]').attr('content')}...`
-        let company = news.company || $('meta[name^="twitter:creator"]').attr('content')|| $('meta[property^="og:article:author"]').attr('content');
-        const thumbnail = $('meta[property^="twitter:image"], meta[property^="og:image"]').first().attr('content') || '';
+        const description = news.description || `${$('meta[property^="og:description"]')?.attr('content')}...`
+        const prePress = $('meta[name^="twitter:creator"]')?.attr('content')|| $('meta[property^="og:article:author"]')?.attr('content');
+        const {domain, press} = await getRedisPress(news);
+        let company = press || news.company || prePress
+        const thumbnail = $('meta[property^="twitter:image"], meta[property^="og:image"]')?.first().attr('content') || '';
         const originallink = news.originallink || $(main).find('a').attr('href');
 
         if (news.title) news.title = decodeHtmlEntities(news.title);
         if (originallink) news.originallink = originallink;
         if (thumbnail) news.thumbnail = thumbnail;
-        if (company) news.company = company.includes("|") ? company.split("|")[1].trim() : company.trim();
+        if (company)  news.company = company.includes("|") ? company.split("|")[1].trim() : company.trim();
         if (description) news.description = decodeHtmlEntities(description);
         if (author) news.author = author;
         if (name) news.name = JSON.stringify(name);
         if (email) news.email = JSON.stringify(email);
 
-        // if (content) news.content = content;
+        if (!press) await setRedisPress(domain,news.company);
         if (news.pubDate) {
             news.timestamp = moment(news.pubDate).unix();
             news.pubDate = getDateString(news.timestamp, 'unit');
@@ -152,6 +154,7 @@ async function getArticleDetails(news: News): Promise<void> {
         }
 
     } catch (error) {
+        console.log(error)
         console.error(`Error fetching getArticleDetails: ${error.message} => ${news.title}`);
     }
 }
@@ -206,20 +209,20 @@ export async function getArticle(news: News): Promise<void> {
 async function getArticleMetaDetails(news: News): Promise<void> {
     try {
         const data = await fetchMetadata(news.link);
-        if(news.link.includes("https://www.kgnews.co.kr/news/article.html?no=744865")){
-            console.log(data)
-        }
-        if (data) {
-            news.thumbnail = data.image ?? '';
-            news.author = data.author ?? '';
-            news.content = data.body ?? '';
 
+        if (data) {
+            news.thumbnail = data.image || '';
+            news.author = data.author || '';
+            news.content = data.body || '';
             const ext = extractAuthorAndEmail(news.author);
-            news.name = JSON.stringify(ext.map(x => x.name)) ?? '';
+            news.name = JSON.stringify(ext.map(x => x.name)) || '';
             news.email = JSON.stringify(data.email);
-            news.company = (data.site_name || data.copyright) ?? '';
+            const {domain, press} = await getRedisPress(news);
+            news.company = press || (data.site_name || data.copyright)
             news.title = decodeHtmlEntities(news.title);
             news.description = decodeHtmlEntities(news.description) || '';
+
+            if (!press) await setRedisPress(domain,news.company);
 
             if (news.pubDate) {
                 news.timestamp = moment(news.pubDate).unix();

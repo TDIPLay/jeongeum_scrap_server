@@ -51,6 +51,20 @@ export async function sendMail(user: string, news: News[], query: string) {
     });
 }
 
+export async function sendBriefingMail(user: string, title: string,content: string) {
+
+    await new EmailSender({
+        user: process.env.GOOGLE_MAIL_ID,
+        pass: process.env.GOOGLE_MAIL_PW,
+    }).sendEmail({
+        from: process.env.GOOGLE_MAIL_ID,
+        to: user,
+        subject: `${title}`,
+        html: content,
+    });
+}
+
+
 function generateHTML(data: News[]): string {
     const template = data.map((item) => {
         const title = item.title ? item.title.replace(/"/g, "`") : "";

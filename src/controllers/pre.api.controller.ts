@@ -19,6 +19,7 @@ import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken
 import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth";
 import Common_service from "../../service/common_service";
 import {alimtalkSend, generateTalkTemplate} from "./aligoxkakao";
+import {getRelKeyword} from "./naverdatalab";
 
 export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
@@ -39,6 +40,24 @@ export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, 
     }
 }
 
+export const preApiDataLab = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const {query, startDate, endDate} = request.query;
+        const queries = ["삼성"];
+        const data = await getRelKeyword(query, startDate, endDate);
+
+        request.transfer = {
+            result: MESSAGE.SUCCESS,
+            code: STANDARD.SUCCESS,
+            message: "SUCCESS",
+            data
+        };
+        done();
+
+    } catch (e) {
+        handleServerError(reply, e)
+    }
+}
 export const preApiRealNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
 
@@ -75,7 +94,7 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
                 let data = null;
 
                 if (i === 1) {
-                    let oldLinks = await hgetData(redis, RKEYWORD, query);
+                    let oldLinks = await hgetData(redis, RKEYWORD, "json", query);
                     data = await getFindNewLinks(query, i, oldLinks || []);
                     if (!data || !data.length || data.length < 50) {
                         data = await getNews(query, i);
@@ -114,7 +133,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
         const {query, start} = request.query;
         const articlePromises: Promise<void>[] = [];
         const redis = await getRedis();
-        let oldLinks = await hgetData(redis, RKEYWORD, query);
+        let oldLinks = await hgetData(redis, RKEYWORD, "json", query);
 
         let news: News[] = [];
 
@@ -161,7 +180,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
                     talkUser[`subject_${i + 1}`] = `[정음]오늘의 뉴스(#${query})`
                     talkUser[`message_${i + 1}`] = template;
                 }
-                // console.log(talkUser)
+                console.log(talkUser)
                 //await alimtalkSend(talkUser, news);
             }
         }
@@ -198,6 +217,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
         handleServerError(reply, e)
     }
 }
+
 
 export const preOpenAi = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {

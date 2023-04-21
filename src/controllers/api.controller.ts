@@ -1,9 +1,11 @@
 import {FastifyReply} from "fastify"
-import {ERROR403, STANDARD} from "../helpers/constants"
+import {ERROR403, ERROR404, MESSAGE, STANDARD} from "../helpers/constants"
 import {handleServerError} from "../helpers/errors"
 import {IAnyRequest, IUserRequest} from "../interfaces";
 import * as JWT from 'jsonwebtoken'
 import {utils} from "../helpers/utils";
+import {generateChatMessage} from "./openai";
+import {sendBriefingMail, sendMail} from "./mailer";
 
 
 export const apiSyncUp = async (request: IAnyRequest, reply: FastifyReply) => {
@@ -57,6 +59,23 @@ export const apiMemoryRate = async (request: IAnyRequest, reply: FastifyReply) =
         const used = Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 1000) / 1000;
         reply.status(STANDARD.SUCCESS).send({"message": `The script uses approximately ${used} MB`})
     } catch (e) {
+        handleServerError(reply, e)
+    }
+}
+
+export const apiBriefingMail = async (request: IAnyRequest, reply: FastifyReply) => {
+    try {
+
+        const {user,title,content} = request.body;
+
+        await sendBriefingMail(user, title, content).then(r=>{
+            reply.status(STANDARD.SUCCESS).send({"message": `${MESSAGE.SUCCESS}`})
+        }).catch(e=>{
+            reply.status(ERROR404.statusCode).send(e.message)
+        });
+
+    } catch (e) {
+        console.log(e)
         handleServerError(reply, e)
     }
 }

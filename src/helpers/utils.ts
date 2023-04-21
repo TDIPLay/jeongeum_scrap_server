@@ -1,7 +1,8 @@
 import * as bcrypt from 'bcryptjs'
 import pino from "pino";
 import moment from 'moment';
-import fs from "fs";
+import * as crypto from 'crypto';
+import * as base64 from 'base-64';
 
 export const utils = {
     isJSON: (data: string) => {
@@ -107,6 +108,11 @@ function replaceVars(raw: any, seqKey: any) {
     return obj;
 }
 
+export const getDomain = (url: string) => {
+    const domain = url.match(/^https?:\/\/([^/]+)/)[1];
+    return domain;
+}
+
 export const getDateString = (time: number, type: string) => {
     if (!time) {
         return moment().format("YYYY-MM-DD HH:mm:ss")
@@ -117,6 +123,14 @@ export const getDateString = (time: number, type: string) => {
             return moment.unix(time).format("YYYY-MM-DD HH:mm:ss");
         }
     }
+}
+
+
+export const generate = (timestamp: string, method: string, uri: string, secret_key: string): string => {
+    const message = `${timestamp}.${method}.${uri}`;
+    const hash = crypto.createHmac('sha256', secret_key).update(message).digest('binary');
+
+    return base64.encode(hash);
 }
 
 export const sleep = (ms) => {
