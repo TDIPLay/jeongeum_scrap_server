@@ -241,8 +241,6 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
     const dataBlog = await getRelBlogCount(query, 1);
     const dataNews = await getRelNewsCount(query, 1);
     const {mobile, pc, female, male, age_10, age_20, age_30, age_40, age_50} = await getSearchRate(query, start, end);
-    console.log(mobile)
-    console.log(pc)
  /*   const periodData: PeriodData[] = mobile.map((item: any, idx) => ({
             period: item.period,
             mobileRatio: item.ratio,
