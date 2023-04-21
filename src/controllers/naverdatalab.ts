@@ -241,11 +241,25 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
     const dataBlog = await getRelBlogCount(query, 1);
     const dataNews = await getRelNewsCount(query, 1);
     const {mobile, pc, female, male, age_10, age_20, age_30, age_40, age_50} = await getSearchRate(query, start, end);
-    const periodData: PeriodData[] = mobile.map((item: any, index) => ({
-        period: item.period,
-        mobileRatio: item.ratio,
-        pcRatio: pc[index].ratio
-    }));
+    console.log(mobile)
+    console.log(pc)
+ /*   const periodData: PeriodData[] = mobile.map((item: any, idx) => ({
+            period: item.period,
+            mobileRatio: item.ratio,
+            pcRatio: pc[idx]?.ratio || 0
+    }));*/
+    const periodData: any[] = [];
+
+    const mobileMap = new Map(mobile.map(({ period, ratio }) => [period, ratio]));
+    const pcMap = new Map(pc.map(({ period, ratio }) => [period, ratio]));
+
+    const allPeriods = [...new Set([...mobile.map((item) => item.period), ...pc.map((item) => item.period)])];
+
+    for (const period of allPeriods) {
+        const mobileRatio = mobileMap.get(period) || 0;
+        const pcRatio = pcMap.get(period) || 0;
+        periodData.push({ period, mobileRatio, pcRatio });
+    }
 
     const dailyData: DailyData = {
 
@@ -367,4 +381,14 @@ async function getRelNewsCount(query: string, start: number = 1): Promise<number
     };
     const {data} = await axios.get(api_url, options);
     return data.total
+}
+
+function extractPeriods(data: any[]): string[] {
+    const periods: string[] = [];
+    data.forEach((item: any) => {
+        if (!periods.includes(item.period)) {
+            periods.push(item.period);
+        }
+    });
+    return periods;
 }

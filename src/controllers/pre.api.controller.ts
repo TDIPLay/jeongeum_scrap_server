@@ -55,6 +55,7 @@ export const preApiDataLab = async (request: IAnyRequest, reply: FastifyReply, d
         done();
 
     } catch (e) {
+        console.log(e)
         handleServerError(reply, e)
     }
 }
