@@ -12,6 +12,7 @@ export const apiSyncUp = async (request: IAnyRequest, reply: FastifyReply) => {
     try {
         reply.status(STANDARD.SUCCESS).send(request.transfer)
     } catch (e) {
+        console.log(e)
         handleServerError(reply, e)
     }
 }

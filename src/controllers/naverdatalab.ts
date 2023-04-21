@@ -188,7 +188,8 @@ async function getSearchRate(query: string, start?: string, end?: string) {
         age_50: results_50.map(({ ratio }) => ({ ratio }))
     };*/
 }
-
+// https://openapi.naver.com/v1/search/blog.json
+//     https://api.naver.com/keywordstool
 // {"api_key": "0100000000141b6de97be2e0dc28b53c8478a7be307a14984163150d8bc486a094903beb33", "secret_key": "AQAAAAAUG23pe+Lg3Ci1PIR4p74wzaSaga4fm2MuG0k9oSuf1w==", "customer_id": "2660230"}
 // {"api_key": "0100000000ebac20c49c87f54d7484dcca28e33b309f9c1f20ae434927643405db8c6742db", "secret_key": "AQAAAADrrCDEnIf1TXSE3Moo4zswMDrCRL+chZU7fF/fdJU/zA==", "customer_id": "2660231"}
 // {"api_key": "0100000000791fa2ea6e26b97ce3cf27023dde23bd72b1a242d7017b6983a424107c2595b7", "secret_key": "AQAAAAB5H6Lqbia5fOPPJwI93iO9V5ILgNqNFFbf1qxzanMp5A==", "customer_id": "2660374"}
@@ -208,7 +209,7 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
     };
 
     const params = {
-        // month: month,
+        month: moment(start).format('YYYYMM'),
         hintKeywords: query,
         showDetail: '1',
     };
@@ -278,6 +279,64 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
     console.log(response.data)*/
     return dailyData;
 }
+
+async function getSearchRateAndCount(query: string, start?: string, end?: string) {
+    // 네이버 데이터랩 API를 사용하여 검색 추이 조회
+    const clientInfo = await getApiClientKey();
+    const apiUrl = 'https://openapi.naver.com/v1/datalab/search';
+    const options = {
+        headers: {
+            'X-Naver-Client-Id': clientInfo.client_id,
+            'X-Naver-Client-Secret': clientInfo.client_secret,
+            'Content-Type': 'application/json',
+        },
+    };
+    const startDate = start || moment().subtract(1, 'month').format('YYYY-MM-DD');
+    const endDate = end || moment().format('YYYY-MM-DD');
+    const data = {
+        startDate,
+        endDate,
+        timeUnit: 'date',
+        device: 'pc',
+        keywordGroups: [
+            {
+                groupName: query,
+                keywords: query.split(','),
+            },
+        ],
+        ages: [],
+        gender: '',
+    };
+    const response = await axios.post(apiUrl, data, options);
+    const results = response.data.results[0].data;
+    const searchRate = results.map((result: any) => ({
+        period: result.period,
+        ratio: result.ratio,
+    }));
+
+    // 네이버 키워드 도구 API를 사용하여 검색량 조회
+    const keywordToolUrl = 'https://api.naver.com/keywordstool';
+    const keywordToolOptions = {
+        headers: {
+            'X-Naver-Client-Id': clientInfo.client_id,
+            'X-Naver-Client-Secret': clientInfo.client_secret,
+            'Content-Type': 'application/json',
+        },
+    };
+    const keywordToolData = {
+        hintKeywords: query,
+        showDetail: 1,
+        useHintKeyword: 1,
+        includeHintKeyword: 1,
+        month: moment(startDate).format('YYYYMM'),
+    };
+    const keywordToolResponse = await axios.post(keywordToolUrl, keywordToolData, keywordToolOptions);
+    const keywordToolResults = keywordToolResponse.data.keywordList;
+    const searchCount = keywordToolResults.reduce((acc: number, result: any) => acc + result.monthlyPcQcCnt, 0);
+
+    return { searchRate, searchCount };
+}
+
 
 async function getRelBlogCount(query: string, start: number = 1): Promise<number> {
     const clientInfo = await getApiClientKey();
