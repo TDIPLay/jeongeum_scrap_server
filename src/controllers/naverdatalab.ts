@@ -31,8 +31,8 @@ interface ApiResponse {
 
 type MonthlyData = {
     relKeyword: string;
-    monthlyPcQcCnt: number;
-    monthlyMobileQcCnt: number;
+    monthlyPcQcCnt: number|string;
+    monthlyMobileQcCnt: number|string;
 };
 
 type PeriodData = {
@@ -60,8 +60,8 @@ type DailyData = {
     relKeywords: string[];
     blogCount: number;
     newsCount: number;
-    pcCount: number;
-    mobileCount: number;
+    pcCount: number|string;
+    mobileCount: number|string;
     rate: RateData;
     daily: PeriodData[];
 };
@@ -208,6 +208,8 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
     const gender = getGenderRatios({female, male})
     const age = getAgeRatios({age_10, age_20, age_30, age_40, age_50})
     const filteredData = rate.filter(dailyRatio => dailyRatio.period >= start);
+
+    // @ts-ignore
     const dailyData: DailyData = {
 
         title: monthlyData.relKeyword ?? query,
@@ -224,8 +226,8 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
             age_40: age.age_40 ?? 0,
             age_50: age.age_50 ?? 0
         },
-        pcCount: monthlyData.monthlyPcQcCnt ?? 0,
-        mobileCount: monthlyData.monthlyMobileQcCnt ?? 0,
+        pcCount: (typeof monthlyData.monthlyPcQcCnt) === 'string' ? 0 : monthlyData.monthlyPcQcCnt,
+        mobileCount: (typeof monthlyData.monthlyMobileQcCnt) === 'string' ? 0 : monthlyData.monthlyMobileQcCnt,
         daily: filteredData,
     };
 
@@ -233,12 +235,15 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
         return sum + value.ratio;
     }, 0);
 
-    const sumPercent = (monthlyData.monthlyMobileQcCnt + monthlyData.monthlyPcQcCnt) / allRatioSum;
+    // @ts-ignore
+    const sumPercent = (dailyData.pcCount + dailyData.mobileCount) / allRatioSum;
+
     dailyData.daily.forEach((item) => {
         const allCount = Math.round(sumPercent * item.ratio);
 
         item.totalCount = allCount;
     });
+    console.log(dailyData)
     return dailyData;
 }
 
