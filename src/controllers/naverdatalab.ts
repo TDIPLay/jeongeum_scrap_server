@@ -98,7 +98,7 @@ async function getSearchRate(query: string, start?: string, end?: string) {
     const ages = [["1", "2"], ["3", "4"], ["5", "6"], ["7", "8"], ["9", "10"]];
     const gender = ["", "f", "m"];
 
-    const results = await Promise.all([
+    /*const results = await Promise.all([
         axios.post(api_url, {
             startDate,
             endDate,
@@ -108,6 +108,7 @@ async function getSearchRate(query: string, start?: string, end?: string) {
             gender: '',
         }, options).then(response => response.data.results[0].data),
         ...gender.map(g => ages.map(a =>
+
             axios.post(api_url, {
                 startDate: monthAgo,
                 endDate: endDate,
@@ -121,7 +122,90 @@ async function getSearchRate(query: string, start?: string, end?: string) {
     ]);
 
     const [rate, female, male, age_10, age_20, age_30, age_40, age_50] = results;
-    return {rate, female, male, age_10, age_20, age_30, age_40, age_50};
+    return {rate, female, male, age_10, age_20, age_30, age_40, age_50};*/
+    const data = {
+        "startDate": startDate,
+        "endDate": endDate,
+        timeUnit: 'date',
+        // device: 'mo',
+        keywordGroups: [
+            {
+                groupName: query,
+                keywords: query.split(',')
+            }
+        ],
+        ages: [],
+        gender: ''
+    };
+    const [results_all/*, results_pc*/, results_female, results_male, results_10, results_20, results_30, results_40, results_50] = await Promise.all([
+        axios.post(api_url, data, options).then(response => response.data.results[0].data),
+        // axios.post(api_url, {...data, device: 'pc'}, options).then(response => response.data.results[0].data),
+        axios.post(api_url, {
+            ...data,
+            "startDate": monthAgo,
+            timeUnit: 'month',
+            device: '',
+            gender: 'f'
+        }, options).then(response => response.data.results[0].data),
+        axios.post(api_url, {
+            ...data,
+            "startDate": monthAgo,
+            timeUnit: 'month',
+            device: '',
+            gender: 'm'
+        }, options).then(response => response.data.results[0].data),
+        axios.post(api_url, {
+            ...data,
+            "startDate": monthAgo,
+            timeUnit: 'month',
+            device: '',
+            gender: '',
+            ages: ["1", "2"]
+        }, options).then(response => response.data.results[0].data),
+        axios.post(api_url, {
+            ...data,
+            "startDate": monthAgo,
+            timeUnit: 'month',
+            device: '',
+            gender: '',
+            ages: ["3", "4"]
+        }, options).then(response => response.data.results[0].data),
+        axios.post(api_url, {
+            ...data,
+            "startDate": monthAgo,
+            timeUnit: 'month',
+            device: '',
+            gender: '',
+            ages: ["5", "6"]
+        }, options).then(response => response.data.results[0].data),
+        axios.post(api_url, {
+            ...data,
+            "startDate": monthAgo,
+            timeUnit: 'month',
+            device: '',
+            gender: '',
+            ages: ["7", "8"]
+        }, options).then(response => response.data.results[0].data),
+        axios.post(api_url, {
+            ...data,
+            "startDate": monthAgo,
+            timeUnit: 'month',
+            device: '',
+            gender: '',
+            ages: ["9", "10"]
+        }, options).then(response => response.data.results[0].data),
+    ]);
+
+    return {
+        rate: results_all,
+        female: results_female,
+        male: results_male,
+        age_10: results_10,
+        age_20: results_20,
+        age_30: results_30,
+        age_40: results_40,
+        age_50: results_50
+    };
 }
 
 // https://openapi.naver.com/v1/search/blog.json
@@ -147,7 +231,7 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
         hintKeywords: query,
         showDetail: '1',
     };
-
+console.log(query)
     const timestamp = String(Date.now());
     const signature = generate(timestamp, method, uri, SECRET_KEY);
 

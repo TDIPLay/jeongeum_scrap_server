@@ -1,18 +1,16 @@
-import axios, {AxiosResponse} from 'axios';
+import axios from 'axios';
 import axiosRetry from 'axios-retry';
 // import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import iconv from 'iconv-lite';
 import {News, NewsItem, Scraper, SearchNews} from "../interfaces";
-import service from "../../service/common_service";
-import {KakaoTalkMessage} from "./kakaoauth";
 import cron from 'node-cron';
 import moment from 'moment'
-import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, RKEYWORD, RPRESS, RSEARCHAPI} from "../helpers/common";
-import {decodeHtmlEntities, extractAuthorAndEmail, getDateString, getDomain} from "../helpers/utils";
+import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, RKEYWORD, RSEARCHAPI} from "../helpers/common";
+import {decodeHtmlEntities, extractAuthorAndEmail, getDateString} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
-import {getRedisPress, hgetData, hmsetRedis, setRedisPress} from "./worker";
-import {ResponseType} from "axios/index";
+import {getRedisPress, hmsetRedis, setRedisPress} from "./worker";
+import {ResponseType} from "axios";
 import request from "request";
 import {getApiClientKey} from "./engine";
 
@@ -42,7 +40,8 @@ const AXIOS_OPTIONS = {
     responseType: "arraybuffer" as ResponseType,
 };
 
-const noTypePress = ['finomy.com','ikunkang.com','www.rapportian.com']
+const noTypePress = ['finomy.com', 'ikunkang.com', 'www.rapportian.com']
+
 async function axiosCall2(link: string): Promise<cheerio.CheerioAPI> {
 
     try {
@@ -55,16 +54,7 @@ async function axiosCall2(link: string): Promise<cheerio.CheerioAPI> {
         });
 
         let response = await axios.get(link, AXIOS_OPTIONS);
-        /*if (link != response.request.res.responseUrl) {
-            console.log(`ori_${link}`)
-            console.log(`new_${response.request.res.responseUrl}`)
-            response = await axios.get(response.request.res.responseUrl, AXIOS_OPTIONS);
-        }
-        if (link.includes("https://n.news.naver.com/mnews/article/047/0002389240?sid=100")) {
-            console.log(response)
-            console.log(`new2_${response.request.res.responseUrl}`)
 
-        }*/
         const content_type = response.headers['content-type'].match(/charset=(.+)/i);
         const no_type = noTypePress.some(x => link.includes(x))
         const encoding = content_type && content_type.length ? content_type[1] : no_type ? "euc-kr" : "utf-8";
@@ -78,7 +68,6 @@ async function axiosCall2(link: string): Promise<cheerio.CheerioAPI> {
         return null;
     }
 }
-
 
 
 async function requestCall(link: string): Promise<any> {
@@ -118,6 +107,7 @@ async function getArticleDetails(news: News): Promise<void> {
     try {
 
         const $ = await newsCall(news.link);
+        if ($ === null) return null;
 
         const main = $('div.media_end_head_info.nv_notrans');
         let author = $('.byline_s').first().text().trim() || $('.byline_p').first().text().trim() || $('.byline').first().text().trim()
@@ -128,7 +118,7 @@ async function getArticleDetails(news: News): Promise<void> {
         // const content = $('body').find('p').text().trim();
         // const content = $('#dic_area').first().text().replace(/\s/g, ' ').trim();
         const description = news.description || `${$('meta[property^="og:description"]')?.attr('content')}...`
-        const prePress = $('meta[name^="twitter:creator"]')?.attr('content')|| $('meta[property^="og:article:author"]')?.attr('content');
+        const prePress = $('meta[name^="twitter:creator"]')?.attr('content') || $('meta[property^="og:article:author"]')?.attr('content');
         const {domain, press} = await getRedisPress(news);
         let company = press || news.company || prePress
         const thumbnail = $('meta[property^="twitter:image"], meta[property^="og:image"]')?.first().attr('content') || '';
@@ -137,13 +127,13 @@ async function getArticleDetails(news: News): Promise<void> {
         if (news.title) news.title = decodeHtmlEntities(news.title);
         if (originallink) news.originallink = originallink;
         if (thumbnail) news.thumbnail = thumbnail;
-        if (company)  news.company = company.includes("|") ? company.split("|")[1].trim() : company.trim();
+        if (company) news.company = company.includes("|") ? company.split("|")[1].trim() : company.trim();
         if (description) news.description = decodeHtmlEntities(description);
         if (author) news.author = author;
         if (name) news.name = JSON.stringify(name);
         if (email) news.email = JSON.stringify(email);
 
-        if (!press) await setRedisPress(domain,news.company);
+        if (!press) await setRedisPress(domain, news.company);
         if (news.pubDate) {
             news.timestamp = moment(news.pubDate).unix();
             news.pubDate = getDateString(news.timestamp, 'unit');
@@ -222,7 +212,7 @@ async function getArticleMetaDetails(news: News): Promise<void> {
             news.title = decodeHtmlEntities(news.title);
             news.description = decodeHtmlEntities(news.description) || '';
 
-            if (!press) await setRedisPress(domain,news.company);
+            if (!press) await setRedisPress(domain, news.company);
 
             if (news.pubDate) {
                 news.timestamp = moment(news.pubDate).unix();
@@ -336,7 +326,7 @@ export async function getNaverRealNews(): Promise<Scraper> {
 //검색어에 +넣으면 &연산 -넣으면 or연산 다음에 추가
 export async function getFindNewLinks(query: string, start: number = 1, oldLinks: string[] = []): Promise<NewsItem[]> {
 
-    const clientInfo = await getApiClientKey(RSEARCHAPI,1);
+    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
 
     let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=100&`; // JSON 결과
     let options = {
@@ -370,7 +360,7 @@ export async function getFindNewLinks(query: string, start: number = 1, oldLinks
 }
 
 export async function getNews(query: string, start: number): Promise<NewsItem[]> {
-    const clientInfo = await getApiClientKey(RSEARCHAPI,1);
+    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
     let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=100`; // JSON 결과
     let options = {
         headers: {
