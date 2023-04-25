@@ -50,7 +50,7 @@ export const utils = {
 
 export const logger = pino({
     name: 'rtb-data-server',
-    level: 'debug'
+    level: 'production'
 });
 
 /*export const fetch_Object = (raw: any, seqKey: any): any => {
