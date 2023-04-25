@@ -244,8 +244,8 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
 
 
 function getGenderRatios(ratios: any): Record<string, number> {
-    const femaleRatio = (ratios.female.reduce((acc, curr) => acc + curr.ratio, 0) + 100);
-    const maleRatio = (ratios.male.reduce((acc, curr) => acc + curr.ratio, 0) + 100);
+    const femaleRatio = (ratios.female.reduce((acc, curr) => acc + curr.ratio, 0) );
+    const maleRatio = (ratios.male.reduce((acc, curr) => acc + curr.ratio, 0) );
     const totalRatio = femaleRatio + maleRatio;
     const femalePercentage = parseFloat(((femaleRatio / totalRatio) * 100).toFixed(2))
     const malePercentage = parseFloat(((maleRatio / totalRatio) * 100).toFixed(2));
