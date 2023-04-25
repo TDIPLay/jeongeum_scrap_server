@@ -6,6 +6,7 @@ export const RKEYWORD = "Keyword_Jungeum"		                    //Redis KEYWORD k
 export const RTOTEN = "Token"		                    //Redis KEYWORD key
 export const RSEARCHAPI = "Serach_Api"		                    //Redis KEYWORD key
 export const RTRENDAPI = "Trend_Api"		                    //Redis KEYWORD key
+export const R_TREND_DATA = "Trend_Data"		                    //Redis Trend_Data
 export const RPRESS = "PressInfo"		                    //Redis KEYWORD key
 export const RPRESSNON = "PressNON"		                    //Redis KEYWORD key
 export const RTOTEN_GOOGLE = "Token_Google"		                    //Redis KEYWORD key

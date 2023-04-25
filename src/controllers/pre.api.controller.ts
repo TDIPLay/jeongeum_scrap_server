@@ -43,8 +43,6 @@ export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, 
 export const preApiDataLab = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
         const {query, startDate, endDate} = request.query;
-        console.log(query)
-        console.log((typeof query))
         let date = [];
         if ((typeof query) === 'object') {
             for (let i = 0; i < query.length; i++) {

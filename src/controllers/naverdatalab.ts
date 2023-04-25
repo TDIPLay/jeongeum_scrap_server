@@ -1,6 +1,6 @@
 import {NewsItem} from "../interfaces";
 import {getApiClientKey} from "./engine";
-import {NAVER_API_URL, RSEARCHAPI, RTRENDAPI} from "../helpers/common";
+import {NAVER_API_URL, R_TREND_DATA, RSEARCHAPI, RTRENDAPI} from "../helpers/common";
 import axios, {AxiosResponse} from 'axios';
 import moment from "moment";
 import {generate} from "../helpers/utils";
@@ -230,7 +230,6 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
         hintKeywords: query,
         showDetail: '1',
     };
-console.log(query)
     const timestamp = String(Date.now());
     const signature = generate(timestamp, method, uri, SECRET_KEY);
 
@@ -259,7 +258,6 @@ console.log(query)
     const dataBlog = await getRelBlogCount(query, 1);
     const dataNews = await getRelNewsCount(query, 1);
     const data  = await getSearchRate(query, start, end);
-    console.log(data)
     const {rate, female, male, age_10, age_20, age_30, age_40, age_50} = data;
     /*   const periodData: PeriodData[] = mobile.map((item: any, idx) => ({
                period: item.period,
@@ -330,7 +328,6 @@ function getGenderRatios(ratios: any): Record<string, number> {
 
 
 function getAgeRatios(data: AgeGroupDataCollection): AgeRatio {
-    console.log(data)
     const ageRatios: AgeRatio = {age_10: 0, age_20: 0, age_30: 0, age_40: 0, age_50: 0};
     let totalRatio = 0;
 

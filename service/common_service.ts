@@ -39,7 +39,7 @@ export default class Common_service {
             const trendIdx = await searchApiIdx(RTRENDAPI);
             if (trendIdx > -1) {
                 if(Common_service.search_api_idx.trend !== trendIdx){
-                    console.log(`${Common_service.search_api[Common_service.search_api_idx.trend] } Changed trendIdx => ${Common_service.search_api[trendIdx].api_name }`);
+                    console.log(`${Common_service.search_api[Common_service?.search_api_idx.trend]?.api_name } Changed trendIdx => ${Common_service.search_api[trendIdx].api_name }`);
                     Common_service.search_api_idx.trend = trendIdx;
                 }
             }
@@ -81,7 +81,7 @@ export default class Common_service {
         const searchIdx = await searchApiIdx(RSEARCHAPI);
         if (searchIdx > -1) {
             if(Common_service.search_api_idx.search !== searchIdx){
-                console.log(`${Common_service.search_api[Common_service.search_api_idx.search] } Changed searchIdx => ${Common_service.search_api[searchIdx].api_name }`);
+                console.log(`${Common_service.search_api[Common_service.search_api_idx?.search]?.api_name } Changed searchIdx => ${Common_service.search_api[searchIdx]?.api_name }`);
                 Common_service.search_api_idx.search = searchIdx;
             }
         }
