@@ -86,6 +86,14 @@ export default class Common_service {
             }
         }
 
+        const trendIdx = await searchApiIdx(RTRENDAPI);
+        if (trendIdx > -1) {
+            if(Common_service.search_api_idx.trend !== trendIdx){
+                console.log(`${Common_service.search_api[Common_service?.search_api_idx.trend]?.api_name } Changed trendIdx => ${Common_service.search_api[trendIdx].api_name }`);
+                Common_service.search_api_idx.trend = trendIdx;
+            }
+        }
+
     }
 
 //{"client_id": "QrfAfnf3E2JLwgfT2HwP", "client_secret": "xTnEl_Vq9f"}

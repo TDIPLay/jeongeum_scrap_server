@@ -4,8 +4,7 @@ import {handleServerError} from "../helpers/errors"
 import {IAnyRequest, IUserRequest} from "../interfaces";
 import * as JWT from 'jsonwebtoken'
 import {utils} from "../helpers/utils";
-import {generateChatMessage} from "./openai";
-import {sendBriefingMail, sendMail} from "./mailer";
+import {sendBriefingMail} from "./mailer";
 
 
 export const apiSyncUp = async (request: IAnyRequest, reply: FastifyReply) => {

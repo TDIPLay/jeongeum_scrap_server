@@ -53,19 +53,6 @@ export const logger = pino({
     level: 'debug'
 });
 
-/*export const fetch_Object = (raw: any, seqKey: any): any => {
-    let obj = {};
-
-    for (const key in raw) {
-        if (seqKey.length > 1) {
-            if (typeof obj[raw[key][seqKey[0]]] === "undefined") obj[raw[key][seqKey[0]]] = {}
-            obj[raw[key][seqKey[0]]][raw[key][seqKey[1]]] = raw[key];
-        } else {
-            obj[raw[key][seqKey]] = raw[key];
-        }
-    }
-    return obj;
-}*/
 export const decodeHtmlEntities = (str: string): string => {
     return str.replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')

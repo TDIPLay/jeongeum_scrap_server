@@ -80,130 +80,59 @@ interface AgeGroupDataCollection {
 }
 
 
-async function getSearchRate(query: string, start?: string, end?: string) {
-    const {client_id, client_secret} = await getApiClientKey(RTRENDAPI, 9);
-    const api_url = 'https://openapi.naver.com/v1/datalab/search';
-    const options = {
-        headers: {
-            'X-Naver-Client-Id': client_id,
-            'X-Naver-Client-Secret': client_secret,
-            'Content-Type': 'application/json',
-        },
+async function getSearchRate(query: string, start?: string, end?: string): Promise<any> {
+    const { client_id, client_secret } = await getApiClientKey(RTRENDAPI, 9);
+
+    const apiUrl = 'https://openapi.naver.com/v1/datalab/search';
+    const headers = {
+        'X-Naver-Client-Id': client_id,
+        'X-Naver-Client-Secret': client_secret,
+        'Content-Type': 'application/json',
     };
 
-    //검색수를 최근한달치만 주기때문에 최대 한달기준으로 적용
     const monthAgo = moment().subtract(1, 'month').format('YYYY-MM-DD');
-    const startDate = start && moment(start).isAfter(monthAgo) ? monthAgo : start;
-    const endDate = end ?? moment().subtract(1, 'day').format('YYYY-MM-DD');
-    const ages = [["1", "2"], ["3", "4"], ["5", "6"], ["7", "8"], ["9", "10"]];
-    const gender = ["", "f", "m"];
+    const startDate = start && moment(start).isAfter(monthAgo) ? monthAgo : start || monthAgo;
+    const endDate = end || moment().subtract(1, 'day').format('YYYY-MM-DD');
 
-    /*const results = await Promise.all([
-        axios.post(api_url, {
-            startDate,
-            endDate,
-            timeUnit: 'date',
-            keywordGroups: [{groupName: query, keywords: query.split(',')}],
-            ages: [],
-            gender: '',
-        }, options).then(response => response.data.results[0].data),
-        ...gender.map(g => ages.map(a =>
-            axios.post(api_url, {
-                startDate: monthAgo,
-                endDate: endDate,
-                timeUnit: 'month',
-                device: '',
-                gender: g,
-                ages: a,
-                keywordGroups: [{groupName: query, keywords: query.split(',')}],
-            }, options).then(response => response.data.results[0].data)
-        )).flat(),
-    ]);
-
-    const [rate, female, male, age_10, age_20, age_30, age_40, age_50] = results;
-    return {rate, female, male, age_10, age_20, age_30, age_40, age_50};*/
-    const data = {
-        "startDate": startDate,
-        "endDate": endDate,
+    const searchData = {
+        startDate,
+        endDate,
         timeUnit: 'date',
-        // device: 'mo',
-        keywordGroups: [
-            {
-                groupName: query,
-                keywords: query.split(',')
-            }
-        ],
+        keywordGroups: [{ groupName: query, keywords: query.split(',') }],
         ages: [],
-        gender: ''
+        gender: '',
+        device: '',
     };
-    const [results_all/*, results_pc*/, results_female, results_male, results_10, results_20, results_30, results_40, results_50] = await Promise.all([
-        axios.post(api_url, data, options).then(response => response.data.results[0].data),
-        // axios.post(api_url, {...data, device: 'pc'}, options).then(response => response.data.results[0].data),
-        axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
-            gender: 'f'
-        }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
-            gender: 'm'
-        }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
-            gender: '',
-            ages: ["1", "2"]
-        }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
-            gender: '',
-            ages: ["3", "4"]
-        }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
-            gender: '',
-            ages: ["5", "6"]
-        }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
-            gender: '',
-            ages: ["7", "8"]
-        }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
-            gender: '',
-            ages: ["9", "10"]
-        }, options).then(response => response.data.results[0].data),
-    ]);
+
+    const searchByGender = async (gender: string): Promise<any> => {
+        return axios.post(apiUrl, { ...searchData, timeUnit: 'month', gender }, { headers }).then((res) => res.data.results[0].data);
+    };
+
+    const searchByAge = async (ages: string[]): Promise<any> => {
+        return axios.post(apiUrl, { ...searchData, timeUnit: 'month', ages }, { headers }).then((res) => res.data.results[0].data);
+    };
+
+    const [resultsAll, resultsFemale, resultsMale, resultsAge10, resultsAge20, resultsAge30, resultsAge40, resultsAge50] =
+        await Promise.all([
+            axios.post(apiUrl, searchData, { headers }).then((res) => res.data.results[0].data),
+            searchByGender('f'),
+            searchByGender('m'),
+            searchByAge(['1', '2']),
+            searchByAge(['3', '4']),
+            searchByAge(['5', '6']),
+            searchByAge(['7', '8']),
+            searchByAge(['9', '10']),
+        ]);
 
     return {
-        rate: results_all,
-        female: results_female,
-        male: results_male,
-        age_10: results_10,
-        age_20: results_20,
-        age_30: results_30,
-        age_40: results_40,
-        age_50: results_50
+        rate: resultsAll,
+        female: resultsFemale,
+        male: resultsMale,
+        age_10: resultsAge10,
+        age_20: resultsAge20,
+        age_30: resultsAge30,
+        age_40: resultsAge40,
+        age_50: resultsAge50,
     };
 }
 
