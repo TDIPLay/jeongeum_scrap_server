@@ -3,11 +3,10 @@ import cron from 'node-cron';
 import {getDateString, logger} from "../src/helpers/utils";
 import {xServerError} from "../src/helpers/errors";
 import {initAPIResource, initPress, searchApiIdx} from "../src/controllers/engine"
-import {hgetData, hmsetRedis, initRedisHmSet} from "../src/controllers/worker";
+import {initRedisHmSet} from "../src/controllers/worker";
 import {processKeywordAlarms} from "../src/controllers/user";
 import {AlarmData, KeywordAlarm, SearchApi} from "../src/interfaces";
-import {QUERY, RKEYWORD, RSEARCHAPI, RTOTEN, RTRENDAPI} from "../src/helpers/common";
-import {getRedis} from "./redis";
+import {QUERY, RSEARCHAPI, RTRENDAPI} from "../src/helpers/common";
 
 export default class Common_service {
 
@@ -34,6 +33,16 @@ export default class Common_service {
         cron.schedule("*/10 * * * *", async () => {
             logger.info(getDateString(0, 'default'));
             await this.module_start();
+        });
+
+        cron.schedule("*/1 * * * *", async () => {
+            const trendIdx = await searchApiIdx(RTRENDAPI);
+            if (trendIdx > -1) {
+                if(Common_service.search_api_idx.trend !== trendIdx){
+                    console.log(`${Common_service.search_api[Common_service.search_api_idx.trend] } Changed trendIdx => ${Common_service.search_api[trendIdx].api_name }`);
+                    Common_service.search_api_idx.trend = trendIdx;
+                }
+            }
         });
     }
 
@@ -76,13 +85,7 @@ export default class Common_service {
                 Common_service.search_api_idx.search = searchIdx;
             }
         }
-        const trendIdx = await searchApiIdx(RTRENDAPI);
-        if (trendIdx > -1) {
-            if(Common_service.search_api_idx.trend !== trendIdx){
-                console.log(`${Common_service.search_api[Common_service.search_api_idx.trend] } Changed trendIdx => ${Common_service.search_api[trendIdx].api_name }`);
-                Common_service.search_api_idx.trend = trendIdx;
-            }
-        }
+
     }
 
 //{"client_id": "QrfAfnf3E2JLwgfT2HwP", "client_secret": "xTnEl_Vq9f"}

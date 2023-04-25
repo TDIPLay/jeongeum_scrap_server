@@ -108,7 +108,6 @@ async function getSearchRate(query: string, start?: string, end?: string) {
             gender: '',
         }, options).then(response => response.data.results[0].data),
         ...gender.map(g => ages.map(a =>
-
             axios.post(api_url, {
                 startDate: monthAgo,
                 endDate: endDate,
