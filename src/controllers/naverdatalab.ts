@@ -192,9 +192,9 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
                period: item.period,
                mobileRatio: item.ratio,
                pcRatio: pc[idx]?.ratio || 0
-       }));*/
+       }));
     const periodData: any[] = [];
-
+    */
     // const rateMap = new Map(rate.map(({period, ratio}) => [period, ratio]));
     // const pcMap = new Map(pc.map(({period, ratio}) => [period, ratio]));
 
@@ -287,8 +287,6 @@ async function getRelBlogCount(query: string, start: number = 1): Promise<number
     };
     const {data} = await axios.get(api_url, options);
 
-
-    // const result = data.items.map(item => item.title ? {...item, "title": `${item.title}_${start}`} : '')
     return data.total
 }
 
