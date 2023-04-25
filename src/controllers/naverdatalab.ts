@@ -243,7 +243,6 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
 
         item.totalCount = allCount;
     });
-    console.log(dailyData)
     return dailyData;
 }
 
