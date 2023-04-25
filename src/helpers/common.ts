@@ -5,6 +5,7 @@ export const FIX = 10000		                    // 소수점 4자리
 export const RKEYWORD = "Keyword_Jungeum"		                    //Redis KEYWORD key
 export const RTOTEN = "Token"		                    //Redis KEYWORD key
 export const RSEARCHAPI = "Serach_Api"		                    //Redis KEYWORD key
+export const RTRENDAPI = "Trend_Api"		                    //Redis KEYWORD key
 export const RPRESS = "PressInfo"		                    //Redis KEYWORD key
 export const RPRESSNON = "PressNON"		                    //Redis KEYWORD key
 export const RTOTEN_GOOGLE = "Token_Google"		                    //Redis KEYWORD key

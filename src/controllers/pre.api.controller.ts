@@ -43,14 +43,23 @@ export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, 
 export const preApiDataLab = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
         const {query, startDate, endDate} = request.query;
-        const queries = ["삼성"];
-        const data = await getRelKeyword(query, startDate, endDate);
+        console.log(query)
+        console.log((typeof query))
+        let date = [];
+        if ((typeof query) === 'object') {
+            for (let i = 0; i < query.length; i++) {
+                date.push(await getRelKeyword(query[i], startDate, endDate))
+            }
+        } else {
+            date.push(await getRelKeyword(query, startDate, endDate))
+        }
+        //const data = await getRelKeyword(query, startDate, endDate);
 
         request.transfer = {
             result: MESSAGE.SUCCESS,
             code: STANDARD.SUCCESS,
             message: "SUCCESS",
-            data
+            data : date
         };
         done();
 

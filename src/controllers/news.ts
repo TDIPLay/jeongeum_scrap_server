@@ -336,7 +336,7 @@ export async function getNaverRealNews(): Promise<Scraper> {
 //검색어에 +넣으면 &연산 -넣으면 or연산 다음에 추가
 export async function getFindNewLinks(query: string, start: number = 1, oldLinks: string[] = []): Promise<NewsItem[]> {
 
-    const clientInfo = await getApiClientKey();
+    const clientInfo = await getApiClientKey(RSEARCHAPI,1);
 
     let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=100&`; // JSON 결과
     let options = {
@@ -370,7 +370,7 @@ export async function getFindNewLinks(query: string, start: number = 1, oldLinks
 }
 
 export async function getNews(query: string, start: number): Promise<NewsItem[]> {
-    const clientInfo = await getApiClientKey();
+    const clientInfo = await getApiClientKey(RSEARCHAPI,1);
     let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=100`; // JSON 결과
     let options = {
         headers: {

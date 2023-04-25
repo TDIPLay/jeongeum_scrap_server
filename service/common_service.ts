@@ -6,7 +6,7 @@ import {initAPIResource, initPress, searchApiIdx} from "../src/controllers/engin
 import {hgetData, hmsetRedis, initRedisHmSet} from "../src/controllers/worker";
 import {processKeywordAlarms} from "../src/controllers/user";
 import {AlarmData, KeywordAlarm, SearchApi} from "../src/interfaces";
-import {QUERY, RKEYWORD, RSEARCHAPI, RTOTEN} from "../src/helpers/common";
+import {QUERY, RKEYWORD, RSEARCHAPI, RTOTEN, RTRENDAPI} from "../src/helpers/common";
 import {getRedis} from "./redis";
 
 export default class Common_service {
@@ -16,7 +16,7 @@ export default class Common_service {
     static server_info: any = {};
     static alarm_info: { [p: string]: KeywordAlarm } = {};
     static search_api:SearchApi[]= [];
-    static search_api_idx = -1;
+    static search_api_idx = {search: -1, trend: -1};
     static err_cnt = 0;
     static debug_flag_log = false;
     static system_flag = false;
@@ -52,6 +52,7 @@ export default class Common_service {
     }
 
     async engine_start() {
+
         if (!await initPress()) {
             console.log("initAPIResource error");
         }
@@ -60,17 +61,27 @@ export default class Common_service {
             console.log("initAPIResource error");
         }
 
-        if ((Common_service.search_api_idx = await searchApiIdx()) === -1) {
+        /*if ((Common_service.search_api_idx = await searchApiIdx(RSEARCHAPI)) === -1) {
             console.log("searchApiIdx none");
         }
 
-        const apiIdx = await searchApiIdx();
-        if (apiIdx > -1) {
-            if(Common_service.search_api_idx !== apiIdx){
-                console.log(`${Common_service.search_api[Common_service.search_api_idx] } Changed => ${Common_service.search_api[apiIdx] }`);
-                Common_service.search_api_idx = apiIdx;
-            }
+        if ((Common_service.search_api_idx = await searchApiIdx(RTRENDAPI)) === -1) {
+            console.log("searchApiIdx none");
+        }*/
 
+        const searchIdx = await searchApiIdx(RSEARCHAPI);
+        if (searchIdx > -1) {
+            if(Common_service.search_api_idx.search !== searchIdx){
+                console.log(`${Common_service.search_api[Common_service.search_api_idx.search] } Changed searchIdx => ${Common_service.search_api[searchIdx].api_name }`);
+                Common_service.search_api_idx.search = searchIdx;
+            }
+        }
+        const trendIdx = await searchApiIdx(RTRENDAPI);
+        if (trendIdx > -1) {
+            if(Common_service.search_api_idx.trend !== trendIdx){
+                console.log(`${Common_service.search_api[Common_service.search_api_idx.trend] } Changed trendIdx => ${Common_service.search_api[trendIdx].api_name }`);
+                Common_service.search_api_idx.trend = trendIdx;
+            }
         }
     }
 

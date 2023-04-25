@@ -70,7 +70,13 @@ export const apiBriefingMail = async (request: IAnyRequest, reply: FastifyReply)
         const {user,title,content} = request.body;
 
         await sendBriefingMail(user, title, content).then(r=>{
-            reply.status(STANDARD.SUCCESS).send({"message": `${MESSAGE.SUCCESS}`})
+
+            request.transfer = {
+                result: MESSAGE.SUCCESS,
+                code: STANDARD.SUCCESS,
+                message: MESSAGE.SUCCESS
+            };
+            reply.status(STANDARD.SUCCESS).send(request.transfer)
         }).catch(e=>{
             reply.status(ERROR404.statusCode).send(e.message)
         });

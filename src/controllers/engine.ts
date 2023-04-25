@@ -3,7 +3,7 @@ import mysql from "../../service/mysql";
 import moment from "moment";
 import {getRedis} from "../../service/redis";
 import {promisify} from "util";
-import {QUERY, RPRESS, RSEARCHAPI} from "../helpers/common";
+import {QUERY, RPRESS, RSEARCHAPI, RTRENDAPI} from "../helpers/common";
 import service from "../../service/common_service"
 import {SearchApi} from "../interfaces";
 import {hgetData, hmsetRedis} from "./worker";
@@ -40,7 +40,7 @@ export async function initAPIResource(): Promise<boolean> {
     return true;
 }
 
-export async function searchApiIdx(): Promise<number> {
+export async function searchApiIdx(redisKey:string): Promise<number> {
     const search_api: SearchApi[] = service.search_api;
 
     if (service.search_api.length > 0) {
@@ -48,9 +48,9 @@ export async function searchApiIdx(): Promise<number> {
         let selectIdx = 0;
         let minReqCnt = Infinity;
         for (let i = 0; i < search_api.length; i++) {
-            const reqCnt = await hgetData(redis, RSEARCHAPI,"json", search_api[i].api_name);
+            const reqCnt = await hgetData(redis, redisKey,"json", search_api[i].api_name);
             if (reqCnt === null) {
-                await hmsetRedis(await getRedis(), RSEARCHAPI, {[`${search_api[i].api_name}`]: 0}, 0);
+                await hmsetRedis(await getRedis(), redisKey, {[`${search_api[i].api_name}`]: 0}, 0);
                 selectIdx = i;
                 break;
             } else {
@@ -60,25 +60,38 @@ export async function searchApiIdx(): Promise<number> {
                 }
             }
         }
-        if (minReqCnt >= 24000) {
+        if (redisKey === RSEARCHAPI && minReqCnt >= 24000) {
             console.log("limit cnt Over 24000");
+        }
+        if (redisKey === RTRENDAPI && minReqCnt >= 950) {
+            console.log("limit cnt Over 950");
         }
         return selectIdx;
     }
     return -1;
 }
 
-export async function getApiClientKey(): Promise<{ client_id: string, client_secret: string }> {
-    if (service.search_api_idx !== -1) {
-        const {client_id, client_secret} = service.search_api[service.search_api_idx].api_key;
-        const redis = await getRedis();
-        redis.hincrbyfloat(RSEARCHAPI, service.search_api[service.search_api_idx].api_name, 1)
-        return {client_id, client_secret};
+export async function getApiClientKey(key:string, crbyCnt: number): Promise<{ client_id: string, client_secret: string }> {
+    const redis = await getRedis();
+    const api = service.search_api_idx;
+
+    if(key === RSEARCHAPI){
+        if (api.search !== -1) {
+            const {client_id, client_secret} = service.search_api[api.search].api_key;
+            redis.hincrbyfloat(key, service.search_api[api.search].api_name,crbyCnt)
+            return {client_id, client_secret};
+        }
+    }else{
+        if (api.trend !== -1) {
+            const {client_id, client_secret} = service.search_api[api.trend ].api_key;
+            redis.hincrbyfloat(key, service.search_api[api.trend ].api_name, crbyCnt)
+            return {client_id, client_secret};
+        }
     }
+
     const {NAVER_CLIENT_ID, NAVER_CLIENT_SECRET} = process.env;
     return {client_id: NAVER_CLIENT_ID, client_secret: NAVER_CLIENT_SECRET};
 }
-
 
 export async function init_Transaction(): Promise<boolean> {
     const redis = await getRedis();
