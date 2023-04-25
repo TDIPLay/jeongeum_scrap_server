@@ -66,107 +66,62 @@ type DailyData = {
     daily: PeriodData[];
 };
 
+interface AgeRatio {
+    [ageGroup: string]: number;
+}
+
+interface AgeGroupData {
+    period: string;
+    ratio: number;
+}
+
+interface AgeGroupDataCollection {
+    [ageGroup: string]: AgeGroupData[];
+}
+
 
 async function getSearchRate(query: string, start?: string, end?: string) {
-    const {client_id, client_secret} = await getApiClientKey(RTRENDAPI,9);
-    const api_url = 'https://openapi.naver.com/v1/datalab/search'; // JSON 결과
+    const {client_id, client_secret} = await getApiClientKey(RTRENDAPI, 9);
+    const api_url = 'https://openapi.naver.com/v1/datalab/search';
     const options = {
         headers: {
             'X-Naver-Client-Id': client_id,
             'X-Naver-Client-Secret': client_secret,
-            'Content-Type': 'application/json'
-        }
+            'Content-Type': 'application/json',
+        },
     };
 
+    //검색수를 최근한달치만 주기때문에 최대 한달기준으로 적용
     const monthAgo = moment().subtract(1, 'month').format('YYYY-MM-DD');
     const startDate = start && moment(start).isAfter(monthAgo) ? monthAgo : start;
     const endDate = end ?? moment().subtract(1, 'day').format('YYYY-MM-DD');
-    const data = {
-        "startDate": startDate,
-        "endDate": endDate,
-        timeUnit: 'date',
-        // device: 'mo',
-        keywordGroups: [
-            {
-                groupName: query,
-                keywords: query.split(',')
-            }
-        ],
-        ages: [],
-        gender: ''
-    };
+    const ages = [["1", "2"], ["3", "4"], ["5", "6"], ["7", "8"], ["9", "10"]];
+    const gender = ["", "f", "m"];
 
-    const [results_all/*, results_pc*/, results_female, results_male, results_10, results_20, results_30, results_40, results_50] = await Promise.all([
-        axios.post(api_url, data, options).then(response => response.data.results[0].data),
-       // axios.post(api_url, {...data, device: 'pc'}, options).then(response => response.data.results[0].data),
+    const results = await Promise.all([
         axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
-            gender: 'f'
-        }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
-            gender: 'm'
-        }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
+            startDate,
+            endDate,
+            timeUnit: 'date',
+            keywordGroups: [{groupName: query, keywords: query.split(',')}],
+            ages: [],
             gender: '',
-            ages: ["1", "2"]
         }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
-            gender: '',
-            ages: ["3", "4"]
-        }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
-            gender: '',
-            ages: ["5", "6"]
-        }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
-            gender: '',
-            ages: ["7", "8"]
-        }, options).then(response => response.data.results[0].data),
-        axios.post(api_url, {
-            ...data,
-            "startDate": monthAgo,
-            timeUnit: 'month',
-            device: '',
-            gender: '',
-            ages: ["9", "10"]
-        }, options).then(response => response.data.results[0].data),
+        ...gender.map(g => ages.map(a =>
+            axios.post(api_url, {
+                startDate: monthAgo,
+                endDate: endDate,
+                timeUnit: 'month',
+                device: '',
+                gender: g,
+                ages: a,
+                keywordGroups: [{groupName: query, keywords: query.split(',')}],
+            }, options).then(response => response.data.results[0].data)
+        )).flat(),
     ]);
 
-    return {
-        rate: results_all,
-        female: results_female,
-        male: results_male,
-        age_10: results_10,
-        age_20: results_20,
-        age_30: results_30,
-        age_40: results_40,
-        age_50: results_50
-    };
-
-
+    const [rate, female, male, age_10, age_20, age_30, age_40, age_50] = results;
+    return {rate, female, male, age_10, age_20, age_30, age_40, age_50};
 }
 
 // https://openapi.naver.com/v1/search/blog.json
@@ -189,7 +144,6 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
     };
 
     const params = {
-
         hintKeywords: query,
         showDetail: '1',
     };
@@ -204,14 +158,15 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
         params,
         headers,
     });
+
+    //relKeyword top 10
     const sortedNews = response.data.keywordList
         .filter(v => v.relKeyword !== query) // exclude query data
         .sort((a, b) => (b.monthlyPcQcCnt + b.monthlyMobileQcCnt) - (a.monthlyPcQcCnt + a.monthlyMobileQcCnt))
         .slice(0, 10);
-    const searchRel = sortedNews
-        .filter(v => v.relKeyword !== query) // exclude query data
-        .map(v => v.relKeyword) // extract relKeyword properties
-    console.log(response.data.keywordList[0])
+
+    const searchRel = sortedNews.filter(v => v.relKeyword !== query).map(v => v.relKeyword)
+
     const monthlyData: MonthlyData = {
         relKeyword: response.data.keywordList[0].relKeyword,
         monthlyPcQcCnt: response.data.keywordList[0].monthlyPcQcCnt,
@@ -220,7 +175,9 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
 
     const dataBlog = await getRelBlogCount(query, 1);
     const dataNews = await getRelNewsCount(query, 1);
-    const {rate, female, male, age_10, age_20, age_30, age_40, age_50} = await getSearchRate(query, start, end);
+    const data  = await getSearchRate(query, start, end);
+    console.log(data)
+    const {rate, female, male, age_10, age_20, age_30, age_40, age_50} = data;
     /*   const periodData: PeriodData[] = mobile.map((item: any, idx) => ({
                period: item.period,
                mobileRatio: item.ratio,
@@ -229,7 +186,7 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
     const periodData: any[] = [];
 
     // const rateMap = new Map(rate.map(({period, ratio}) => [period, ratio]));
-   // const pcMap = new Map(pc.map(({period, ratio}) => [period, ratio]));
+    // const pcMap = new Map(pc.map(({period, ratio}) => [period, ratio]));
 
     //const allPeriods = [...new Set([...mobile.map((item) => item.period), ...pc.map((item) => item.period)])];
 
@@ -240,26 +197,25 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
     }*/
     const gender = getGenderRatios({female, male})
     const age = getAgeRatios({age_10, age_20, age_30, age_40, age_50})
-    console.log(age)
     const filteredData = rate.filter(dailyRatio => dailyRatio.period >= start);
     const dailyData: DailyData = {
 
-        title: monthlyData.relKeyword,
-        keywords: [monthlyData.relKeyword],
-        relKeywords: searchRel,
-        blogCount: dataBlog,
-        newsCount: dataNews,
+        title: monthlyData.relKeyword ?? query,
+        keywords: [monthlyData.relKeyword] ?? [],
+        relKeywords: searchRel ?? [],
+        blogCount: dataBlog ?? 0,
+        newsCount: dataNews ?? 0,
         rate: {
-            female: gender.female,
-            male: gender.male,
-            age_10: age.age_10,
-            age_20: age.age_20,
-            age_30: age.age_30,
-            age_40: age.age_40,
-            age_50: age.age_50
+            female: gender.female ?? 0,
+            male: gender.male ?? 0,
+            age_10: age.age_10 ?? 0,
+            age_20: age.age_20 ?? 0,
+            age_30: age.age_30 ?? 0,
+            age_40: age.age_40 ?? 0,
+            age_50: age.age_50 ?? 0
         },
-        pcCount: monthlyData.monthlyPcQcCnt,
-        mobileCount: monthlyData.monthlyMobileQcCnt,
+        pcCount: monthlyData.monthlyPcQcCnt ?? 0,
+        mobileCount: monthlyData.monthlyMobileQcCnt ?? 0,
         daily: filteredData,
     };
 
@@ -267,19 +223,14 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
         return sum + value.ratio;
     }, 0);
 
-    const sumPercent = (monthlyData.monthlyMobileQcCnt+monthlyData.monthlyPcQcCnt) / allRatioSum;
+    const sumPercent = (monthlyData.monthlyMobileQcCnt + monthlyData.monthlyPcQcCnt) / allRatioSum;
     dailyData.daily.forEach((item) => {
-         const allCount = Math.round(sumPercent * item.ratio);
+        const allCount = Math.round(sumPercent * item.ratio);
 
         item.totalCount = allCount;
     });
-
-    // return dailyData;
-    /*console.log(params)
-    console.log(response.data)*/
     return dailyData;
 }
-
 
 
 function getGenderRatios(ratios: any): Record<string, number> {
@@ -287,29 +238,17 @@ function getGenderRatios(ratios: any): Record<string, number> {
     const maleRatio = (ratios.male.reduce((acc, curr) => acc + curr.ratio, 0) + 100);
     const totalRatio = femaleRatio + maleRatio;
     const femalePercentage = parseFloat(((femaleRatio / totalRatio) * 100).toFixed(2))
-    const malePercentage =  parseFloat(((maleRatio / totalRatio) * 100).toFixed(2));
+    const malePercentage = parseFloat(((maleRatio / totalRatio) * 100).toFixed(2));
     return {
         female: femalePercentage,
         male: malePercentage,
     };
 }
 
-interface AgeRatio {
-    [ageGroup: string]: number;
-}
-
-interface AgeGroupData {
-    period: string;
-    ratio: number;
-}
-
-interface AgeGroupDataCollection {
-    [ageGroup: string]: AgeGroupData[];
-}
 
 function getAgeRatios(data: AgeGroupDataCollection): AgeRatio {
     console.log(data)
-    const ageRatios: AgeRatio = {age_10:0 , age_20: 0, age_30: 0, age_40: 0, age_50: 0};
+    const ageRatios: AgeRatio = {age_10: 0, age_20: 0, age_30: 0, age_40: 0, age_50: 0};
     let totalRatio = 0;
 
     Object.keys(data).forEach((ageGroup) => {
@@ -327,72 +266,8 @@ function getAgeRatios(data: AgeGroupDataCollection): AgeRatio {
 }
 
 
-async function getSearchRateAndCount(query: string, start?: string, end?: string) {
-    // 네이버 데이터랩 API를 사용하여 검색 추이 조회
-
-
-    const clientInfo = await getApiClientKey(RTRENDAPI,1);
-    const apiUrl = 'https://openapi.naver.com/v1/datalab/search';
-    const options = {
-        headers: {
-            'X-Naver-Client-Id': clientInfo.client_id,
-            'X-Naver-Client-Secret': clientInfo.client_secret,
-            'Content-Type': 'application/json',
-        },
-    };
-
-    const monthAgo = moment().subtract(1, 'month').format('YYYY-MM-DD');
-    const startDate = start && moment(start).isAfter(monthAgo) ? start : monthAgo;
-    console.log("start"+start)
-    console.log("monthAgo"+monthAgo)
-    const endDate = end || moment().format('YYYY-MM-DD');
-    const data = {
-        startDate,
-        endDate,
-        timeUnit: 'date',
-        device: 'pc',
-        keywordGroups: [
-            {
-                groupName: query,
-                keywords: query.split(','),
-            },
-        ],
-        ages: [],
-        gender: '',
-    };
-    const response = await axios.post(apiUrl, data, options);
-    const results = response.data.results[0].data;
-    const searchRate = results.map((result: any) => ({
-        period: result.period,
-        ratio: result.ratio,
-    }));
-
-    // 네이버 키워드 도구 API를 사용하여 검색량 조회
-    const keywordToolUrl = 'https://api.naver.com/keywordstool';
-    const keywordToolOptions = {
-        headers: {
-            'X-Naver-Client-Id': clientInfo.client_id,
-            'X-Naver-Client-Secret': clientInfo.client_secret,
-            'Content-Type': 'application/json',
-        },
-    };
-    const keywordToolData = {
-        hintKeywords: query,
-        showDetail: 1,
-        useHintKeyword: 1,
-        includeHintKeyword: 1,
-        month: moment(startDate).format('YYYYMM'),
-    };
-    const keywordToolResponse = await axios.post(keywordToolUrl, keywordToolData, keywordToolOptions);
-    const keywordToolResults = keywordToolResponse.data.keywordList;
-    const searchCount = keywordToolResults.reduce((acc: number, result: any) => acc + result.monthlyPcQcCnt, 0);
-
-    return {searchRate, searchCount};
-}
-
-
 async function getRelBlogCount(query: string, start: number = 1): Promise<number> {
-    const clientInfo = await getApiClientKey(RSEARCHAPI,1);
+    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
     let api_url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURI(query)}&start=${start}&display=1`; // JSON 결과
     let options = {
         headers: {
@@ -409,7 +284,7 @@ async function getRelBlogCount(query: string, start: number = 1): Promise<number
 }
 
 async function getRelNewsCount(query: string, start: number = 1): Promise<number> {
-    const clientInfo = await getApiClientKey(RSEARCHAPI,1);
+    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
     let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=1`; // JSON 결과
     let options = {
         headers: {
@@ -420,32 +295,4 @@ async function getRelNewsCount(query: string, start: number = 1): Promise<number
     };
     const {data} = await axios.get(api_url, options);
     return data.total
-}
-async function trendStats(keyword) {
-    const token = "AAAAOfOGaGw7n5iGvh5mU9l69TeBJk9aYhJ9vt1lkUvIT8hMwQ598IgXdPPS5sy0pDhn2nX9G-8sEFnabG0gkG9aQCo"
-    const response = await axios.get('https://manage.searchad.naver.com/keywordstool', {
-        params: {
-            format: 'json',
-            keyword: keyword,
-        },
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-
-    if (response.status >= 400) {
-        throw new Error(`${response.status}: ${response.statusText}`);
-    }
-        console.log(response.data['keywordList'][0]['userStat'])
-    return response.data['keywordList'][0]['userStat'];
-}
-
-function extractPeriods(data: any[]): string[] {
-    const periods: string[] = [];
-    data.forEach((item: any) => {
-        if (!periods.includes(item.period)) {
-            periods.push(item.period);
-        }
-    });
-    return periods;
 }
