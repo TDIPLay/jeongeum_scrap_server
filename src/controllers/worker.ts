@@ -56,7 +56,7 @@ export const initRedisHmSet = (key: string, redis, result: string, expire: numbe
 
 export const getRedisPress = async (news: News) => {
     const redis = await getRedis();
-    const domain = getDomain(news.originallink);
+    const domain = getDomain(news.originallink || news.link);
     const press = await hgetData(redis, RPRESS, "", domain)
     return {domain:domain, press:press}
 }
