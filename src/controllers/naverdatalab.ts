@@ -92,7 +92,7 @@ async function getSearchRate(query: string, start?: string, end?: string): Promi
 
     const monthAgo = moment().subtract(1, 'month').format('YYYY-MM-DD');
     const startDate = start && moment(start).isAfter(monthAgo) ? monthAgo : start || monthAgo;
-    const endDate = end || moment().subtract(1, 'day').format('YYYY-MM-DD');
+    const endDate = /*end ||*/ moment().subtract(1, 'day').format('YYYY-MM-DD');
 
     const searchData = {
         startDate,
@@ -174,7 +174,7 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
     const sortedNews = response.data.keywordList
         .filter(v => v.relKeyword !== query) // exclude query data
         .sort((a, b) => (b.monthlyPcQcCnt + b.monthlyMobileQcCnt) - (a.monthlyPcQcCnt + a.monthlyMobileQcCnt))
-        .slice(0, 10);
+        .slice(0, 30);
 
     const searchRel = sortedNews.filter(v => v.relKeyword !== query).map(v => v.relKeyword)
 
@@ -207,7 +207,7 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
     }*/
     const gender = getGenderRatios({female, male})
     const age = getAgeRatios({age_10, age_20, age_30, age_40, age_50})
-    const filteredData = rate.filter(dailyRatio => dailyRatio.period >= start);
+    const filteredData = rate.filter(dailyRatio => dailyRatio.period >= start && dailyRatio.period <= end);
 
     // @ts-ignore
     const dailyData: DailyData = {
