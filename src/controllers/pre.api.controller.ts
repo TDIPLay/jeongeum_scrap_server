@@ -29,19 +29,19 @@ import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth"
 import {generateTalkTemplate} from "./aligoxkakao";
 import {getRelKeyword} from "./naverdatalab";
 import { KoalaNLP } from 'koalanlp';
-import {analyzeSentiment} from "./koanlp";
+//import {analyzeSentiment} from "./koanlp";
 export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
 
-        const text = '최근 도서 지역에서 양귀비를 몰래 재배한 사례가 잇따라 발생하고 있다. 25일 경찰 등에 따르면 전날 제주 서귀포시 서호동 소재 귤밭에서 양귀비 100여주가 재배됐다는 신고가 들어와 경찰이 소유주 수사에 나섰다.';
+  /*      const text = '최근 도서 지역에서 양귀비를 몰래 재배한 사례가 잇따라 발생하고 있다. 25일 경찰 등에 따르면 전날 제주 서귀포시 서호동 소재 귤밭에서 양귀비 100여주가 재배됐다는 신고가 들어와 경찰이 소유주 수사에 나섰다.';
         const sentiment = await analyzeSentiment(text);
-        console.log(sentiment);
+        console.log(sentiment);*/
 
         request.transfer = {
             result: MESSAGE.SUCCESS,
             code: STANDARD.SUCCESS,
             message: "SUCCESS",
-            data: sentiment
+            data: {}
         };
         done();
 
