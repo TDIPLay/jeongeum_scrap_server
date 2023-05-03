@@ -438,7 +438,7 @@ async function getPageNewLinks(query: string, oldLinks: string[] = []) {
 
 export async function getBrowserHtml(news: News) {
 
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({args: ['--no-sandbox']});
     const page = await browser.newPage();
     try {
         await page.goto(news.link, { waitUntil: 'networkidle0', timeout: 10000 });
