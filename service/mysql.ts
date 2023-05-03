@@ -98,6 +98,7 @@ export default class Mysql {
                     // this.connection.release();
                     this.connection.getConnection(function (err, connection) {
                         if (err) throw err; // not connected!
+                        //pool connection release
                         connection.release();
                     });
                 }

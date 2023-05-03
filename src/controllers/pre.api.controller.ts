@@ -54,9 +54,9 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         const {query} = request.query;
         const redis = await getRedis();
         const oldLinks = await hgetData(redis, RREPLY_KEYWORD, "json", query) || [];
-        const simNews = await getNews(query,1,15,'sim');
-        const dateNews = await getNews(query,1,15);
-        const neverNews  = [...simNews,...dateNews].filter(news => news.link && news.link.includes("naver"))
+        const sortBySimNews = await getNews(query,1,30,'sim');
+        const sortByDateNews = await getNews(query,5,30);
+        const neverNews  = [...sortBySimNews,...sortByDateNews].filter(news => news.link && news.link.includes("naver"))
         let uniqueNeverNews = neverNews.filter((news, index, self) =>
             index === self.findIndex(t => t.link === news.link)
         );
@@ -72,7 +72,7 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         }
 
         const redisData = {[`${query}`]: JSON.stringify([...newLinks, ...tempLinks])};
-        await hmsetRedis(await getRedis(), RREPLY_KEYWORD, redisData, 0);
+        await hmsetRedis(redis, RREPLY_KEYWORD, redisData, 0);
 
         uniqueNeverNews =  uniqueNeverNews.filter(news => news.link && news.link.includes("http") && !oldLinks.includes(news.link));
 
