@@ -370,6 +370,7 @@ export async function getFindNewLinks(query: string, start: number = 1, oldLinks
 export async function getNews(query: string, start: number, display: number = 100, sort:string = 'date'): Promise<NewsItem[]> {
     const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
     let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=${display}&sort=${sort}`; // JSON 결과
+
     let options = {
         headers: {
             'X-Naver-Client-Id': clientInfo.client_id,
@@ -439,9 +440,9 @@ async function getPageNewLinks(query: string, oldLinks: string[] = []) {
 export async function getReply(news: News) {
 
     const browser = await puppeteer.launch({args: ['--no-sandbox']});
-    const page = await browser.newPage();
     try {
-        await page.goto(news.link, { waitUntil: 'networkidle0', timeout: 10000 });
+        const page = await browser.newPage();
+        await page.goto(news.link, { waitUntil: 'networkidle0', timeout: 7000 });
         const textContents = await page.evaluate(() => {
             const contentsList = Array.from(document.querySelectorAll('.u_cbox_comment_box .u_cbox_contents'));
             return contentsList.map(content => content.textContent.trim());

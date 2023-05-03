@@ -49,6 +49,7 @@ export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done)
         handleServerError(reply, e)
     }
 }
+
 export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
         const {query} = request.query;
@@ -60,23 +61,11 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         let uniqueNeverNews = neverNews.filter((news, index, self) =>
             index === self.findIndex(t => t.link === news.link)
         );
-        process.setMaxListeners(11);
-        const diffLinks = uniqueNeverNews.filter((item: News) => oldLinks && !oldLinks.includes(item.link));
-        const newLinks = Array.from(diffLinks).map((news: SearchNews) => news?.link) || [];
-
-        let tempLinks = oldLinks;
-        const listCnt = oldLinks?.length + newLinks.length;
-
-        if (listCnt > MAX_LINK) {
-            tempLinks.splice(-(listCnt - MAX_LINK));
-        }
-
-        const redisData = {[`${query}`]: JSON.stringify([...newLinks, ...tempLinks])};
-        await hmsetRedis(redis, RREPLY_KEYWORD, redisData, 0);
-
         uniqueNeverNews =  uniqueNeverNews.filter(news => news.link && news.link.includes("http") && !oldLinks.includes(news.link));
 
         //브라우져 메모리 이슈로 인해 5개씩만
+        process.setMaxListeners(11);
+
         const CHUNK_SIZE = 5;
         for (let i = 0; i < uniqueNeverNews.length; i += CHUNK_SIZE) {
             const articlePromises = uniqueNeverNews
@@ -90,6 +79,20 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
             .filter(news => news.reply && news.reply !== undefined)
             //.flatMap(news => news.reply);
         const sortedNews = replyList.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
+
+        const diffLinks = sortedNews.filter((item: News) => oldLinks && !oldLinks.includes(item.link));
+        const newLinks = Array.from(diffLinks).map((news: SearchNews) => news?.link) || [];
+
+        let tempLinks = oldLinks;
+        const listCnt = oldLinks?.length + newLinks.length;
+
+        if (listCnt > MAX_LINK) {
+            tempLinks.splice(-(listCnt - MAX_LINK));
+        }
+
+        const redisData = {[`${query}`]: JSON.stringify([...newLinks, ...tempLinks])};
+        await hmsetRedis(redis, RREPLY_KEYWORD, redisData, 0);
+
         request.transfer = {
             result: MESSAGE.SUCCESS,
             code: STANDARD.SUCCESS,
