@@ -2,23 +2,22 @@ import {FastifyReply} from "fastify"
 import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
 import Common_service from '../../service/common_service'
-import {IAnyRequest, News} from "../interfaces";
+import {IAnyRequest, News, SearchNews} from "../interfaces";
 //import rp from 'request-promise-native'
 import {
     getArticle,
-    getBrowserHtml,
     getFindNewLinks,
     getNaverRankNews,
     getNaverRealNews,
     getNewLinks,
-    getNews
+    getNews, getReply
 } from "./news";
 import {generateChatMessage} from "./openai";
 import moment from "moment/moment";
 import {sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
-import {RKEYWORD, RTOTEN} from "../helpers/common";
+import {MAX_LINK, RKEYWORD, RREPLY_KEYWORD, RTOTEN} from "../helpers/common";
 import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
 import {getKakaoUserInfo, userKakaoOAuth, validateKakaoToken} from "./kakaoauth";
 import {sendMail} from "./mailer";
@@ -53,28 +52,49 @@ export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done)
 export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
         const {query} = request.query;
-        const news = await getNews(query,1,15,'sim');
-        const neverNews  = news.filter(news => news.link && news.link.includes("naver"))
+        const redis = await getRedis();
+        const oldLinks = await hgetData(redis, RREPLY_KEYWORD, "json", query) || [];
+        const simNews = await getNews(query,1,15,'sim');
+        const dateNews = await getNews(query,1,15);
+        const neverNews  = [...simNews,...dateNews].filter(news => news.link && news.link.includes("naver"))
+        let uniqueNeverNews = neverNews.filter((news, index, self) =>
+            index === self.findIndex(t => t.link === news.link)
+        );
         process.setMaxListeners(11);
+        const diffLinks = uniqueNeverNews.filter((item: News) => oldLinks && !oldLinks.includes(item.link));
+        const newLinks = Array.from(diffLinks).map((news: SearchNews) => news?.link) || [];
+
+        let tempLinks = oldLinks;
+        const listCnt = oldLinks?.length + newLinks.length;
+
+        if (listCnt > MAX_LINK) {
+            tempLinks.splice(-(listCnt - MAX_LINK));
+        }
+
+        const redisData = {[`${query}`]: JSON.stringify([...newLinks, ...tempLinks])};
+        await hmsetRedis(await getRedis(), RREPLY_KEYWORD, redisData, 0);
+
+        uniqueNeverNews =  uniqueNeverNews.filter(news => news.link && news.link.includes("http") && !oldLinks.includes(news.link));
+
         //브라우져 메모리 이슈로 인해 5개씩만
         const CHUNK_SIZE = 5;
-        for (let i = 0; i < neverNews.length; i += CHUNK_SIZE) {
-            const articlePromises = neverNews
+        for (let i = 0; i < uniqueNeverNews.length; i += CHUNK_SIZE) {
+            const articlePromises = uniqueNeverNews
                 .slice(i, i + CHUNK_SIZE)
-                .map(news => getBrowserHtml(news));
+                .map(news => getReply(news));
             await Promise.all(articlePromises);
             await sleep(100);
         }
 
         const replyList = neverNews
             .filter(news => news.reply && news.reply !== undefined)
-            .flatMap(news => news.reply);
-
+            //.flatMap(news => news.reply);
+        const sortedNews = replyList.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
         request.transfer = {
             result: MESSAGE.SUCCESS,
             code: STANDARD.SUCCESS,
             message: "SUCCESS",
-            data: replyList
+            data: sortedNews
         };
         done();
 

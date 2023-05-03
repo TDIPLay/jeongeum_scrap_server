@@ -436,7 +436,7 @@ async function getPageNewLinks(query: string, oldLinks: string[] = []) {
     return uniqueLinks.filter((link) => !oldLinks.includes(link));
 }
 
-export async function getBrowserHtml(news: News) {
+export async function getReply(news: News) {
 
     const browser = await puppeteer.launch({args: ['--no-sandbox']});
     const page = await browser.newPage();
@@ -448,6 +448,10 @@ export async function getBrowserHtml(news: News) {
         });
         if (textContents && textContents.length > 0) {
             news.reply = textContents;
+            if (news.pubDate) {
+                news.timestamp = moment(news.pubDate).unix();
+                news.pubDate = getDateString(news.timestamp, 'unit');
+            }
         }
         await browser.close();
     } catch (e) {

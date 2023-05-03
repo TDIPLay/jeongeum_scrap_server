@@ -3,6 +3,7 @@ import {ResponseType} from 'axios';
 export const REDIS_EXPIRE = 86400		        // 레디스 expire TTL
 export const FIX = 10000		                    // 소수점 4자리
 export const RKEYWORD = "Keyword_Jungeum"		                    //Redis KEYWORD key
+export const RREPLY_KEYWORD = "Keyword_Reply"		                    //Redis Reply key
 export const RTOTEN = "Token"		                    //Redis KEYWORD key
 export const RSEARCHAPI = "Serach_Api"		                    //Redis KEYWORD key
 export const RTRENDAPI = "Trend_Api"		                    //Redis KEYWORD key

@@ -45,7 +45,7 @@ interface MetaData {
     twitterDescription: string;
 }
 export interface NewsItem {
-
+    timestamp?: number;
     title: string;
     link: string;
     originalLink?: string;
