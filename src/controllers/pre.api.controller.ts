@@ -28,7 +28,7 @@ import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken
 import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth";
 import {generateTalkTemplate} from "./aligoxkakao";
 import {getRelKeyword} from "./naverdatalab";
-import { KoalaNLP } from 'koalanlp';
+//import { KoalaNLP } from 'koalanlp';
 //import {analyzeSentiment} from "./koanlp";
 export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
