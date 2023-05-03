@@ -1,15 +1,24 @@
 import {FastifyReply} from "fastify"
 import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
+import Common_service from '../../service/common_service'
 import {IAnyRequest, News} from "../interfaces";
 //import rp from 'request-promise-native'
-import {getArticle, getFindNewLinks, getNaverRankNews, getNaverRealNews, getNewLinks, getNews} from "./news";
+import {
+    getArticle,
+    getBrowserHtml,
+    getFindNewLinks,
+    getNaverRankNews,
+    getNaverRealNews,
+    getNewLinks,
+    getNews
+} from "./news";
 import {generateChatMessage} from "./openai";
 import moment from "moment/moment";
 import {sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
-import {ALARM, RKEYWORD, RTOTEN} from "../helpers/common";
+import {RKEYWORD, RTOTEN} from "../helpers/common";
 import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
 import {getKakaoUserInfo, userKakaoOAuth, validateKakaoToken} from "./kakaoauth";
 import {sendMail} from "./mailer";
@@ -17,9 +26,63 @@ import {v4 as uuid_v4} from "uuid";
 import {createUser, getAlarmsUser} from "./user";
 import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken} from "./googleauth";
 import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth";
-import Common_service from "../../service/common_service";
-import {alimtalkSend, generateTalkTemplate} from "./aligoxkakao";
+import {generateTalkTemplate} from "./aligoxkakao";
 import {getRelKeyword} from "./naverdatalab";
+import { KoalaNLP } from 'koalanlp';
+import {analyzeSentiment} from "./koanlp";
+export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+
+        const text = '최근 도서 지역에서 양귀비를 몰래 재배한 사례가 잇따라 발생하고 있다. 25일 경찰 등에 따르면 전날 제주 서귀포시 서호동 소재 귤밭에서 양귀비 100여주가 재배됐다는 신고가 들어와 경찰이 소유주 수사에 나섰다.';
+        const sentiment = await analyzeSentiment(text);
+        console.log(sentiment);
+
+        request.transfer = {
+            result: MESSAGE.SUCCESS,
+            code: STANDARD.SUCCESS,
+            message: "SUCCESS",
+            data: sentiment
+        };
+        done();
+
+    } catch (e) {
+        console.log(e)
+        handleServerError(reply, e)
+    }
+}
+export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const {query} = request.query;
+        const news = await getNews(query,1,15,'sim');
+        const neverNews  = news.filter(news => news.link && news.link.includes("naver"))
+        process.setMaxListeners(11);
+        //브라우져 메모리 이슈로 인해 5개씩만
+        const CHUNK_SIZE = 5;
+        for (let i = 0; i < neverNews.length; i += CHUNK_SIZE) {
+            const articlePromises = neverNews
+                .slice(i, i + CHUNK_SIZE)
+                .map(news => getBrowserHtml(news));
+            await Promise.all(articlePromises);
+            await sleep(100);
+        }
+
+        const replyList = neverNews
+            .filter(news => news.reply && news.reply !== undefined)
+            .flatMap(news => news.reply);
+
+        request.transfer = {
+            result: MESSAGE.SUCCESS,
+            code: STANDARD.SUCCESS,
+            message: "SUCCESS",
+            data: replyList
+        };
+        done();
+
+    } catch (e) {
+        console.log(e)
+        handleServerError(reply, e)
+    }
+}
 
 export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
@@ -90,6 +153,7 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
         const {query, page = 1} = request.query;
 
         const articlePromises: Promise<void>[] = [];
+
         //1 1-100 2 101-200 3 201-300     10 901-1000
         const start = (page - 1) * 100 + 1;
         const end = page * 100;
@@ -105,19 +169,22 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
                     let oldLinks = await hgetData(redis, RKEYWORD, "json", query);
                     data = await getFindNewLinks(query, i, oldLinks || []);
                     if (!data || !data.length || data.length < 50) {
-                        data = await getNews(query, i);
+                        data = await getNews(query, i, 100);
                     }
                 } else {
-                    data = await getNews(query, i);
+                    data = await getNews(query, i, 100);
                 }
                 if (!data || !data.length) break;
                 await sleep(100);
                 news = [...news, ...data];
             }
-
+            // const  test = await getBrowserHtml(query,'https://n.news.naver.com/mnews/article/003/0011836031?sid=101')
+            // console.log(test)
             news.filter(news => news.link && news.link.includes("http"))
                 .forEach(news => articlePromises.push(getArticle(news)));
             await Promise.all(articlePromises);
+
+
 
             request.transfer = {
                 result: MESSAGE.SUCCESS,
@@ -158,6 +225,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
 
         const uniqueNews = Array.from(new Set(news.filter(n => n.link?.startsWith("http"))));
         const sortedNews = uniqueNews.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
+      //  const naverNews = Array.from(new Set(news.filter(n => n.link?.includes("naver"))));
 
         sortedNews.forEach(news => articlePromises.push(getArticle(news)));
         await Promise.all(articlePromises);
@@ -286,7 +354,6 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
             'type': state,
         }
 
-        console.log(`${social}_ACCESS_TOKEN: => ${userObj}`)
         const res = await createUser(userObj);
 
         if (res.data.result) {

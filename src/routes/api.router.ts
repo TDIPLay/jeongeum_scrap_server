@@ -10,8 +10,8 @@ import {
     preApiDataLab,
     preApiRankNews,
     preApiRealNews,
-    preApiSyncUp,
-    preOpenAi,
+    preApiSyncUp, preKoaNap,
+    preOpenAi, preReply,
     preSearchNewLink,
     preSearchNews,
     preSocial,
@@ -74,8 +74,6 @@ async function apiRouter(fastify: FastifyInstance) {
         url: '/social/oauth/:social',
         schema: apiSchema, preHandler: preSocialCallback, handler: apiLogin
     })
-
-
     fastify.route({
         method: 'GET',
         url: '/datalab',
@@ -86,14 +84,21 @@ async function apiRouter(fastify: FastifyInstance) {
         url: '/sendmail',
         handler: apiBriefingMail,
     })
-
-
+    fastify.route({
+        method: 'GET',
+        url: '/koanlp',
+        schema: apiSchema,preHandler:preKoaNap, handler: apiSyncUp
+    })
+    fastify.route({
+        method: 'GET',
+        url: '/news_reply',
+        schema: apiSchema,preHandler:preReply, handler: apiSyncUp
+    })
     fastify.route({
         method: 'GET',
         url: '/redirect',
         schema: apiSchema, handler: passUrl
     })
-
     fastify.route({
         method: 'POST',
         url: '/signup',

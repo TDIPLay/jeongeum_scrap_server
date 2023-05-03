@@ -7,6 +7,7 @@ export interface News {
     pubDate?: string;
     thumbnail?: string;
     content?: string;
+    reply?: string[];
     company?: string;
     author?: string;
     email?: string;
@@ -48,6 +49,7 @@ export interface NewsItem {
     title: string;
     link: string;
     originalLink?: string;
+    reply?: string[];
     description: string;
     pubDate?: string;
 }

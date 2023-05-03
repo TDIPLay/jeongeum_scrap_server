@@ -1,6 +1,6 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-// import * as puppeteer from 'puppeteer';
+import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import iconv from 'iconv-lite';
 import {News, NewsItem, Scraper, SearchNews} from "../interfaces";
@@ -124,6 +124,8 @@ async function getArticleDetails(news: News): Promise<void> {
         const thumbnail = $('meta[property^="twitter:image"], meta[property^="og:image"]')?.first().attr('content') || '';
         const originallink = news.originallink || $(main).find('a').attr('href');
 
+
+
         if (news.title) news.title = decodeHtmlEntities(news.title);
         if (originallink) news.originallink = originallink;
         if (thumbnail) news.thumbnail = thumbnail;
@@ -188,12 +190,18 @@ export async function getArticle(news: News): Promise<void> {
     try {
         if (news.link.includes("naver")) {
             await getArticleDetails(news);
+
+
         } else {
             await getArticleMetaDetails(news);
         }
     } catch (error) {
         console.error(`Error article: ${error.message} => ${news.title}`);
     }
+
+
+
+
 }
 
 async function getArticleMetaDetails(news: News): Promise<void> {
@@ -359,9 +367,9 @@ export async function getFindNewLinks(query: string, start: number = 1, oldLinks
     return data.items.filter(news => news.link && news.link.includes("http") && !oldLinks.includes(news.link));
 }
 
-export async function getNews(query: string, start: number): Promise<NewsItem[]> {
+export async function getNews(query: string, start: number, display: number = 100, sort:string = 'date'): Promise<NewsItem[]> {
     const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
-    let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=100`; // JSON 결과
+    let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=${display}&sort=${sort}`; // JSON 결과
     let options = {
         headers: {
             'X-Naver-Client-Id': clientInfo.client_id,
@@ -428,17 +436,25 @@ async function getPageNewLinks(query: string, oldLinks: string[] = []) {
     return uniqueLinks.filter((link) => !oldLinks.includes(link));
 }
 
-/*async function getBrowserHtml(query: string, news: News) {
-
-    const url = `https://search.naver.com/search.naver?where=news&query=${query}`;
+export async function getBrowserHtml(news: News) {
 
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
-    await page.goto(news.link);
-    const html = await page.evaluate(() => document.documentElement.outerHTML);
-
-    return html;
-}*/
+    try {
+        await page.goto(news.link, { waitUntil: 'networkidle0', timeout: 10000 });
+        const textContents = await page.evaluate(() => {
+            const contentsList = Array.from(document.querySelectorAll('.u_cbox_comment_box .u_cbox_contents'));
+            return contentsList.map(content => content.textContent.trim());
+        });
+        if (textContents && textContents.length > 0) {
+            news.reply = textContents;
+        }
+        await browser.close();
+    } catch (e) {
+        await browser.close();
+    }
+    // return textContents;
+ }
 
 function test() {
 
