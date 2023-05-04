@@ -6,7 +6,9 @@ export interface News {
     description: string;
     pubDate?: string;
     thumbnail?: string;
+    postdate?: string;
     content?: string;
+    like?: {};
     reply?: string[];
     company?: string;
     author?: string;

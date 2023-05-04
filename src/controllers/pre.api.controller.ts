@@ -5,7 +5,7 @@ import Common_service from '../../service/common_service'
 import {IAnyRequest, News, SearchNews} from "../interfaces";
 //import rp from 'request-promise-native'
 import {
-    getArticle,
+    getArticle, getBlog,
     getFindNewLinks,
     getNaverRankNews,
     getNaverRealNews,
@@ -55,18 +55,19 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         const {query} = request.query;
         const redis = await getRedis();
         const oldLinks = await hgetData(redis, RREPLY_KEYWORD, "json", query) || [];
-        const sortBySimNews = await getNews(query,1,30,'sim');
-        const sortByDateNews = await getNews(query,5,30);
-        const neverNews  = [...sortBySimNews,...sortByDateNews].filter(news => news.link && news.link.includes("naver"))
+        const sortBySimNews = await getNews(query,1,15,'sim');
+        const sortByDateNews = await getNews(query,5,10);
+        const blog = /*await getBlog(query,1,10)*/[];
+        const neverNews  = [...sortBySimNews,...sortByDateNews,...blog].filter(news => news.link && news.link.includes("naver"))
         let uniqueNeverNews = neverNews.filter((news, index, self) =>
             index === self.findIndex(t => t.link === news.link)
         );
         uniqueNeverNews =  uniqueNeverNews.filter(news => news.link && news.link.includes("http") && !oldLinks.includes(news.link));
 
-        //브라우져 메모리 이슈로 인해 5개씩만
-        process.setMaxListeners(11);
+        process.setMaxListeners(25);
 
-        const CHUNK_SIZE = 5;
+        //브라우져 메모리 이슈로 인해 10개 미만으로
+        const CHUNK_SIZE = 8;
         for (let i = 0; i < uniqueNeverNews.length; i += CHUNK_SIZE) {
             const articlePromises = uniqueNeverNews
                 .slice(i, i + CHUNK_SIZE)

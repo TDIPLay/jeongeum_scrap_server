@@ -269,14 +269,7 @@ export async function getNaverRankNews(): Promise<Scraper> {
             .forEach(news => articlePromises.push(getArticleDetails(news)));
         await Promise.all(articlePromises);
 
-        /*  const CHUNK_SIZE = 10;
-          const articlePromises: Promise<void>[] = [];
-              const newsChunk = newsList.slice(i, i + CHUNK_SIZE);
-          for (let i = 0; i < newsList.length; i += CHUNK_SIZE) {
-              const promises = newsChunk.map((news) => getArticleDetails(news, AXIOS_OPTIONS, 0));
-              articlePromises.push(...promises);
-              await Promise.all(promises);
-          }*/
+
         return scrap;
 
     } catch (error) {
@@ -385,6 +378,24 @@ export async function getNews(query: string, start: number, display: number = 10
     return data.items.filter(news => news.link && news.link.includes("http") /*&& news.link.includes("naverauth.ts")*/);
 }
 
+export async function getBlog(query: string, start: number, display: number = 100, sort:string = 'date'): Promise<NewsItem[]> {
+    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
+    let api_url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURI(query)}&start=${start}&display=${display}&sort=${sort}`; // JSON 결과
+
+    let options = {
+        headers: {
+            'X-Naver-Client-Id': clientInfo.client_id,
+            'X-Naver-Client-Secret': clientInfo.client_secret,
+            withCredentials: true
+        }
+    };
+    const {data} = await axios.get(api_url, options);
+
+
+    // const result = data.items.map(item => item.title ? {...item, "title": `${item.title}_${start}`} : '')
+    return data.items.filter(news => news.link && news.link.includes("http") /*&& news.link.includes("naverauth.ts")*/);
+}
+
 
 export async function getNewLinks(query: string, start: number, oldLinks: string[] = []): Promise<NewsItem[]> {
 
@@ -437,25 +448,57 @@ async function getPageNewLinks(query: string, oldLinks: string[] = []) {
     return uniqueLinks.filter((link) => !oldLinks.includes(link));
 }
 
-export async function getReply(news: News) {
+export async function getReply(news: News,type:string = 'News') {
 
     const browser = await puppeteer.launch({args: ['--no-sandbox']});
     try {
         const page = await browser.newPage();
-        await page.goto(news.link, { waitUntil: 'networkidle0', timeout: 7000 });
-        const textContents = await page.evaluate(() => {
-            const contentsList = Array.from(document.querySelectorAll('.u_cbox_comment_box .u_cbox_contents'));
-            return contentsList.map(content => content.textContent.trim());
-        });
-        if (textContents && textContents.length > 0) {
-            news.reply = textContents;
-            if (news.pubDate) {
-                news.timestamp = moment(news.pubDate).unix();
-                news.pubDate = getDateString(news.timestamp, 'unit');
+        await page.goto(news.link, { waitUntil: 'networkidle0', timeout: 10000 });
+        const commentCountEl = await page.$('.media_end_head_info_variety_cmtcount a.media_end_head_cmtcount_button');
+        const commentCountText = await commentCountEl?.evaluate(el => el.textContent.trim());
+        const commentCount = commentCountText ? parseInt(commentCountText) : null
+
+        if(commentCount > 0){
+
+            const textContents = await page.evaluate(() => {
+                const contentsList = Array.from(document.querySelectorAll('.u_cbox_comment_box .u_cbox_contents'));
+                return contentsList.map(content => content.textContent.trim());
+            });
+
+            if(type == 'News'){
+                try {
+                    const likeItElements = await page.evaluate(() => {
+                        const elements = document.querySelectorAll('#likeItCountViewDiv li');
+                        const likeItCounts = {};
+                        elements.forEach((element) => {
+                            const name = element.querySelector('span.u_likeit_list_name._label').textContent.trim();
+                            const count = parseInt(element.querySelector('span.u_likeit_list_count._count').textContent.trim());
+
+                            likeItCounts[name] = count;
+                        });
+                        return likeItCounts;
+                    });
+                    news.like = likeItElements;
+                }catch (e) {
+                }
+            }
+            if (textContents && textContents.length > 0) {
+
+                news.reply = textContents;
+                if (news.pubDate) {
+                    news.timestamp = moment(news.pubDate).unix();
+                    news.pubDate = getDateString(news.timestamp, 'unit');
+                }
+                if(news.postdate){
+                    news.timestamp = moment(news.postdate).unix();
+                    news.pubDate = getDateString(news.timestamp, 'unit');
+                }
             }
         }
+
         await browser.close();
     } catch (e) {
+        console.log(e)
         await browser.close();
     }
     // return textContents;
