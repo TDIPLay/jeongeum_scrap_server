@@ -391,6 +391,13 @@ export async function getBlog(query: string, start: number, display: number = 10
     };
     const {data} = await axios.get(api_url, options);
 
+    /*  data.items.map(news =>{
+        if(news.postdate){
+            news.timestamp = moment(news.postdate).unix();
+            news.pubDate = getDateString(news.timestamp, 'unit');
+        }
+    })*/
+
 
     // const result = data.items.map(item => item.title ? {...item, "title": `${item.title}_${start}`} : '')
     return data.items.filter(news => news.link && news.link.includes("http") /*&& news.link.includes("naverauth.ts")*/);

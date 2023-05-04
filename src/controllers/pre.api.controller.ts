@@ -62,16 +62,14 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         let uniqueNeverNews = neverNews.filter((news, index, self) =>
             index === self.findIndex(t => t.link === news.link)
         );
-        uniqueNeverNews =  uniqueNeverNews.filter(news => news.link && news.link.includes("http") && !oldLinks.includes(news.link));
+        uniqueNeverNews =  uniqueNeverNews.filter(news => !oldLinks.includes(news.link));
 
         process.setMaxListeners(25);
 
         //브라우져 메모리 이슈로 인해 10개 미만으로
         const CHUNK_SIZE = 8;
         for (let i = 0; i < uniqueNeverNews.length; i += CHUNK_SIZE) {
-            const articlePromises = uniqueNeverNews
-                .slice(i, i + CHUNK_SIZE)
-                .map(news => getReply(news));
+            const articlePromises = uniqueNeverNews.slice(i, i + CHUNK_SIZE).map(news => getReply(news));
             await Promise.all(articlePromises);
             await sleep(100);
         }
