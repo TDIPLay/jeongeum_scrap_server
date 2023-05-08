@@ -79,8 +79,8 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         uniqueNeverNews =  uniqueNeverNews.filter(news => !oldLinks.includes(news.link));
 
         // process.setMaxListeners(18);
-        //브라우져 메모리 이슈로 인해 10개 미만으로
-        const CHUNK_SIZE = 15;
+        //브라우져 메모리/ 브라우징 이슈로 인해 10개 미만으로
+        const CHUNK_SIZE = 10;
         const browser = await puppeteer.launch({args: ['--no-sandbox']});
 
         for (let i = 0; i < uniqueNeverNews.length; i += CHUNK_SIZE) {
