@@ -77,7 +77,7 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
             index === self.findIndex(t => t.link === news.link)
         );
         uniqueNeverNews =  uniqueNeverNews.filter(news => !oldLinks.includes(news.link));
-        console.log(uniqueNeverNews)
+
         // process.setMaxListeners(18);
         //브라우져 메모리/ 브라우징 이슈로 인해 10개 미만으로
         const CHUNK_SIZE = 10;

@@ -70,13 +70,12 @@ export async function getStockBorad(page: number = 1, stock: string): Promise<an
         const posts: Stock[] = [];
         const stockInfo = [];
         let objStock = { name: stock, code: code, stockInfo: {},board: []}
-        const target = $('.new_totalinfo dl.blind').eq(0); // 첫 번째 new_totalinfo 요소 선택
+        const stockEl = $('.new_totalinfo dl.blind').eq(0); // 첫 번째 new_totalinfo 요소 선택
 
-        target.find('dd').each((i , element) => {
+        stockEl.find('dd').each((i , element) => {
             if (i === 0) return;
             const text = $(element).text().trim().replace(/[\n\t]/g, ''); // 공백과 개행문자 제거
             const splitText = text.split(' ');
-
             const key = splitText[0]; // '종목명', '종목코드', '현재가' 등
             const value = splitText.slice(1).join(' '); // key 제외한 나머지 text
 
@@ -95,7 +94,6 @@ export async function getStockBorad(page: number = 1, stock: string): Promise<an
             const non_sympathy = Number($(el).find('td:nth-child(6)').text().trim());
 
             if(reply) title = title.replace(`[${reply}]`,'').trim();
-
 
             if (title) posts.push({
                 date,
