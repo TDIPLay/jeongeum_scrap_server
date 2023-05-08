@@ -457,7 +457,7 @@ export async function getReply(news: News, type: string = 'News', browser) {
 
     const page = await browser.newPage();
     try {
-        await page.goto(news.link, {waitUntil: 'networkidle0', timeout: 5000});
+        await page.goto(news.link, {waitUntil: 'networkidle0', timeout: 10000});
         const commentCountEl = await page.$('.media_end_head_info_variety_cmtcount a.media_end_head_cmtcount_button');
         if(!commentCountEl) return;
         const commentCountText = await commentCountEl?.evaluate(el => el.textContent.trim());
