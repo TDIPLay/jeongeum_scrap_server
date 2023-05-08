@@ -189,8 +189,6 @@ export async function getArticle(news: News): Promise<void> {
     try {
         if (news.link.includes("naver")) {
             await getArticleDetails(news);
-
-
         } else {
             await getArticleMetaDetails(news);
         }
@@ -201,6 +199,7 @@ export async function getArticle(news: News): Promise<void> {
 
 }
 
+//기사 원문 스크랩
 async function getArticleMetaDetails(news: News): Promise<void> {
     try {
         const data = await fetchMetadata(news.link);
@@ -233,7 +232,7 @@ async function getArticleMetaDetails(news: News): Promise<void> {
     }
 }
 
-
+//언론사별 기사 랭킹 1~5 rank 스크랩
 export async function getNaverRankNews(): Promise<Scraper> {
     try {
         const $ = await newsCall(NAVER_RANK_URL);
@@ -469,14 +468,14 @@ export async function getReply(news: News, type: string = 'News', browser) {
                 const result = [];
 
                 elements.forEach((element) => {
-                    const contentsEle = element.querySelector('.u_cbox_contents');
-                    const sympathyEle = element.querySelector('.u_cbox_cnt_recomm');
-                    const non_sympathyEle = element.querySelector('.u_cbox_cnt_unrecomm');
-                    const contents = contentsEle ? contentsEle.textContent.trim()/*.replace(/[^\S\r\n]+/g, ' ')*/ : '';
-                    const sympathyCount = sympathyEle ? parseInt(sympathyEle.textContent.trim()) : 0;
-                    const nonSympathyCount = non_sympathyEle ? parseInt(non_sympathyEle.textContent.trim()) : 0;
+                    const contentsEl = element.querySelector('.u_cbox_contents');
+                    const sympathyEl = element.querySelector('.u_cbox_cnt_recomm');
+                    const non_sympathyEl = element.querySelector('.u_cbox_cnt_unrecomm');
+                    const contents = contentsEl ? contentsEl.textContent.trim()/*.replace(/[^\S\r\n]+/g, ' ')*/ : '';
+                    const sympathyCount = sympathyEl ? parseInt(sympathyEl.textContent.trim()) : 0;
+                    const nonSympathyCount = non_sympathyEl ? parseInt(non_sympathyEl.textContent.trim()) : 0;
 
-                    if(contentsEle || sympathyEle ||non_sympathyEle){
+                    if(contentsEl || sympathyEl ||non_sympathyEl){
                         result.push({
                             contents: contents,
                             sympathy: sympathyCount,
@@ -505,6 +504,7 @@ export async function getReply(news: News, type: string = 'News', browser) {
                 } catch (e) {
                 }
             }
+
             if (textContents && textContents.length > 0) {
 
                 news.reply = textContents;
@@ -518,12 +518,12 @@ export async function getReply(news: News, type: string = 'News', browser) {
                 }
             }
         }
-      //  await closeBrowser(browser)
+
         await page.close();
+
     } catch (e) {
         console.log(e)
         await page.close();
-        //await closeBrowser(browser)
     }
     // return textContents;
 }

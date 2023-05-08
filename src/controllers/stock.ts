@@ -11,6 +11,7 @@ interface Stock {
     date: string;
     title: string;
     author: string;
+    reply: number;
     views: number;
     sympathy: number;
     non_sympathy: number;
@@ -86,19 +87,22 @@ export async function getStockBorad(page: number = 1, stock: string): Promise<an
             // 헤더 스킵
             if (i === 0) return;
             const date = $(el).find('td:nth-child(1) span').text().trim();
-            const title = $(el).find('td.title a').text().trim().replace(/[^\S\r\n]+/g, ' ');
+            let title = $(el).find('td.title a').text().trim().replace(/[^\S\r\n]+/g, ' ');
+            const reply = title.match(/\[(\d+)\]/) ? parseInt(title.match(/\[(\d+)\]/)[1]) : 0;
             const author = $(el).find('td:nth-child(3)').text().trim();
             const views = Number($(el).find('td:nth-child(4)').text().trim());
             const sympathy = Number($(el).find('td:nth-child(5)').text().trim());
             const non_sympathy = Number($(el).find('td:nth-child(6)').text().trim());
+            title = title.replace(`[${reply}]`,'').trim();
 
             if (title) posts.push({
                 date,
                 title,
                 author,
+                reply,
                 views,
                 sympathy,
-                non_sympathy,
+                non_sympathy
             });
         });
 

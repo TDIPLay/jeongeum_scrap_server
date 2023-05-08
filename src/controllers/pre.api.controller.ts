@@ -77,7 +77,7 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
             index === self.findIndex(t => t.link === news.link)
         );
         uniqueNeverNews =  uniqueNeverNews.filter(news => !oldLinks.includes(news.link));
-
+        console.log(uniqueNeverNews)
         // process.setMaxListeners(18);
         //브라우져 메모리/ 브라우징 이슈로 인해 10개 미만으로
         const CHUNK_SIZE = 10;
@@ -89,6 +89,7 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
             await sleep(20);
         }
         await closeBrowser(browser);
+
         const replyList = neverNews
             .filter(news => news.reply && news.reply !== undefined)
             //.flatMap(news => news.reply);
@@ -97,14 +98,13 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         const diffLinks = sortedNews.filter((item: News) => oldLinks && !oldLinks.includes(item.link));
         const newLinks = Array.from(diffLinks).map((news: SearchNews) => news?.link) || [];
 
-        let tempLinks = oldLinks;
         const listCnt = oldLinks?.length + newLinks.length;
 
         if (listCnt > MAX_LINK) {
-            tempLinks.splice(-(listCnt - MAX_LINK));
+            oldLinks.splice(-(listCnt - MAX_LINK));
         }
 
-        const redisData = {[`${query}`]: JSON.stringify([...newLinks, ...tempLinks])};
+        const redisData = {[`${query}`]: JSON.stringify([...newLinks, ...oldLinks])};
         await hmsetRedis(redis, RREPLY_KEYWORD, redisData, 0);
 
         request.transfer = {
