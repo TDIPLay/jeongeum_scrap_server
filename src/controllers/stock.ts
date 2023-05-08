@@ -93,7 +93,9 @@ export async function getStockBorad(page: number = 1, stock: string): Promise<an
             const views = Number($(el).find('td:nth-child(4)').text().trim());
             const sympathy = Number($(el).find('td:nth-child(5)').text().trim());
             const non_sympathy = Number($(el).find('td:nth-child(6)').text().trim());
-            title = title.replace(`[${reply}]`,'').trim();
+
+            if(reply) title = title.replace(`[${reply}]`,'').trim();
+
 
             if (title) posts.push({
                 date,
