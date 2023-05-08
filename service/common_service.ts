@@ -2,10 +2,10 @@ import mysql from "./mysql"
 import cron from 'node-cron';
 import {getDateString, logger} from "../src/helpers/utils";
 import {xServerError} from "../src/helpers/errors";
-import {initAPIResource, initPress, searchApiIdx} from "../src/controllers/engine"
+import {initAPIResource, initPress, initStock, searchApiIdx} from "../src/controllers/engine"
 import {initRedisHmSet} from "../src/controllers/worker";
 import {processKeywordAlarms} from "../src/controllers/user";
-import {AlarmData, KeywordAlarm, SearchApi} from "../src/interfaces";
+import {AlarmData, KeywordAlarm, SearchApi, StockData} from "../src/interfaces";
 import {QUERY, RSEARCHAPI, RTRENDAPI} from "../src/helpers/common";
 
 export default class Common_service {
@@ -30,6 +30,8 @@ export default class Common_service {
 
     constructor() {
         //sql connection & make dataset
+
+
         cron.schedule("*/10 * * * *", async () => {
             logger.info(getDateString(0, 'default'));
             await this.module_start();
@@ -49,11 +51,13 @@ export default class Common_service {
     async module_start() {
         logger.info("init_start")
         try {
-            const result: AlarmData[] = await mysql.getInstance().query(QUERY.Alarm);
-            Common_service.alarm_info = processKeywordAlarms(result)
+            const resultAlarm: AlarmData[] = await mysql.getInstance().query(QUERY.Alarm);
+            Common_service.alarm_info = processKeywordAlarms(resultAlarm)
 
+           /* if (!await initStock()) {
+                console.log("initPress error");
+            }*/
 
-            await this.engine_start();
         } catch (e) {
             logger.error(e)
             logger.info("init_err")
@@ -63,20 +67,12 @@ export default class Common_service {
     async engine_start() {
 
         if (!await initPress()) {
-            console.log("initAPIResource error");
+            console.log("initPress error");
         }
 
         if (!await initAPIResource()) {
             console.log("initAPIResource error");
         }
-
-        /*if ((Common_service.search_api_idx = await searchApiIdx(RSEARCHAPI)) === -1) {
-            console.log("searchApiIdx none");
-        }
-
-        if ((Common_service.search_api_idx = await searchApiIdx(RTRENDAPI)) === -1) {
-            console.log("searchApiIdx none");
-        }*/
 
         const searchIdx = await searchApiIdx(RSEARCHAPI);
         if (searchIdx > -1) {

@@ -1,16 +1,18 @@
 import {ResponseType} from 'axios';
 
-export const REDIS_EXPIRE = 86400		        // 레디스 expire TTL
-export const FIX = 10000		                    // 소수점 4자리
-export const RKEYWORD = "Keyword_Jungeum"		                    //Redis KEYWORD key
-export const RREPLY_KEYWORD = "Keyword_Reply"		                    //Redis Reply key
-export const RTOTEN = "Token"		                    //Redis KEYWORD key
-export const RSEARCHAPI = "Serach_Api"		                    //Redis KEYWORD key
-export const RTRENDAPI = "Trend_Api"		                    //Redis KEYWORD key
-export const R_TREND_DATA = "Trend_Data"		                    //Redis Trend_Data
-export const RPRESS = "PressInfo"		                    //Redis KEYWORD key
+export const REDIS_EXPIRE = 86400		                    // 레디스 expire TTL
+export const FIX = 10000		                            // 소수점 4자리
+
+export const RKEYWORD = "Keyword_Jungeum"		            //Redis KEYWORD key
+export const RREPLY_KEYWORD = "Keyword_Reply"		        //Redis Reply key
+export const RTOTEN = "Token"		                        //Redis KEYWORD key
+export const RSEARCHAPI = "Serach_Api"		                //Redis Serach_Api key
+export const RTRENDAPI = "Trend_Api"		                //Redis Trend_Api key
+export const R_TREND_DATA = "Trend_Data"		            //Redis Trend_Data key
+export const RPRESS = "PressInfo"		                    //Redis PressInfo key
+export const RSTOCK = "StockInfo"		                    //Redis StockInfo key
 export const RPRESSNON = "PressNON"		                    //Redis KEYWORD key
-export const RTOTEN_GOOGLE = "Token_Google"		                    //Redis KEYWORD key
+export const RTOTEN_GOOGLE = "Token_Google"		            //Redis Token_Google key
 export const MAX_LINK = 200		                    // MAX_LINK
 export const NAVER_API_URL = "https://openapi.naver.com/v1/search/news.json"
 export const NAVER_RANK_URL = "https://news.naver.com/main/ranking/popularDay.naver"
@@ -39,6 +41,11 @@ export const QUERY = {
         "WHERE \n" +
         "KA.alarm_type != 0",
 
+    Stock: "SELECT " +
+        "name, " +
+        "code" +
+        " FROM stock ",
+
     Search_API: "SELECT " +
         "api_name," +
         "api_limit, " +
@@ -46,7 +53,7 @@ export const QUERY = {
         "FROM api_management " +
         "WHERE api_type = 'search'",
 
-    Press :"SELECT" +
+    Press: "SELECT" +
         " press_id" +
         ", press_name" +
         " FROM press WHERE " +

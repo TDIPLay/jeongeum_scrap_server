@@ -1,3 +1,4 @@
+
 export interface News {
 
     title: string;
@@ -8,8 +9,9 @@ export interface News {
     thumbnail?: string;
     postdate?: string;
     content?: string;
+    //reply?: { contents: string[]; sympathy: any[]; non_sympathy: any[] };
+    reply?: any;
     like?: {};
-    reply?: string[];
     company?: string;
     author?: string;
     email?: string;
@@ -51,7 +53,8 @@ export interface NewsItem {
     title: string;
     link: string;
     originalLink?: string;
-    reply?: string[];
+    //reply?: { contents: string[]; sympathy: any[]; non_sympathy: any[] };
+    reply?: any;
     description: string;
     pubDate?: string;
 }
@@ -63,6 +66,10 @@ export interface AlarmData {
     alarm_type: string;
     alarm_mail: string;
     alarm_phone_number: string;
+}
+export interface StockData {
+    name: number;
+    code: string;
 }
 
 export interface SearchApi {

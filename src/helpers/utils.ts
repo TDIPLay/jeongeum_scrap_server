@@ -123,6 +123,15 @@ export const generate = (timestamp: string, method: string, uri: string, secret_
 export const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+export const closeBrowser = async (browser) => {
+    const pages = await browser.pages();
+    for (const page of pages) {
+        await page.close();
+    }
+    await browser.close();
+    await sleep( 1000); // 1초간 대기
+    await browser.close();
+}
 
 export const getNextMin = (ts: number, min: string) => {
 

@@ -16,7 +16,7 @@ import {
     preSearchNews,
     preSocial,
     preSocialCallback,
-    preSocialLogin,
+    preSocialLogin, preStock,
     signUp
 } from "../controllers";
 
@@ -88,6 +88,11 @@ async function apiRouter(fastify: FastifyInstance) {
         method: 'GET',
         url: '/koanlp',
         schema: apiSchema,preHandler:preKoaNap, handler: apiSyncUp
+    })
+    fastify.route({
+        method: 'GET',
+        url: '/stock',
+        schema: apiSchema,preHandler:preStock, handler: apiSyncUp
     })
     fastify.route({
         method: 'GET',

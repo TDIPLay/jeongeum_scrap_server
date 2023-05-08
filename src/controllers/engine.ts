@@ -3,9 +3,9 @@ import mysql from "../../service/mysql";
 import moment from "moment";
 import {getRedis} from "../../service/redis";
 import {promisify} from "util";
-import {QUERY, RPRESS, RSEARCHAPI, RTRENDAPI} from "../helpers/common";
+import {QUERY, RPRESS, RSEARCHAPI, RSTOCK, RTRENDAPI} from "../helpers/common";
 import service from "../../service/common_service"
-import {SearchApi} from "../interfaces";
+import {SearchApi, StockData} from "../interfaces";
 import {hgetData, hmsetRedis} from "./worker";
 
 export async function initPress(): Promise<boolean> {
@@ -39,6 +39,19 @@ export async function initAPIResource(): Promise<boolean> {
     }
     return true;
 }
+
+export async function initStock(): Promise<boolean> {
+    const stock: StockData[] = await mysql.getInstance().query(QUERY.Stock);
+
+    const redis = await getRedis();
+    const hash: Record<string, string> = {};
+    for (const api of stock) {
+        hash[api.name] = api.code;
+    }
+    await hmsetRedis(redis, RSTOCK, hash, 0);
+    return true;
+}
+
 
 export async function searchApiIdx(redisKey:string): Promise<number> {
     const search_api: SearchApi[] = service.search_api;

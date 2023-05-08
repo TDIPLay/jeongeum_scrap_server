@@ -4,14 +4,7 @@ import service from '../../service/common_service'
 import Common_service from '../../service/common_service'
 import {IAnyRequest, News, SearchNews} from "../interfaces";
 //import rp from 'request-promise-native'
-import {
-    getArticle, getBlog,
-    getFindNewLinks,
-    getNaverRankNews,
-    getNaverRealNews,
-    getNewLinks,
-    getNews, getReply
-} from "./news";
+import {getArticle, getFindNewLinks, getNaverRankNews, getNaverRealNews, getNewLinks, getNews, getReply} from "./news";
 import {generateChatMessage} from "./openai";
 import moment from "moment/moment";
 import {sleep, utils} from "../helpers/utils";
@@ -27,6 +20,7 @@ import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken
 import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth";
 import {generateTalkTemplate} from "./aligoxkakao";
 import {getRelKeyword} from "./naverdatalab";
+import {getStockBorad} from "./stock";
 //import { KoalaNLP } from 'koalanlp';
 //import {analyzeSentiment} from "./koanlp";
 export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done) => {
@@ -49,6 +43,25 @@ export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done)
         handleServerError(reply, e)
     }
 }
+export const preStock = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const {page,query} = request.query;
+
+        const stock = await getStockBorad(page, query);
+        console.log(stock)
+        request.transfer = {
+            result: MESSAGE.SUCCESS,
+            code: STANDARD.SUCCESS,
+            message: "SUCCESS",
+            data: stock
+        };
+        done();
+
+    } catch (e) {
+        console.log(e)
+        handleServerError(reply, e)
+    }
+}
 
 export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
@@ -56,7 +69,7 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         const redis = await getRedis();
         const oldLinks = await hgetData(redis, RREPLY_KEYWORD, "json", query) || [];
         const sortBySimNews = await getNews(query,1,15,'sim');
-        const sortByDateNews = await getNews(query,5,10);
+        const sortByDateNews = await getNews(query,5,15);
         const blog = /*await getBlog(query,1,10)*/[];
         const neverNews  = [...sortBySimNews,...sortByDateNews,...blog].filter(news => news.link && news.link.includes("naver"))
         let uniqueNeverNews = neverNews.filter((news, index, self) =>
@@ -64,10 +77,10 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         );
         uniqueNeverNews =  uniqueNeverNews.filter(news => !oldLinks.includes(news.link));
 
-        process.setMaxListeners(25);
+        // process.setMaxListeners(25);
 
         //브라우져 메모리 이슈로 인해 10개 미만으로
-        const CHUNK_SIZE = 8;
+        const CHUNK_SIZE = 6;
         for (let i = 0; i < uniqueNeverNews.length; i += CHUNK_SIZE) {
             const articlePromises = uniqueNeverNews.slice(i, i + CHUNK_SIZE).map(news => getReply(news));
             await Promise.all(articlePromises);

@@ -7,7 +7,7 @@ import {News, NewsItem, Scraper, SearchNews} from "../interfaces";
 import cron from 'node-cron';
 import moment from 'moment'
 import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, RKEYWORD, RSEARCHAPI} from "../helpers/common";
-import {decodeHtmlEntities, extractAuthorAndEmail, getDateString} from "../helpers/utils";
+import {closeBrowser, decodeHtmlEntities, extractAuthorAndEmail, getDateString} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {getRedisPress, hmsetRedis, setRedisPress} from "./worker";
 import {ResponseType} from "axios";
@@ -125,7 +125,6 @@ async function getArticleDetails(news: News): Promise<void> {
         const originallink = news.originallink || $(main).find('a').attr('href');
 
 
-
         if (news.title) news.title = decodeHtmlEntities(news.title);
         if (originallink) news.originallink = originallink;
         if (thumbnail) news.thumbnail = thumbnail;
@@ -198,8 +197,6 @@ export async function getArticle(news: News): Promise<void> {
     } catch (error) {
         console.error(`Error article: ${error.message} => ${news.title}`);
     }
-
-
 
 
 }
@@ -360,7 +357,7 @@ export async function getFindNewLinks(query: string, start: number = 1, oldLinks
     return data.items.filter(news => news.link && news.link.includes("http") && !oldLinks.includes(news.link));
 }
 
-export async function getNews(query: string, start: number, display: number = 100, sort:string = 'date'): Promise<NewsItem[]> {
+export async function getNews(query: string, start: number, display: number = 100, sort: string = 'date'): Promise<NewsItem[]> {
     const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
     let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=${display}&sort=${sort}`; // JSON 결과
 
@@ -378,7 +375,7 @@ export async function getNews(query: string, start: number, display: number = 10
     return data.items.filter(news => news.link && news.link.includes("http") /*&& news.link.includes("naverauth.ts")*/);
 }
 
-export async function getBlog(query: string, start: number, display: number = 100, sort:string = 'date'): Promise<NewsItem[]> {
+export async function getBlog(query: string, start: number, display: number = 100, sort: string = 'date'): Promise<NewsItem[]> {
     const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
     let api_url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURI(query)}&start=${start}&display=${display}&sort=${sort}`; // JSON 결과
 
@@ -455,24 +452,44 @@ async function getPageNewLinks(query: string, oldLinks: string[] = []) {
     return uniqueLinks.filter((link) => !oldLinks.includes(link));
 }
 
-export async function getReply(news: News,type:string = 'News') {
+export async function getReply(news: News, type: string = 'News') {
 
     const browser = await puppeteer.launch({args: ['--no-sandbox']});
+    const page = await browser.newPage();
     try {
-        const page = await browser.newPage();
-        await page.goto(news.link, { waitUntil: 'networkidle0', timeout: 10000 });
+        await page.goto(news.link, {waitUntil: 'networkidle0', timeout: 30000});
         const commentCountEl = await page.$('.media_end_head_info_variety_cmtcount a.media_end_head_cmtcount_button');
+        if(!commentCountEl) return;
         const commentCountText = await commentCountEl?.evaluate(el => el.textContent.trim());
         const commentCount = commentCountText ? parseInt(commentCountText) : null
 
-        if(commentCount > 0){
-
+        if (commentCount > 0) {
             const textContents = await page.evaluate(() => {
-                const contentsList = Array.from(document.querySelectorAll('.u_cbox_comment_box .u_cbox_contents'));
-                return contentsList.map(content => content.textContent.trim());
+                const elements = document.querySelectorAll('.u_cbox_comment_box');
+                const result = [];
+
+                elements.forEach((element) => {
+                    const contentsEle = element.querySelector('.u_cbox_contents');
+                    const sympathyEle = element.querySelector('.u_cbox_cnt_recomm');
+                    const non_sympathyEle = element.querySelector('.u_cbox_cnt_unrecomm');
+                    const contents = contentsEle ? contentsEle.textContent.trim() : '';
+                    const sympathyCount = sympathyEle ? parseInt(sympathyEle.textContent.trim()) : 0;
+                    const nonSympathyCount = non_sympathyEle ? parseInt(non_sympathyEle.textContent.trim()) : 0;
+
+                    if(contentsEle || sympathyEle ||non_sympathyEle){
+                        result.push({
+                            contents: contents,
+                            sympathy: sympathyCount,
+                            non_sympathy: nonSympathyCount
+                        });
+                    }
+                });
+
+                return result;
             });
 
-            if(type == 'News'){
+
+            if (type == 'News') {
                 try {
                     const likeItElements = await page.evaluate(() => {
                         const elements = document.querySelectorAll('#likeItCountViewDiv li');
@@ -480,36 +497,34 @@ export async function getReply(news: News,type:string = 'News') {
                         elements.forEach((element) => {
                             const name = element.querySelector('span.u_likeit_list_name._label').textContent.trim();
                             const count = parseInt(element.querySelector('span.u_likeit_list_count._count').textContent.trim());
-
                             likeItCounts[name] = count;
                         });
                         return likeItCounts;
                     });
                     news.like = likeItElements;
-                }catch (e) {
+                } catch (e) {
                 }
             }
             if (textContents && textContents.length > 0) {
-
+                console.log("ok")
+                console.log(news.link)
                 news.reply = textContents;
                 if (news.pubDate) {
                     news.timestamp = moment(news.pubDate).unix();
                     news.pubDate = getDateString(news.timestamp, 'unit');
                 }
-                if(news.postdate){
+                if (news.postdate) {
                     news.timestamp = moment(news.postdate).unix();
                     news.pubDate = getDateString(news.timestamp, 'unit');
                 }
             }
         }
-
-        await browser.close();
+        await closeBrowser(browser)
     } catch (e) {
-        console.log(e)
-        await browser.close();
+        await closeBrowser(browser)
     }
     // return textContents;
- }
+}
 
 function test() {
 
