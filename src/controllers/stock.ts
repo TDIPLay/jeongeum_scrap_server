@@ -81,6 +81,7 @@ export async function getStockBorad(page: number = 1, stock: string): Promise<an
 
             objStock.stockInfo[key] = value;
         });
+
         $('table.type2 tr').each((i, el) => {
             // 헤더 스킵
             if (i === 0) return;

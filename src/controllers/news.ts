@@ -506,8 +506,7 @@ export async function getReply(news: News, type: string = 'News') {
                 }
             }
             if (textContents && textContents.length > 0) {
-                console.log("ok")
-                console.log(news.link)
+
                 news.reply = textContents;
                 if (news.pubDate) {
                     news.timestamp = moment(news.pubDate).unix();

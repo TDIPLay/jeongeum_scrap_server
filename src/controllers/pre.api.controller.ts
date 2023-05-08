@@ -48,7 +48,7 @@ export const preStock = async (request: IAnyRequest, reply: FastifyReply, done) 
         const {page,query} = request.query;
 
         const stock = await getStockBorad(page, query);
-        console.log(stock)
+
         request.transfer = {
             result: MESSAGE.SUCCESS,
             code: STANDARD.SUCCESS,
@@ -69,7 +69,7 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         const redis = await getRedis();
         const oldLinks = await hgetData(redis, RREPLY_KEYWORD, "json", query) || [];
         const sortBySimNews = await getNews(query,1,15,'sim');
-        const sortByDateNews = await getNews(query,5,15);
+        const sortByDateNews = await getNews(query,1,15);
         const blog = /*await getBlog(query,1,10)*/[];
         const neverNews  = [...sortBySimNews,...sortByDateNews,...blog].filter(news => news.link && news.link.includes("naver"))
         let uniqueNeverNews = neverNews.filter((news, index, self) =>
