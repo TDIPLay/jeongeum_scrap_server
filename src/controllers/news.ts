@@ -452,12 +452,12 @@ async function getPageNewLinks(query: string, oldLinks: string[] = []) {
     return uniqueLinks.filter((link) => !oldLinks.includes(link));
 }
 
-export async function getReply(news: News, type: string = 'News') {
+export async function getReply(news: News, type: string = 'News', browser) {
 
-    const browser = await puppeteer.launch({args: ['--no-sandbox']});
+
     const page = await browser.newPage();
     try {
-        await page.goto(news.link, {waitUntil: 'networkidle0', timeout: 30000});
+        await page.goto(news.link, {waitUntil: 'networkidle0', timeout: 5000});
         const commentCountEl = await page.$('.media_end_head_info_variety_cmtcount a.media_end_head_cmtcount_button');
         if(!commentCountEl) return;
         const commentCountText = await commentCountEl?.evaluate(el => el.textContent.trim());
@@ -472,7 +472,7 @@ export async function getReply(news: News, type: string = 'News') {
                     const contentsEle = element.querySelector('.u_cbox_contents');
                     const sympathyEle = element.querySelector('.u_cbox_cnt_recomm');
                     const non_sympathyEle = element.querySelector('.u_cbox_cnt_unrecomm');
-                    const contents = contentsEle ? contentsEle.textContent.trim() : '';
+                    const contents = contentsEle ? contentsEle.textContent.trim()/*.replace(/[^\S\r\n]+/g, ' ')*/ : '';
                     const sympathyCount = sympathyEle ? parseInt(sympathyEle.textContent.trim()) : 0;
                     const nonSympathyCount = non_sympathyEle ? parseInt(non_sympathyEle.textContent.trim()) : 0;
 
@@ -518,9 +518,12 @@ export async function getReply(news: News, type: string = 'News') {
                 }
             }
         }
-        await closeBrowser(browser)
+      //  await closeBrowser(browser)
+        await page.close();
     } catch (e) {
-        await closeBrowser(browser)
+        console.log(e)
+        await page.close();
+        //await closeBrowser(browser)
     }
     // return textContents;
 }

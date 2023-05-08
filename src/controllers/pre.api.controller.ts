@@ -7,7 +7,7 @@ import {IAnyRequest, News, SearchNews} from "../interfaces";
 import {getArticle, getFindNewLinks, getNaverRankNews, getNaverRealNews, getNewLinks, getNews, getReply} from "./news";
 import {generateChatMessage} from "./openai";
 import moment from "moment/moment";
-import {sleep, utils} from "../helpers/utils";
+import {closeBrowser, sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
 import {MAX_LINK, RKEYWORD, RREPLY_KEYWORD, RTOTEN} from "../helpers/common";
@@ -21,6 +21,7 @@ import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth"
 import {generateTalkTemplate} from "./aligoxkakao";
 import {getRelKeyword} from "./naverdatalab";
 import {getStockBorad} from "./stock";
+import * as puppeteer from "puppeteer";
 //import { KoalaNLP } from 'koalanlp';
 //import {analyzeSentiment} from "./koanlp";
 export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done) => {
@@ -68,8 +69,8 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         const {query} = request.query;
         const redis = await getRedis();
         const oldLinks = await hgetData(redis, RREPLY_KEYWORD, "json", query) || [];
-        const sortBySimNews = await getNews(query,1,15,'sim');
-        const sortByDateNews = await getNews(query,1,15);
+        const sortBySimNews = await getNews(query,1,50,'sim');
+        const sortByDateNews = await getNews(query,1,50);
         const blog = /*await getBlog(query,1,10)*/[];
         const neverNews  = [...sortBySimNews,...sortByDateNews,...blog].filter(news => news.link && news.link.includes("naver"))
         let uniqueNeverNews = neverNews.filter((news, index, self) =>
@@ -77,16 +78,17 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         );
         uniqueNeverNews =  uniqueNeverNews.filter(news => !oldLinks.includes(news.link));
 
-        // process.setMaxListeners(25);
-
+        // process.setMaxListeners(18);
         //브라우져 메모리 이슈로 인해 10개 미만으로
-        const CHUNK_SIZE = 6;
-        for (let i = 0; i < uniqueNeverNews.length; i += CHUNK_SIZE) {
-            const articlePromises = uniqueNeverNews.slice(i, i + CHUNK_SIZE).map(news => getReply(news));
-            await Promise.all(articlePromises);
-            await sleep(100);
-        }
+        const CHUNK_SIZE = 15;
+        const browser = await puppeteer.launch({args: ['--no-sandbox']});
 
+        for (let i = 0; i < uniqueNeverNews.length; i += CHUNK_SIZE) {
+            const articlePromises = uniqueNeverNews.slice(i, i + CHUNK_SIZE).map(news => getReply(news, 'News', browser));
+            await Promise.all(articlePromises);
+            await sleep(20);
+        }
+        await closeBrowser(browser);
         const replyList = neverNews
             .filter(news => news.reply && news.reply !== undefined)
             //.flatMap(news => news.reply);

@@ -86,7 +86,7 @@ export async function getStockBorad(page: number = 1, stock: string): Promise<an
             // 헤더 스킵
             if (i === 0) return;
             const date = $(el).find('td:nth-child(1) span').text().trim();
-            const title = $(el).find('td.title a').text().trim();
+            const title = $(el).find('td.title a').text().trim().replace(/[^\S\r\n]+/g, ' ');
             const author = $(el).find('td:nth-child(3)').text().trim();
             const views = Number($(el).find('td:nth-child(4)').text().trim());
             const sympathy = Number($(el).find('td:nth-child(5)').text().trim());
