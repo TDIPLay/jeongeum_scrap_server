@@ -272,8 +272,9 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
 
             if (alarmEmailUser.length > 0) {
                 console.log(`send mail User :  ${alarmEmailUser}`)
-                await sendMail(alarmEmailUser.join(','), news, query);
+                await sendMail(alarmEmailUser.join(','), sortedNews, query);
             }
+
             if (alarmTalkUser.length > 0) {
                 console.log(`send talk User :  ${alarmTalkUser}`)
                 // senderkey: 발신프로필 키

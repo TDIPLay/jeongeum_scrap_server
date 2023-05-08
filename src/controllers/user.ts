@@ -34,7 +34,6 @@ export function processKeywordAlarms(alarms: AlarmData[]): { [p: string]: Keywor
         }
         keywordAlarms[key].keyword.push(alarm.keyword);
     }
-    console.log(keywordAlarms)
     return keywordAlarms;
 }
 
