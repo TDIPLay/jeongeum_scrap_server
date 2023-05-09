@@ -57,7 +57,8 @@ function createRedisClient() {
 }
 
 async function getRedis(): Promise<RedisClientType> {
-    if (!isReady) {
+
+    if (!redisClient || !redisClient.connected && !isReady) {
         createRedisClient();
         await new Promise((resolve) => redisClient.once("ready", resolve));
         service.system_flag = true;
