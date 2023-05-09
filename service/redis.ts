@@ -56,7 +56,7 @@ function createRedisClient() {
 
 }
 
-async function getRedis(): Promise<RedisClientType> {
+/*async function getRedis(): Promise<RedisClientType> {
 
     if (!redisClient || !redisClient.connected && !isReady) {
         createRedisClient();
@@ -64,6 +64,27 @@ async function getRedis(): Promise<RedisClientType> {
         service.system_flag = true;
         isReady = true;
     }
+    return redisClient;
+}*/
+
+
+async function getRedis(): Promise<RedisClientType> {
+    if (redisClient && (redisClient.connected || isReady)) {
+        return redisClient;
+    }
+
+    await new Promise((resolve) => {
+        if (isReady) {
+            Promise.resolve().then(resolve);
+        } else {
+            createRedisClient();
+            redisClient.once("ready", () => Promise.resolve().then(resolve));
+        }
+    });
+
+    service.system_flag = true;
+    isReady = true;
+
     return redisClient;
 }
 

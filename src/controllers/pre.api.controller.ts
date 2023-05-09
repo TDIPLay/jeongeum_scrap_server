@@ -94,7 +94,6 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
             .filter(news => news.reply && news.reply !== undefined)
             //.flatMap(news => news.reply);
         const sortedNews = replyList.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
-
         const diffLinks = sortedNews.filter((item: News) => oldLinks && !oldLinks.includes(item.link));
         const newLinks = Array.from(diffLinks).map((news: SearchNews) => news?.link) || [];
 
@@ -220,8 +219,6 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
             news.filter(news => news.link && news.link.includes("http"))
                 .forEach(news => articlePromises.push(getArticle(news)));
             await Promise.all(articlePromises);
-
-
 
             request.transfer = {
                 result: MESSAGE.SUCCESS,
