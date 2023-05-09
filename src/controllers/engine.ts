@@ -63,7 +63,7 @@ export async function searchApiIdx(redisKey:string): Promise<number> {
         for (let i = 0; i < search_api.length; i++) {
             const reqCnt = await hgetData(redis, redisKey,"json", search_api[i].api_name);
             if (reqCnt === null) {
-                await hmsetRedis(await getRedis(), redisKey, {[`${search_api[i].api_name}`]: 0}, 0);
+                await hmsetRedis(redis, redisKey, {[`${search_api[i].api_name}`]: 0}, 0);
                 selectIdx = i;
                 break;
             } else {

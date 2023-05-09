@@ -54,6 +54,7 @@ export default class Common_service {
             const resultAlarm: AlarmData[] = await mysql.getInstance().query(QUERY.Alarm);
             Common_service.alarm_info = processKeywordAlarms(resultAlarm)
 
+            await this.engine_start();
            /* if (!await initStock()) {
                 console.log("initPress error");
             }*/
@@ -75,6 +76,7 @@ export default class Common_service {
         }
 
         const searchIdx = await searchApiIdx(RSEARCHAPI);
+
         if (searchIdx > -1) {
             if(Common_service.search_api_idx.search !== searchIdx){
                 console.log(`${Common_service.search_api[Common_service.search_api_idx?.search]?.api_name ?? ''} Changed searchIdx => ${Common_service.search_api[searchIdx]?.api_name }`);
@@ -92,7 +94,7 @@ export default class Common_service {
 
     }
 
-//{"client_id": "QrfAfnf3E2JLwgfT2HwP", "client_secret": "xTnEl_Vq9f"}
+
     private async initDataSet(key: string, query: string, sort_key: any, redis, expire: number) {
         try {
             await mysql.getInstance().query(query).then(async (raws) => {
