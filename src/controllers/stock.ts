@@ -65,6 +65,7 @@ export async function getStockBorad(page: number = 1, stock: string): Promise<an
 
     if (stock) {
         const code = await hgetData(await getRedis(), RSTOCK, "", stock);
+        console.log(code)
         const url = `https://finance.naver.com/item/board.naver?code=${code}&page=${page}`;
         const $ = await axiosCall(url);
         const posts: Stock[] = [];

@@ -469,6 +469,7 @@ export async function getReply(news: News, type: string = 'News', browser) {
         const commentCountText = await page.$eval('.u_cbox_count', el => el.textContent);
         const commentCount = commentCountText ? parseInt(commentCountText) : null
 
+        //like icon 수 가져오기
         if (commentCount > 0) {
             const textContents = await page.evaluate(() => {
                 const elements = document.querySelectorAll('.u_cbox_comment_box');
@@ -482,7 +483,7 @@ export async function getReply(news: News, type: string = 'News', browser) {
                     const sympathyCount = sympathyEl ? parseInt(sympathyEl.textContent.trim()) : 0;
                     const nonSympathyCount = non_sympathyEl ? parseInt(non_sympathyEl.textContent.trim()) : 0;
 
-                    if(contentsEl || sympathyEl ||non_sympathyEl){
+                    if(contentsEl || sympathyEl || non_sympathyEl){
                         result.push({
                             contents: contents,
                             sympathy: sympathyCount,
@@ -494,8 +495,8 @@ export async function getReply(news: News, type: string = 'News', browser) {
                 return result;
             });
 
-
-            if (type == 'News') {
+            //like icon 수 가져오기
+           /* if (type == 'News') {
                 try {
                     const likeItElements = await page.evaluate(() => {
                         const elements = document.querySelectorAll('#likeItCountViewDiv li');
@@ -510,7 +511,7 @@ export async function getReply(news: News, type: string = 'News', browser) {
                     news.like = likeItElements;
                 } catch (e) {
                 }
-            }
+            }*/
 
             if (textContents && textContents.length > 0) {
 
