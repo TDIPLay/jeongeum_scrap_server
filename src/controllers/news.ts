@@ -461,7 +461,7 @@ export async function getReply(news: News, type: string = 'News', browser) {
         // https://n.news.naver.com/mnews/article/comment/022/0003810455?sid=104
 
 
-        await page.goto(modifiedUrl, {waitUntil: 'networkidle0', timeout: 3000});
+        await page.goto(modifiedUrl, {waitUntil: 'networkidle0', timeout: 9000});
         //const commentCountEl = await page.$('.media_end_head_info_variety_cmtcount a.media_end_head_cmtcount_button');
         //if(!commentCountEl) return;
         //const commentCountText = await commentCountEl?.evaluate(el => el.textContent.trim());
