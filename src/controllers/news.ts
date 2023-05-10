@@ -455,11 +455,18 @@ export async function getReply(news: News, type: string = 'News', browser) {
 
 
     const page = await browser.newPage();
+    let modifiedUrl = news.link.includes('n.news.naver.com/mnews') ? news.link.replace("/article/", "/article/comment/") : news.link;
     try {
-        await page.goto(news.link, {waitUntil: 'networkidle0', timeout: 10000});
-        const commentCountEl = await page.$('.media_end_head_info_variety_cmtcount a.media_end_head_cmtcount_button');
-        if(!commentCountEl) return;
-        const commentCountText = await commentCountEl?.evaluate(el => el.textContent.trim());
+        // https://n.news.naver.com/mnews/article/comment/277/0005257002?sid=100
+        // https://n.news.naver.com/mnews/article/comment/022/0003810455?sid=104
+
+
+        await page.goto(modifiedUrl, {waitUntil: 'networkidle0', timeout: 3000});
+        //const commentCountEl = await page.$('.media_end_head_info_variety_cmtcount a.media_end_head_cmtcount_button');
+        //if(!commentCountEl) return;
+        //const commentCountText = await commentCountEl?.evaluate(el => el.textContent.trim());
+        //const commentCount = commentCountText ? parseInt(commentCountText) : null
+        const commentCountText = await page.$eval('.u_cbox_count', el => el.textContent);
         const commentCount = commentCountText ? parseInt(commentCountText) : null
 
         if (commentCount > 0) {
@@ -523,6 +530,7 @@ export async function getReply(news: News, type: string = 'News', browser) {
 
     } catch (e) {
         console.log(e)
+        console.log(modifiedUrl)
         await page.close();
     }
     // return textContents;
