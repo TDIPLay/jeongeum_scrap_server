@@ -20,7 +20,6 @@ interface KakaoTalkMessage {
     button_title: string
 }
 
-
 // KakaoTalk 메시지를 전송하는 함수
 export async function sendKakaoTalkMessage(access_token:string,message: KakaoTalkMessage): Promise<void> {
     const config: AxiosRequestConfig = {
@@ -78,7 +77,6 @@ export async function userKakaoOAuth(code: string): Promise<any> {
         return null;
     }
 }
-
 
 export const getKakaoUserInfo = async (accessToken: string) : Promise<any> => {
     const apiUrl = 'https://kapi.kakao.com/v2/user/me';

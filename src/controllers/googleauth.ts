@@ -33,8 +33,6 @@ export const userGoogleOAuth = async (code: string): Promise<Credentials> => {
     return tokens;
 };
 
-
-
 // 유저 정보를 가져오는 함수
 export const getGoogleUserInfo = async (accessToken: string): Promise<any> => {
     const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, `${process.env.SOCIAL_POSTBACK}/google`);
@@ -57,7 +55,6 @@ export const getGoogleUserInfo = async (accessToken: string): Promise<any> => {
         image: ''
     };
 };
-
 
 export async function validateGoogleToken(accessToken: string): Promise<boolean> {
    /* const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, `${process.env.SOCIAL_POSTBACK}/google`);

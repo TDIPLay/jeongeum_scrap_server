@@ -73,7 +73,7 @@ export const getNaverUserInfo = async (accessToken: string) : Promise<any> => {
 
   try {
     const response = await axios.get(apiUrl, { headers });
-
+    console.log(response)
     const {id,name, email, mobile,profileImage} = response.data.response;
     return {
       id: id,

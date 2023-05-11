@@ -9,8 +9,6 @@ import {getRedis} from "../../service/redis";
 import {Stock} from "../interfaces";
 
 
-
-
 const noTypePress = ['finomy.com', 'ikunkang.com', 'www.rapportian.com']
 
 async function axiosCall(link: string): Promise<cheerio.CheerioAPI> {
@@ -40,7 +38,6 @@ async function axiosCall(link: string): Promise<cheerio.CheerioAPI> {
     }
 }
 
-
 export async function getStockBoard(page: number = 1, stock: string): Promise<any> {
 
     if (!stock) {
@@ -67,7 +64,6 @@ export async function getStockBoard(page: number = 1, stock: string): Promise<an
     return objStock;
 }
 
-
 async function getStockCode(stock: string): Promise<string> {
     const code = await hgetData(await getRedis(), RSTOCK, "", stock);
     return code;
@@ -89,8 +85,6 @@ function parseStockInfo($: cheerio.CheerioAPI): Record<string, string> {
 
 async function getFinance(url) {
     const $ = await axiosCall(url);
-
-
     const tables = $('.tb_type1');
     // console.log(tables.html())
     const annualTable = $(tables[2]);
@@ -111,8 +105,6 @@ async function getFinance(url) {
     // Process the data as needed
     return data;
 }
-
-
 
 function parsePosts($: cheerio.CheerioAPI, code: string): Stock[] {
     const posts: Stock[] = [];
@@ -149,6 +141,7 @@ function parsePosts($: cheerio.CheerioAPI, code: string): Stock[] {
 
     return posts;
 }
+
 export async function getStockReply(stock, browser) {
     const page = await browser.newPage();
 
