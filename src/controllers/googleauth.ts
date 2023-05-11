@@ -49,7 +49,6 @@ export const getGoogleUserInfo = async (accessToken: string): Promise<any> => {
         resourceName: 'people/me',
         personFields: 'names,emailAddresses',
     });
-    console.log(data)
     // 필요한 유저 정보를 추출하여 반환
     return {
         name: data.names?.[0].displayName,

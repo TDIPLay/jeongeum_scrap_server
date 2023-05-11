@@ -96,7 +96,14 @@ export interface Stock {
     sympathy: number;
     non_sympathy: number;
 }
-
+export interface TokenResponse {
+    access_token: string;
+    token_type: string;
+    expires_in: number;
+    refresh_token: string;
+    scope: string;
+    vendor?:string;
+}
 export interface UserInfo {
     id: string;
     nickname: string;

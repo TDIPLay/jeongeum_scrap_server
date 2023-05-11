@@ -1,4 +1,5 @@
 import axios, {AxiosRequestConfig} from 'axios';
+import {TokenResponse} from "../interfaces";
 
 // 카카오톡 API를 호출할 때 필요한 인증 토큰
 const ACCESS_TOKEN = 'X5m8-mV575fdhrqUV4YFn3uI2Xz1BpHASBrb5gVkCj11WgAAAYcsJDHs';
@@ -19,14 +20,7 @@ interface KakaoTalkMessage {
     button_title: string
 }
 
- interface KakaoAccessToken {
-    access_token: string;
-    token_type: string;
-    expires_in: number;
-    refresh_token: string;
-    scope: string;
-    vendor?:string;
-}
+
 // KakaoTalk 메시지를 전송하는 함수
 export async function sendKakaoTalkMessage(access_token:string,message: KakaoTalkMessage): Promise<void> {
     const config: AxiosRequestConfig = {
@@ -47,7 +41,7 @@ export async function sendKakaoTalkMessage(access_token:string,message: KakaoTal
     }
 }
 
-async function getKakaoAccessToken(clientId: string, clientSecret: string, redirectUri: string, code: string): Promise<KakaoAccessToken> {
+async function getKakaoAccessToken(clientId: string, clientSecret: string, redirectUri: string, code: string): Promise<TokenResponse> {
     const config = {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',

@@ -1,9 +1,8 @@
 import axios from 'axios';
-import {KakaoAccessTokenResponse} from "../interfaces";
+import {TokenResponse} from "../interfaces";
 
 
-
-async function getNaverAccessToken(clientId: string, clientSecret: string, redirectUri: string, code: string): Promise<KakaoAccessTokenResponse> {
+async function getNaverAccessToken(clientId: string, clientSecret: string, redirectUri: string, code: string): Promise<TokenResponse> {
   const config = {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
