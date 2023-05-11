@@ -49,7 +49,7 @@ export const utils = {
 }
 
 export const logger = pino({
-    name: 'rtb-data-server',
+    name: 'jeongeum_server',
     level: 'debug'
 });
 

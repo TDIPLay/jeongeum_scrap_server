@@ -3,7 +3,7 @@ import axiosRetry from 'axios-retry';
 import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import iconv from 'iconv-lite';
-import {News, NewsItem, Scraper, SearchNews} from "../interfaces";
+import {News, NewsItem, Scraper, SearchNews, StockData} from "../interfaces";
 import cron from 'node-cron';
 import moment from 'moment'
 import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, RKEYWORD, RSEARCHAPI} from "../helpers/common";

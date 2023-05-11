@@ -20,7 +20,7 @@ import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken
 import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth";
 import {generateTalkTemplate} from "./aligoxkakao";
 import {getRelKeyword} from "./naverdatalab";
-import {getStockBorad} from "./stock";
+import {getStockBoard, getStockReply} from "./stock";
 import * as puppeteer from "puppeteer";
 //import { KoalaNLP } from 'koalanlp';
 //import {analyzeSentiment} from "./koanlp";
@@ -48,7 +48,18 @@ export const preStock = async (request: IAnyRequest, reply: FastifyReply, done) 
     try {
         const {page,query} = request.query;
 
-        const stock = await getStockBorad(page, query);
+        const stock = await getStockBoard(page, query);
+
+        const CHUNK_SIZE = 10;
+        const browser = await puppeteer.launch({args: ['--no-sandbox']});
+        //const browser = await puppeteer.launch({args: ['--no-sandbox'], headless: false});
+        for (let i = 0; i < stock.board.length; i += CHUNK_SIZE) {
+            const articlePromises = stock.board.slice(i, i + CHUNK_SIZE).map(stock => getStockReply(stock, browser));
+            await Promise.all(articlePromises);
+            await sleep(20);
+        }
+        await closeBrowser(browser);
+
 
         request.transfer = {
             result: MESSAGE.SUCCESS,
