@@ -1,73 +1,18 @@
 import axios from 'axios';
-import axiosRetry from 'axios-retry';
-import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import iconv from 'iconv-lite';
-import {News, NewsItem, Scraper, SearchNews, StockData} from "../interfaces";
+import {News, NewsItem, Scraper, SearchNews} from "../interfaces";
 import cron from 'node-cron';
 import moment from 'moment'
-import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, RKEYWORD, RSEARCHAPI} from "../helpers/common";
-import {closeBrowser, decodeHtmlEntities, extractAuthorAndEmail, getDateString} from "../helpers/utils";
+import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, REQUEST_OPTIONS, RKEYWORD, RSEARCHAPI} from "../helpers/common";
+import {decodeHtmlEntities, extractAuthorAndEmail, getDateString} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {getRedisPress, hmsetRedis, setRedisPress} from "./worker";
-import {ResponseType} from "axios";
 import request from "request";
 import {getApiClientKey} from "./engine";
 
-const REQUEST_OPTIONS = {
-    headers: {
-        "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
-    },
-    encoding: null,
-    timeout: 7000,
-    followRedirect: true,
-    maxRedirects: 3,
-};
-
-
-const AXIOS_OPTIONS = {
-    headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
-    },
-    encoding: null,
-    method: "GET",
-    timeout: 5000,
-    maxRedirects: 3,
-    onRedirect: (redirectRequest, redirectResponse) => {
-        console.log(`Redirected to: ${redirectResponse.headers.location}`);
-    },
-    responseType: "arraybuffer" as ResponseType,
-};
 
 const noTypePress = ['finomy.com', 'ikunkang.com', 'www.rapportian.com']
-
-async function axiosCall2(link: string): Promise<cheerio.CheerioAPI> {
-
-    try {
-        axiosRetry(axios, {
-            retries: 2,
-            retryDelay: (retryCount) => {
-                return retryCount * 1000; // 1초, 2초, 3초
-            },
-            shouldResetTimeout: true,
-        });
-
-        let response = await axios.get(link, AXIOS_OPTIONS);
-
-        const content_type = response.headers['content-type'].match(/charset=(.+)/i);
-        const no_type = noTypePress.some(x => link.includes(x))
-        const encoding = content_type && content_type.length ? content_type[1] : no_type ? "euc-kr" : "utf-8";
-
-        const data = encoding.toLowerCase() !== 'utf-8' ? iconv.decode(response.data, encoding) : response.data;
-
-        return cheerio.load(data);
-
-    } catch (error) {
-        console.error(`Error axiosCall link: ${error.message} => ${link}`);
-        return null;
-    }
-}
 
 
 async function requestCall(link: string): Promise<any> {

@@ -83,7 +83,7 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         const sortBySimNews = await getNews(query,1,25,'sim');
         const sortByDateNews = await getNews(query,1,25);
         const blog = /*await getBlog(query,1,10)*/[];
-        const neverNews  = [...sortBySimNews,...sortByDateNews,...blog].filter(news => news.link && news.link.includes("naver"))
+        const neverNews  = [...sortBySimNews,...sortByDateNews,...blog].filter(news => news.link && news.link.includes("naver.com"))
         let uniqueNeverNews = neverNews.filter((news, index, self) =>
             index === self.findIndex(t => t.link === news.link)
         );

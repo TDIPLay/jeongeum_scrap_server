@@ -1,6 +1,7 @@
 import nodemailer, {Transporter} from 'nodemailer';
 import {News} from "../interfaces";
 
+//google
 interface MailOptions {
     from: string;
     to: string;

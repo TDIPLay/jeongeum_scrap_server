@@ -3,39 +3,13 @@ import iconv from "iconv-lite";
 import axios from 'axios';
 import {ResponseType} from "axios/index";
 import axiosRetry from "axios-retry";
-import {RPRESS, RSTOCK} from "../helpers/common";
+import {AXIOS_OPTIONS, RSTOCK} from "../helpers/common";
 import {hgetData} from "./worker";
 import {getRedis} from "../../service/redis";
-import {News, StockData} from "../interfaces";
-import moment from "moment/moment";
-import {getDateString} from "../helpers/utils";
+import {Stock} from "../interfaces";
 
-interface Stock {
-    date: string;
-    title: string;
-    content?: string;
-    link: string;
-    author: string;
-    reply_count?: number;
-    reply?: any;
-    views: number;
-    sympathy: number;
-    non_sympathy: number;
-}
 
-const AXIOS_OPTIONS = {
-    headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
-    },
-    encoding: null,
-    method: "GET",
-    timeout: 5000,
-    maxRedirects: 3,
-    onRedirect: (redirectRequest, redirectResponse) => {
-        console.log(`Redirected to: ${redirectResponse.headers.location}`);
-    },
-    responseType: "arraybuffer" as ResponseType,
-};
+
 
 const noTypePress = ['finomy.com', 'ikunkang.com', 'www.rapportian.com']
 

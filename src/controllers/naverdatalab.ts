@@ -1,7 +1,6 @@
-import {NewsItem} from "../interfaces";
 import {getApiClientKey} from "./engine";
-import {NAVER_API_URL, R_TREND_DATA, RSEARCHAPI, RTRENDAPI} from "../helpers/common";
-import axios, {AxiosResponse} from 'axios';
+import {NAVER_API_URL, RSEARCHAPI, RTRENDAPI} from "../helpers/common";
+import axios from 'axios';
 import moment from "moment";
 import {generate} from "../helpers/utils";
 

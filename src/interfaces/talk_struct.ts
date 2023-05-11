@@ -18,14 +18,7 @@ export interface News {
     name?: string;
     timestamp?: number;
 }
-export interface KakaoAccessTokenResponse {
-    access_token: string;
-    token_type: string;
-    expires_in: number;
-    refresh_token: string;
-    scope: string;
-    vendor?:string;
-}
+
 export interface SearchNews {
     title: string;
     link: string;
@@ -90,6 +83,69 @@ export interface KeywordAlarm {
 export interface AlarmMailKeywords {
     [key: string]: string[];
 }
+
+export interface Stock {
+    date: string;
+    title: string;
+    content?: string;
+    link: string;
+    author: string;
+    reply_count?: number;
+    reply?: any;
+    views: number;
+    sympathy: number;
+    non_sympathy: number;
+}
+
+export interface UserInfo {
+    id: string;
+    nickname: string;
+    profileImage: string;
+    email: string;
+    mobile: string;
+}
+
+export interface TokenInfo {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+    token_type: string;
+}
+
+export interface UserInfoResponse {
+    id: number;
+    properties: {
+        nickname: string;
+        profile_image?: string;
+        thumbnail_image?: string;
+    };
+    kakao_account: {
+        profile_nickname_needs_agreement: boolean;
+        profile_needs_agreement: boolean;
+        profile: {
+            nickname: string;
+            thumbnail_image_url?: string;
+            profile_image_url?: string;
+            is_default_image?: boolean;
+        };
+        email_needs_agreement: boolean;
+        has_email: boolean;
+        email: string;
+        is_email_valid?: boolean;
+        is_email_verified: boolean;
+        has_age_range?: boolean;
+        age_range_needs_agreement?: boolean;
+        age_range?: string;
+        has_birthday?: boolean;
+        birthday_needs_agreement?: boolean;
+        birthday?: string;
+        birthday_type?: string;
+        has_gender?: boolean;
+        gender_needs_agreement?: boolean;
+        gender?: string;
+    };
+}
+
 
 export interface ICommonOK {
     result: string,

@@ -1,4 +1,4 @@
-import axios, {AxiosRequestConfig, ResponseType} from 'axios';
+import axios from 'axios';
 import moment from "moment";
 import {AlarmData, KeywordAlarm} from "../interfaces";
 import {ALARM} from "../helpers/common";

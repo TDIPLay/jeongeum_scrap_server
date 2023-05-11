@@ -1,20 +1,7 @@
 import axios from 'axios';
 import {KakaoAccessTokenResponse} from "../interfaces";
 
-interface UserInfo {
-  id: string;
-  nickname: string;
-  profileImage: string;
-  email: string;
-  mobile: string;
-}
 
-interface TokenInfo {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-  token_type: string;
-}
 
 async function getNaverAccessToken(clientId: string, clientSecret: string, redirectUri: string, code: string): Promise<KakaoAccessTokenResponse> {
   const config = {

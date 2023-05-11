@@ -1,10 +1,4 @@
 import axios, {AxiosRequestConfig} from 'axios';
-import Common_service from "../../service/common_service";
-import service from "../../service/common_service";
-import {hmsetRedis} from "./worker";
-import {RKEYWORD, RTOTEN} from "../helpers/common";
-import {getRedis} from "../../service/redis";
-import {KakaoAccessTokenResponse} from "../interfaces";
 
 // 카카오톡 API를 호출할 때 필요한 인증 토큰
 const ACCESS_TOKEN = 'X5m8-mV575fdhrqUV4YFn3uI2Xz1BpHASBrb5gVkCj11WgAAAYcsJDHs';
@@ -15,7 +9,7 @@ const KAKAO_OAUTH_API_URL = 'https://kauth.kakao.com/oauth/token';
 
 
 // KakaoTalk 메시지 전송에 필요한 인터페이스 정의
-export interface KakaoTalkMessage {
+interface KakaoTalkMessage {
     object_type: string;
     text: string;
     link: {
@@ -25,41 +19,14 @@ export interface KakaoTalkMessage {
     button_title: string
 }
 
-interface UserInfoResponse {
-    id: number;
-    properties: {
-        nickname: string;
-        profile_image?: string;
-        thumbnail_image?: string;
-    };
-    kakao_account: {
-        profile_nickname_needs_agreement: boolean;
-        profile_needs_agreement: boolean;
-        profile: {
-            nickname: string;
-            thumbnail_image_url?: string;
-            profile_image_url?: string;
-            is_default_image?: boolean;
-        };
-        email_needs_agreement: boolean;
-        has_email: boolean;
-        email: string;
-        is_email_valid?: boolean;
-        is_email_verified: boolean;
-        has_age_range?: boolean;
-        age_range_needs_agreement?: boolean;
-        age_range?: string;
-        has_birthday?: boolean;
-        birthday_needs_agreement?: boolean;
-        birthday?: string;
-        birthday_type?: string;
-        has_gender?: boolean;
-        gender_needs_agreement?: boolean;
-        gender?: string;
-    };
+ interface KakaoAccessToken {
+    access_token: string;
+    token_type: string;
+    expires_in: number;
+    refresh_token: string;
+    scope: string;
+    vendor?:string;
 }
-
-
 // KakaoTalk 메시지를 전송하는 함수
 export async function sendKakaoTalkMessage(access_token:string,message: KakaoTalkMessage): Promise<void> {
     const config: AxiosRequestConfig = {
@@ -80,7 +47,7 @@ export async function sendKakaoTalkMessage(access_token:string,message: KakaoTal
     }
 }
 
-async function getKakaoAccessToken(clientId: string, clientSecret: string, redirectUri: string, code: string): Promise<KakaoAccessTokenResponse> {
+async function getKakaoAccessToken(clientId: string, clientSecret: string, redirectUri: string, code: string): Promise<KakaoAccessToken> {
     const config = {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',

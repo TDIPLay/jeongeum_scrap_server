@@ -17,6 +17,30 @@ export const MAX_LINK = 200		                    // MAX_LINK
 export const NAVER_API_URL = "https://openapi.naver.com/v1/search/news.json"
 export const NAVER_RANK_URL = "https://news.naver.com/main/ranking/popularDay.naver"
 
+export const AXIOS_OPTIONS = {
+    headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
+    },
+    encoding: null,
+    method: "GET",
+    timeout: 5000,
+    maxRedirects: 3,
+    onRedirect: (redirectRequest, redirectResponse) => {
+        console.log(`Redirected to: ${redirectResponse.headers.location}`);
+    },
+    responseType: "arraybuffer" as ResponseType,
+};
+
+export const REQUEST_OPTIONS = {
+    headers: {
+        "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
+    },
+    encoding: null,
+    timeout: 7000,
+    followRedirect: true,
+    maxRedirects: 3,
+};
 
 export enum ALARM {
     email = '1',

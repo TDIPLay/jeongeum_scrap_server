@@ -129,7 +129,7 @@ export const closeBrowser = async (browser) => {
         await page.close();
     }
     await browser.close();
-    await sleep( 1000); // 1초간 대기
+    await sleep( 1000);
     await browser.close();
 }
 
