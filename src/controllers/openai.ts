@@ -11,7 +11,7 @@ export async function generateChatMessage(query:string):Promise<string> {
 //택스트기반 봇 사용
     const text_davinci = {
         model: 'text-davinci-002',
-        prompt: `${query} 키워드로 뉴스기사써줘`,
+        prompt: `${query}`,
         temperature: 0.5,
         max_tokens: 1000,
         top_p: 1,
@@ -29,7 +29,7 @@ export async function generateChatMessage(query:string):Promise<string> {
             [
                 {
                     role: "user",
-                    content: `${query} 키워드로 뉴스기사작성해줘`
+                    content: `${query}`
                 },
             ],
        // responseType: 'stream'
