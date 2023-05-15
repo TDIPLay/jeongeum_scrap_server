@@ -10,13 +10,17 @@ import {
     preApiDataLab,
     preApiRankNews,
     preApiRealNews,
-    preApiSyncUp, preKoaNap,
-    preOpenAi, preReply,
+    preApiSyncUp,
+    preKoaNap,
+    preOpenAi,
+    preReply, preSearchBlog, preSearchBlogNewLink, preSearchCafe, preSearchCafeNewLink,
     preSearchNewLink,
     preSearchNews,
     preSocial,
     preSocialCallback,
-    preSocialLogin, preStock,
+    preSocialLogin,
+    preStock,
+    preStockRaw,
     signUp
 } from "../controllers";
 
@@ -38,6 +42,12 @@ async function apiRouter(fastify: FastifyInstance) {
         method: 'GET',
         url: '/search',
         schema: apiSchema, preHandler: preSearchNewLink, handler: apiSyncUp
+    })
+    //뉴스 댓글 전달
+    fastify.route({
+        method: 'GET',
+        url: '/news_reply',
+        schema: apiSchema,preHandler:preReply, handler: apiSyncUp
     })
     //언론사별 rank스크랩 기본데이터+기자+이메일등 1~5위까지 전달
     fastify.route({
@@ -87,13 +97,37 @@ async function apiRouter(fastify: FastifyInstance) {
         url: '/datalab',
         schema: apiSchema, preHandler: preApiDataLab, handler: apiSyncUp
     })
+    //최근 블로그스크랩 기본데이터+기자+이메일등 최대 ~ 1000  전달
+    fastify.route({
+        method: 'GET',
+        url: '/blog_all',
+        schema: apiSchema, preHandler: preSearchBlog, handler: apiSyncUp
+    })
+    //키워드별 신규 블로그스크랩 기본데이터+기자+이메일등 전달
+    fastify.route({
+        method: 'GET',
+        url: '/blog',
+        schema: apiSchema, preHandler: preSearchBlogNewLink, handler: apiSyncUp
+    })
+    //최근 카페스크랩 기본데이터+기자+이메일등 최대 ~ 1000  전달
+    fastify.route({
+        method: 'GET',
+        url: '/cafe_all',
+        schema: apiSchema, preHandler: preSearchCafe, handler: apiSyncUp
+    })
+    //키워드별 신규 카페스크랩 기본데이터+기자+이메일등 전달
+    fastify.route({
+        method: 'GET',
+        url: '/cafe',
+        schema: apiSchema, preHandler: preSearchCafeNewLink, handler: apiSyncUp
+    })
     //메일 전송
     fastify.route({
         method: 'POST',
         url: '/sendmail',
         handler: apiBriefingMail,
     })
-    //임시 자연어 분석
+    //임시 자연어 분석 하다말음
     fastify.route({
         method: 'GET',
         url: '/koanlp',
@@ -105,11 +139,11 @@ async function apiRouter(fastify: FastifyInstance) {
         url: '/stock',
         schema: apiSchema,preHandler:preStock, handler: apiSyncUp
     })
-    //뉴스 댓글 전달
+    //주식 데이터 일자ㅣ상장기업명ㅣ뉴스건수ㅣ공시건수ㅣ게시글수ㅣ조회수ㅣ공감ㅣ비공감ㅣ아이디중복율ㅣ거래량ㅣ거래대금ㅣ주식시세(증감율)|코스닥ㅣ코스피 전달
     fastify.route({
         method: 'GET',
-        url: '/news_reply',
-        schema: apiSchema,preHandler:preReply, handler: apiSyncUp
+        url: '/stock_raw',
+        schema: apiSchema,preHandler:preStockRaw, handler: apiSyncUp
     })
 
     //api 인증서 발급 사용안함

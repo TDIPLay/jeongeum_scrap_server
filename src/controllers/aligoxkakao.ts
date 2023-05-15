@@ -329,6 +329,39 @@ const generateTalkTemplate = (data: News[]) => {
     }).join("");
     return `${template}`
 };
+
+async function sendAlimTalk() {
+    try {
+        const articles = [
+            {
+                title: '4월 호텔 톱5, ‘그랜드워커힐’ 홀로 선전',
+                link: 'https://n.news.naver.com/mnews/article/022/0003810737?sid=101',
+            },
+            {
+                title: '4월 호텔 톱5, ‘그랜드워커힐’ 홀로 선전',
+                link: 'https://n.news.naver.com/mnews/article/022/0003810737?sid=101',
+            },
+            {
+                title: '4월 호텔 톱5, ‘그랜드워커힐’ 홀로 선전',
+                link: 'https://n.news.naver.com/mnews/article/022/0003810737?sid=101',
+            },
+            {
+                title: '4월 호텔 톱5, ‘그랜드워커힐’ 홀로 선전',
+                link: 'https://n.news.naver.com/mnews/article/022/0003810737?sid=101',
+            }
+        ];
+
+        // 템플릿 내용 생성
+        const templateContent = articles.map((article, index) => {
+            return `[기사 ${index + 1}]\n제목: ${article.title}\n링크: ${article.link}\n`;
+        }).join('\n');
+
+        return templateContent;
+    } catch (e) {
+
+    }
+}
+
 export {
     token,
     friendList,

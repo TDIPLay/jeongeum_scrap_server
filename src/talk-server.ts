@@ -91,7 +91,7 @@ const startServer = async () => {
     })
 
     server.get('/', (request, reply) => {
-      reply.send({ name: 'talknews-server' })
+      reply.send({ name: 'jeongeum-server' })
     })
 
     if (process.env.NODE_ENV === 'production') {

@@ -10,7 +10,7 @@ import moment from "moment/moment";
 import {closeBrowser, sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
-import {MAX_LINK, RKEYWORD, RREPLY_KEYWORD, RTOTEN} from "../helpers/common";
+import {MAX_LINK, R_BlOG_KEYWORD, R_CAFE_KEYWORD, RKEYWORD, RREPLY_KEYWORD, RTOTEN} from "../helpers/common";
 import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
 import {getKakaoUserInfo, userKakaoOAuth, validateKakaoToken} from "./kakaoauth";
 import {sendMail} from "./mailer";
@@ -20,8 +20,10 @@ import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken
 import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth";
 import {generateTalkTemplate} from "./aligoxkakao";
 import {getRelKeyword} from "./naverdatalab";
-import {getStockBoard, getStockReply} from "./stock";
+import {getStockBoard, getStockPage, getStockReply} from "./stock";
 import * as puppeteer from "puppeteer";
+import {getBlog, getBlogLinks, getFindBlogLinks} from "./blog";
+import {getCafe, getFindCafeLinks, getNewCafeLinks} from "./cafe";
 //import { KoalaNLP } from 'koalanlp';
 //import {analyzeSentiment} from "./koanlp";
 export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done) => {
@@ -74,6 +76,38 @@ export const preStock = async (request: IAnyRequest, reply: FastifyReply, done) 
         handleServerError(reply, e)
     }
 }
+
+export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const {page,query} = request.query;
+
+        const stock = await getStockPage(page, query);
+        const endDate = moment().subtract(1, 'day').format('YYYY-MM-DD');
+        const CHUNK_SIZE = 10;
+        const browser = await puppeteer.launch({args: ['--no-sandbox']});
+        //const browser = await puppeteer.launch({args: ['--no-sandbox'], headless: false});
+        for (let i = 1; i < stock.board.length; i += CHUNK_SIZE) {
+            const articlePromises = stock.board.slice(i, i + CHUNK_SIZE).map(stock => getStockPage(i, query));
+            await Promise.all(articlePromises);
+            await sleep(20);
+        }
+        //await closeBrowser(browser);*/
+
+
+        request.transfer = {
+            result: MESSAGE.SUCCESS,
+            code: STANDARD.SUCCESS,
+            message: "SUCCESS",
+            data: stock
+        };
+        done();
+
+    } catch (e) {
+        console.log(e)
+        handleServerError(reply, e)
+    }
+}
+
 
 export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
@@ -332,6 +366,193 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
             message: "SUCCESS",
             list_count: news.length,
             data: sortedNews
+        };
+        done();
+    } catch (e) {
+        console.log(e)
+        handleServerError(reply, e)
+    }
+}
+
+export const preSearchBlog = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const {query, page = 1} = request.query;
+
+        const articlePromises: Promise<void>[] = [];
+
+        //1 1-100 2 101-200 3 201-300     10 901-1000
+        const start = (page - 1) * 100 + 1;
+        const end = page * 100;
+        let blog: News[] = [];
+        const redis = await getRedis();
+
+        if (parseInt(page) <= 10) {
+            //page seq 대한기사  100건만
+            for (let i = start; i < end; i += 100) {
+                let data = null;
+
+                if (i === 1) {
+                    let oldLinks = await hgetData(redis, R_BlOG_KEYWORD, "json", query);
+                    data = await getFindBlogLinks(query, i, oldLinks || []);
+                    if (!data || !data.length || data.length < 50) {
+                        data = await getBlog(query, i, 100);
+                    }
+                } else {
+                    data = await getNews(query, i, 100);
+                }
+                if (!data || !data.length) break;
+                await sleep(100);
+                blog = [...blog, ...data];
+            }
+            // const  test = await getBrowserHtml(query,'https://n.news.naver.com/mnews/article/003/0011836031?sid=101')
+            // console.log(test)
+            blog.filter(blog => blog.link && blog.link.includes("http"))
+                .forEach(blog => articlePromises.push(getArticle(blog)));
+            await Promise.all(articlePromises);
+
+            request.transfer = {
+                result: MESSAGE.SUCCESS,
+                code: STANDARD.SUCCESS,
+                message: "SUCCESS",
+                list_count: blog.length,
+                data: blog
+            };
+        } else {
+            request.transfer = {result: MESSAGE.FAIL, code: ERROR400.statusCode, message: "Over Page"};
+        }
+        done();
+    } catch (e) {
+        console.error(e)
+        handleServerError(reply, e)
+    }
+}
+
+export const preSearchBlogNewLink = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const {query, start} = request.query;
+        const articlePromises: Promise<void>[] = [];
+        const redis = await getRedis();
+        let oldLinks = await hgetData(redis, R_BlOG_KEYWORD, "json", query);
+
+        let blog: News[] = [];
+
+        //최근기사 100건만
+        for (let i = 1; i < 100; i += 100) {
+            let blogList = await getBlogLinks(query, start, oldLinks || []);
+            if (!blogList || !blogList.length) break;
+            let tm = moment(blogList[blogList.length - 1].pubDate).unix();
+            blog = [...blog, ...blogList];
+
+            await sleep(100);
+            if (utils.getTime() > tm) break;
+        }
+
+        const uniqueNews = Array.from(new Set(blog.filter(n => n.link?.startsWith("http"))));
+        const sortedBlog = uniqueNews.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
+       // const naverNews = Array.from(new Set(news.filter(n => n.link?.includes("naver"))));
+
+        sortedBlog.forEach(news => articlePromises.push(getArticle(news)));
+        await Promise.all(articlePromises);
+
+        request.transfer = {
+            result: MESSAGE.SUCCESS,
+            code: STANDARD.SUCCESS,
+            message: "SUCCESS",
+            list_count: blog.length,
+            data: sortedBlog
+        };
+        done();
+    } catch (e) {
+        console.log(e)
+        handleServerError(reply, e)
+    }
+}
+export const preSearchCafe = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const {query, page = 1} = request.query;
+
+        const articlePromises: Promise<void>[] = [];
+
+        //1 1-100 2 101-200 3 201-300     10 901-1000
+        const start = (page - 1) * 100 + 1;
+        const end = page * 100;
+        let cafe: News[] = [];
+        const redis = await getRedis();
+
+        if (parseInt(page) <= 10) {
+            //page seq 대한기사  100건만
+            for (let i = start; i < end; i += 100) {
+                let data = null;
+
+                if (i === 1) {
+                    let oldLinks = await hgetData(redis, R_CAFE_KEYWORD, "json", query);
+                    data = await getFindCafeLinks(query, i, oldLinks || []);
+                    if (!data || !data.length || data.length < 50) {
+                        data = await getCafe(query, i, 100);
+                    }
+                } else {
+                    data = await getCafe(query, i, 100);
+                }
+                if (!data || !data.length) break;
+                await sleep(100);
+                cafe = [...cafe, ...data];
+            }
+            // const  test = await getBrowserHtml(query,'https://n.news.naver.com/mnews/article/003/0011836031?sid=101')
+            // console.log(test)
+            /*cafe.filter(news => news.link && news.link.includes("http"))
+                .forEach(news => articlePromises.push(getArticle(news)));
+            await Promise.all(articlePromises);*/
+
+            request.transfer = {
+                result: MESSAGE.SUCCESS,
+                code: STANDARD.SUCCESS,
+                message: "SUCCESS",
+                list_count: cafe.length,
+                data: cafe
+            };
+        } else {
+            request.transfer = {result: MESSAGE.FAIL, code: ERROR400.statusCode, message: "Over Page"};
+        }
+        done();
+    } catch (e) {
+        console.error(e)
+        handleServerError(reply, e)
+    }
+}
+
+export const preSearchCafeNewLink = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const {query, start} = request.query;
+        const articlePromises: Promise<void>[] = [];
+        const redis = await getRedis();
+        let oldLinks = await hgetData(redis, R_CAFE_KEYWORD, "json", query);
+
+        let cafe: News[] = [];
+
+        //최근기사 100건만
+        for (let i = 1; i < 100; i += 100) {
+            let cafeList = await getNewCafeLinks(query, start, oldLinks || []);
+            if (!cafeList || !cafeList.length) break;
+            let tm = moment(cafeList[cafeList.length - 1].pubDate).unix();
+            cafe = [...cafe, ...cafeList];
+
+            await sleep(100);
+            if (utils.getTime() > tm) break;
+        }
+
+        const uniqueNews = Array.from(new Set(cafe.filter(n => n.link?.startsWith("http"))));
+        const sortedCafe = uniqueNews.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
+      //  const naverNews = Array.from(new Set(news.filter(n => n.link?.includes("naver"))));
+
+       /* sortedCafe.forEach(news => articlePromises.push(getArticle(news)));
+        await Promise.all(articlePromises);*/
+
+        request.transfer = {
+            result: MESSAGE.SUCCESS,
+            code: STANDARD.SUCCESS,
+            message: "SUCCESS",
+            list_count: cafe.length,
+            data: sortedCafe
         };
         done();
     } catch (e) {

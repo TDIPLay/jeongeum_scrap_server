@@ -4,6 +4,8 @@ export const REDIS_EXPIRE = 86400		                    // 레디스 expire TTL
 export const FIX = 10000		                            // 소수점 4자리
 
 export const RKEYWORD = "Keyword_Jungeum"		            //Redis KEYWORD key
+export const R_BlOG_KEYWORD = "BLOG_Keyword_Jungeum"		            //Redis KEYWORD key
+export const R_CAFE_KEYWORD = "CAFE_Keyword_Jungeum"		            //Redis KEYWORD key
 export const RREPLY_KEYWORD = "Keyword_Reply"		        //Redis Reply key
 export const RTOTEN = "Token"		                        //Redis KEYWORD key
 export const RSEARCHAPI = "Serach_Api"		                //Redis Serach_Api key

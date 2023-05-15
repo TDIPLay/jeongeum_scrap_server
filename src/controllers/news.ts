@@ -53,7 +53,7 @@ async function getArticleDetails(news: News): Promise<void> {
 
         const $ = await newsCall(news.link);
         if ($ === null) return null;
-
+        console.log(news.link)
         const main = $('div.media_end_head_info.nv_notrans');
         let author = $('.byline_s').first().text().trim() || $('.byline_p').first().text().trim() || $('.byline').first().text().trim()
 
@@ -318,32 +318,6 @@ export async function getNews(query: string, start: number, display: number = 10
     // const result = data.items.map(item => item.title ? {...item, "title": `${item.title}_${start}`} : '')
     return data.items.filter(news => news.link && news.link.includes("http") /*&& news.link.includes("naverauth.ts")*/);
 }
-
-export async function getBlog(query: string, start: number, display: number = 100, sort: string = 'date'): Promise<NewsItem[]> {
-    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
-    let api_url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURI(query)}&start=${start}&display=${display}&sort=${sort}`; // JSON 결과
-
-    let options = {
-        headers: {
-            'X-Naver-Client-Id': clientInfo.client_id,
-            'X-Naver-Client-Secret': clientInfo.client_secret,
-            withCredentials: true
-        }
-    };
-    const {data} = await axios.get(api_url, options);
-
-    /*  data.items.map(news =>{
-        if(news.postdate){
-            news.timestamp = moment(news.postdate).unix();
-            news.pubDate = getDateString(news.timestamp, 'unit');
-        }
-    })*/
-
-
-    // const result = data.items.map(item => item.title ? {...item, "title": `${item.title}_${start}`} : '')
-    return data.items.filter(news => news.link && news.link.includes("http") /*&& news.link.includes("naverauth.ts")*/);
-}
-
 
 export async function getNewLinks(query: string, start: number, oldLinks: string[] = []): Promise<NewsItem[]> {
 

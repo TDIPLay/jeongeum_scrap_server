@@ -7,6 +7,7 @@ import {AXIOS_OPTIONS, RSTOCK} from "../helpers/common";
 import {hgetData} from "./worker";
 import {getRedis} from "../../service/redis";
 import {Stock} from "../interfaces";
+import moment from "moment/moment";
 
 
 const noTypePress = ['finomy.com', 'ikunkang.com', 'www.rapportian.com']
@@ -48,10 +49,10 @@ export async function getStockBoard(page: number = 1, stock: string): Promise<an
     const url = `https://finance.naver.com/item/board.naver?code=${code}&page=${page}`;
     const $ = await axiosCall(url);
     const stockInfo = parseStockInfo($);
-    const posts = parsePosts($, code);
+    const posts = parsePosts($);
 
     const financeUrl = `https://finance.naver.com/item/main.nhn?code=${code}`;
-    const finance = await getFinance(financeUrl);
+    const finance = await getFinance(financeUrl, ".tb_type1", 2);
 
     const objStock = {
         name: stock,
@@ -63,6 +64,35 @@ export async function getStockBoard(page: number = 1, stock: string): Promise<an
 
     return objStock;
 }
+
+export async function getStockPage(page: number = 1, stock: string) {
+
+    if (!stock) {
+        return null;
+    }
+
+    const code = await getStockCode(stock);
+
+    const url = [
+        `https://finance.naver.com/item/board.naver?code=${code}&page=${page}`,
+        `https://finance.naver.com/item/frgn.naver?code=${code}&page=${page}`
+    ];
+    //최근 게시글 수/ 조회수/공감/비공감/ 아이디중복율
+    // const $ = await axiosCall(url[0]);
+    // const posts = parseCountPosts($);
+    // console.log(posts)
+    //최근 거래량ㅣ거래대금ㅣ주식시세(증감율)
+
+    const finance = await getFinance(url[1], ".type2", 1);
+
+    console.log(finance)
+    // const url = `https://finance.naver.com/item/news.naver?code=${code}&page=${page}`;
+    // const finance = await getFinance(url,".type5",0);
+    // console.log(url)
+    // console.log(finance)
+
+}
+
 
 async function getStockCode(stock: string): Promise<string> {
     const code = await hgetData(await getRedis(), RSTOCK, "", stock);
@@ -83,11 +113,10 @@ function parseStockInfo($: cheerio.CheerioAPI): Record<string, string> {
     return stockInfo;
 }
 
-async function getFinance(url) {
+async function getFinance(url: string, ele: string, idx: number) {
     const $ = await axiosCall(url);
-    const tables = $('.tb_type1');
-    // console.log(tables.html())
-    const annualTable = $(tables[2]);
+    const tables = $(ele);
+    const annualTable = $(tables[idx]);
     const rows = annualTable.find('tr');
 
     const data = [];
@@ -96,24 +125,24 @@ async function getFinance(url) {
         const rowData = [];
 
         columns.each((colIndex, colElement) => {
-           rowData.push($(colElement).text().trim());
+            if ($(colElement).text().trim() !== '') rowData.push($(colElement).text().trim());
         });
 
-        data.push(rowData);
+        if (rowData.length !== 0) data.push(rowData);
     });
 
     // Process the data as needed
     return data;
 }
 
-function parsePosts($: cheerio.CheerioAPI, code: string): Stock[] {
+function parsePosts($: cheerio.CheerioAPI): Stock[] {
     const posts: Stock[] = [];
 
     $('table.type2 tr').each((i, el) => {
         if (i === 0) return;
         const date = $(el).find('td:nth-child(1) span').text().trim();
         let title = $(el).find('td.title a').text().trim().replace(/[^\S\r\n]+/g, ' ');
-        if(!title) return;
+        if (!title) return;
         const board_link = $(el).find('td.title a').attr('href');
         const link = board_link ? `https://finance.naver.com${board_link}` : null;
         const replyCountMatch = title.match(/\[(\d+)\]/);
@@ -137,6 +166,39 @@ function parsePosts($: cheerio.CheerioAPI, code: string): Stock[] {
             sympathy,
             non_sympathy
         });
+    });
+
+    return posts;
+}
+
+function parseCountPosts($: cheerio.CheerioAPI) {
+    const posts = {};
+
+    $('table.type2 tr').each((i, el) => {
+        if (i === 0) return;
+        const date = $(el).find('td:nth-child(1) span').text().trim().split(" ")[0];
+        const author = $(el).find('td:nth-child(3)').text().trim();
+        const views = Number($(el).find('td:nth-child(4)').text().trim().replace(/,/g, ''));
+        const sympathy = Number($(el).find('td:nth-child(5)').text().trim().replace(/,/g, ''));
+        const non_sympathy = Number($(el).find('td:nth-child(6)').text().trim().replace(/,/g, ''));
+
+        if (!posts[date]) {
+            posts[date] = {
+                authors: new Set(),
+                viewCount: 0,
+                sympathyCount: 0,
+                nonSympathyCount: 0,
+                duplicateRatio: 0
+            };
+        }
+
+        const post = posts[date];
+        post.authors.add(author);
+        post.viewCount += views;
+        post.sympathyCount += sympathy;
+        post.nonSympathyCount += non_sympathy;
+
+        post.duplicateRatio = post.authors.size / (i - 1);
     });
 
     return posts;

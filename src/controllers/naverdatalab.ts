@@ -30,8 +30,8 @@ interface ApiResponse {
 
 type MonthlyData = {
     relKeyword: string;
-    monthlyPcQcCnt: number|string;
-    monthlyMobileQcCnt: number|string;
+    monthlyPcQcCnt: number | string;
+    monthlyMobileQcCnt: number | string;
 };
 
 type PeriodData = {
@@ -58,9 +58,10 @@ type DailyData = {
     keywords: string[];
     relKeywords: string[];
     blogCount: number;
+    cafeCount: number;
     newsCount: number;
-    pcCount: number|string;
-    mobileCount: number|string;
+    pcCount: number | string;
+    mobileCount: number | string;
     rate: RateData;
     daily: PeriodData[];
 };
@@ -80,7 +81,7 @@ interface AgeGroupDataCollection {
 
 
 async function getSearchRate(query: string, start?: string, end?: string): Promise<any> {
-    const { client_id, client_secret } = await getApiClientKey(RTRENDAPI, 9);
+    const {client_id, client_secret} = await getApiClientKey(RTRENDAPI, 9);
 
     const apiUrl = 'https://openapi.naver.com/v1/datalab/search';
     const headers = {
@@ -97,23 +98,31 @@ async function getSearchRate(query: string, start?: string, end?: string): Promi
         startDate,
         endDate,
         timeUnit: 'date',
-        keywordGroups: [{ groupName: query, keywords: query.split(',') }],
+        keywordGroups: [{groupName: query, keywords: query.split(',')}],
         ages: [],
         gender: '',
         device: '',
     };
 
     const searchByGender = async (gender: string): Promise<any> => {
-        return axios.post(apiUrl, { ...searchData, timeUnit: 'month', gender }, { headers }).then((res) => res.data.results[0].data);
+        return axios.post(apiUrl, {
+            ...searchData,
+            timeUnit: 'month',
+            gender
+        }, {headers}).then((res) => res.data.results[0].data);
     };
 
     const searchByAge = async (ages: string[]): Promise<any> => {
-        return axios.post(apiUrl, { ...searchData, timeUnit: 'month', ages }, { headers }).then((res) => res.data.results[0].data);
+        return axios.post(apiUrl, {
+            ...searchData,
+            timeUnit: 'month',
+            ages
+        }, {headers}).then((res) => res.data.results[0].data);
     };
 
     const [resultsAll, resultsFemale, resultsMale, resultsAge10, resultsAge20, resultsAge30, resultsAge40, resultsAge50] =
         await Promise.all([
-            axios.post(apiUrl, searchData, { headers }).then((res) => res.data.results[0].data),
+            axios.post(apiUrl, searchData, {headers}).then((res) => res.data.results[0].data),
             searchByGender('f'),
             searchByGender('m'),
             searchByAge(['1', '2']),
@@ -184,8 +193,9 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
     };
 
     const dataBlog = await getRelBlogCount(query, 1);
+    const dataCafe = await getRelCafeCount(query, 1);
     const dataNews = await getRelNewsCount(query, 1);
-    const data  = await getSearchRate(query, start, end);
+    const data = await getSearchRate(query, start, end);
     const {rate, female, male, age_10, age_20, age_30, age_40, age_50} = data;
     /*   const periodData: PeriodData[] = mobile.map((item: any, idx) => ({
                period: item.period,
@@ -215,6 +225,7 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
         keywords: [monthlyData.relKeyword] ?? [],
         relKeywords: searchRel ?? [],
         blogCount: dataBlog ?? 0,
+        cafeCount: dataCafe ?? 0,
         newsCount: dataNews ?? 0,
         rate: {
             female: gender.female ?? 0,
@@ -247,8 +258,8 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
 
 
 function getGenderRatios(ratios: any): Record<string, number> {
-    const femaleRatio = (ratios.female.reduce((acc, curr) => acc + curr.ratio, 0) );
-    const maleRatio = (ratios.male.reduce((acc, curr) => acc + curr.ratio, 0) );
+    const femaleRatio = (ratios.female.reduce((acc, curr) => acc + curr.ratio, 0));
+    const maleRatio = (ratios.male.reduce((acc, curr) => acc + curr.ratio, 0));
     const totalRatio = femaleRatio + maleRatio;
     const femalePercentage = parseFloat(((femaleRatio / totalRatio) * 100).toFixed(2))
     const malePercentage = parseFloat(((maleRatio / totalRatio) * 100).toFixed(2));
@@ -281,6 +292,22 @@ function getAgeRatios(data: AgeGroupDataCollection): AgeRatio {
 async function getRelBlogCount(query: string, start: number = 1): Promise<number> {
     const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
     let api_url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURI(query)}&start=${start}&display=1`; // JSON 결과
+    let options = {
+        headers: {
+            'X-Naver-Client-Id': clientInfo.client_id,
+            'X-Naver-Client-Secret': clientInfo.client_secret,
+            withCredentials: true
+        }
+    };
+    const {data} = await axios.get(api_url, options);
+
+    return data.total
+}
+
+
+async function getRelCafeCount(query: string, start: number = 1): Promise<number> {
+    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
+    let api_url = `https://openapi.naver.com/v1/search/cafearticle.json?query=${encodeURI(query)}&start=${start}&display=1`; // JSON 결과
     let options = {
         headers: {
             'X-Naver-Client-Id': clientInfo.client_id,

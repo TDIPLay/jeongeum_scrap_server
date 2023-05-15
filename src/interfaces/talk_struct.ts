@@ -41,6 +41,7 @@ interface MetaData {
     twitterTitle: string;
     twitterDescription: string;
 }
+
 export interface NewsItem {
     timestamp?: number;
     title: string;
@@ -49,6 +50,28 @@ export interface NewsItem {
     //reply?: { contents: string[]; sympathy: any[]; non_sympathy: any[] };
     reply?: any;
     description: string;
+    pubDate?: string;
+}
+
+export interface BlogItem {
+    timestamp?: number;
+    title: string;
+    link: string;
+    originalLink?: string;
+    //reply?: { contents: string[]; sympathy: any[]; non_sympathy: any[] };
+    reply?: any;
+    description: string;
+    pubDate?: string;
+}
+
+export interface CafeItem {
+    timestamp?: number;
+    title: string;
+    link: string;
+    reply?: any;
+    description: string;
+    cafename: string;
+    cafeurl: string;
     pubDate?: string;
 }
 export interface AlarmData {
