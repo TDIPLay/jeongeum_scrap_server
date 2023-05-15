@@ -27,7 +27,6 @@ async function getNaverAccessToken(clientId: string, clientSecret: string, redir
 }
 
 export async function userNaverOAuth(code: string): Promise<any> {
-  console.log("code: =>" + code)
   const tokens = await getNaverAccessToken(process.env["NAVER_CLIENT_ID"], process.env["NAVER_CLIENT_SECRET"],`${process.env.SOCIAL_POSTBACK}/naver`, code);
 
   if(tokens){
@@ -73,7 +72,6 @@ export const getNaverUserInfo = async (accessToken: string) : Promise<any> => {
 
   try {
     const response = await axios.get(apiUrl, { headers });
-    console.log(response)
     const {id,name, email, mobile,profileImage} = response.data.response;
     return {
       id: id,
