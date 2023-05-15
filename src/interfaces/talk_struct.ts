@@ -57,10 +57,10 @@ export interface BlogItem {
     timestamp?: number;
     title: string;
     link: string;
-    originalLink?: string;
     //reply?: { contents: string[]; sympathy: any[]; non_sympathy: any[] };
     reply?: any;
     description: string;
+    postdate?: string;
     pubDate?: string;
 }
 

@@ -2,12 +2,12 @@ import {FastifyReply} from "fastify"
 import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
 import Common_service from '../../service/common_service'
-import {IAnyRequest, News, SearchNews} from "../interfaces";
+import {BlogItem, CafeItem, IAnyRequest, News, SearchNews} from "../interfaces";
 //import rp from 'request-promise-native'
 import {getArticle, getFindNewLinks, getNaverRankNews, getNaverRealNews, getNewLinks, getNews, getReply} from "./news";
 import {generateChatMessage} from "./openai";
 import moment from "moment/moment";
-import {closeBrowser, sleep, utils} from "../helpers/utils";
+import {closeBrowser, getDateString, sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
 import {MAX_LINK, R_BlOG_KEYWORD, R_CAFE_KEYWORD, RKEYWORD, RREPLY_KEYWORD, RTOTEN} from "../helpers/common";
@@ -22,8 +22,8 @@ import {generateTalkTemplate} from "./aligoxkakao";
 import {getRelKeyword} from "./naverdatalab";
 import {getStockBoard, getStockPage, getStockReply} from "./stock";
 import * as puppeteer from "puppeteer";
-import {getBlog, getBlogLinks, getFindBlogLinks} from "./blog";
-import {getCafe, getFindCafeLinks, getNewCafeLinks} from "./cafe";
+import {getBlog, getBlogLinks, getFindBlogLinks} from "./naverblog";
+import {getCafe, getFindCafeLinks, getNewCafeLinks} from "./navercafe";
 //import { KoalaNLP } from 'koalanlp';
 //import {analyzeSentiment} from "./koanlp";
 export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done) => {
@@ -383,7 +383,7 @@ export const preSearchBlog = async (request: IAnyRequest, reply: FastifyReply, d
         //1 1-100 2 101-200 3 201-300     10 901-1000
         const start = (page - 1) * 100 + 1;
         const end = page * 100;
-        let blog: News[] = [];
+        let blog: BlogItem[] = [];
         const redis = await getRedis();
 
         if (parseInt(page) <= 10) {
@@ -404,18 +404,23 @@ export const preSearchBlog = async (request: IAnyRequest, reply: FastifyReply, d
                 await sleep(100);
                 blog = [...blog, ...data];
             }
-            // const  test = await getBrowserHtml(query,'https://n.news.naver.com/mnews/article/003/0011836031?sid=101')
-            // console.log(test)
-            blog.filter(blog => blog.link && blog.link.includes("http"))
-                .forEach(blog => articlePromises.push(getArticle(blog)));
-            await Promise.all(articlePromises);
+            // blog.filter(blog => blog.link && blog.link.includes("http"))
+            //     .forEach(blog => articlePromises.push(getArticle(blog)));
+            // await Promise.all(articlePromises);
+            const blogData = blog.map(blog => {
+                return {
+                    ...blog,
+                    timestamp: moment(blog.postdate).unix(),
+                    pub_date: getDateString(moment(blog.postdate).unix(), 'unit')
 
+                }
+            })
             request.transfer = {
                 result: MESSAGE.SUCCESS,
                 code: STANDARD.SUCCESS,
                 message: "SUCCESS",
-                list_count: blog.length,
-                data: blog
+                list_count: blogData.length,
+                data: blogData
             };
         } else {
             request.transfer = {result: MESSAGE.FAIL, code: ERROR400.statusCode, message: "Over Page"};
@@ -434,13 +439,13 @@ export const preSearchBlogNewLink = async (request: IAnyRequest, reply: FastifyR
         const redis = await getRedis();
         let oldLinks = await hgetData(redis, R_BlOG_KEYWORD, "json", query);
 
-        let blog: News[] = [];
+        let blog: BlogItem[] = [];
 
         //최근기사 100건만
         for (let i = 1; i < 100; i += 100) {
             let blogList = await getBlogLinks(query, start, oldLinks || []);
             if (!blogList || !blogList.length) break;
-            let tm = moment(blogList[blogList.length - 1].pubDate).unix();
+            let tm = moment(blogList[blogList.length - 1].postdate).unix();
             blog = [...blog, ...blogList];
 
             await sleep(100);
@@ -448,11 +453,18 @@ export const preSearchBlogNewLink = async (request: IAnyRequest, reply: FastifyR
         }
 
         const uniqueNews = Array.from(new Set(blog.filter(n => n.link?.startsWith("http"))));
-        const sortedBlog = uniqueNews.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
-       // const naverNews = Array.from(new Set(news.filter(n => n.link?.includes("naver"))));
+        const blogData = uniqueNews.map(blog => {
+            return {
+                ...blog,
+                timestamp: moment(blog.postdate).unix(),
+                pub_date: getDateString(moment(blog.postdate).unix(), 'unit')
 
-        sortedBlog.forEach(news => articlePromises.push(getArticle(news)));
-        await Promise.all(articlePromises);
+            }
+        })
+        const sortedBlog = blogData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
+
+        // sortedBlog.forEach(news => articlePromises.push(getArticle(news)));
+        // await Promise.all(articlePromises);
 
         request.transfer = {
             result: MESSAGE.SUCCESS,
@@ -476,7 +488,7 @@ export const preSearchCafe = async (request: IAnyRequest, reply: FastifyReply, d
         //1 1-100 2 101-200 3 201-300     10 901-1000
         const start = (page - 1) * 100 + 1;
         const end = page * 100;
-        let cafe: News[] = [];
+        let cafe: CafeItem[] = [];
         const redis = await getRedis();
 
         if (parseInt(page) <= 10) {
@@ -502,13 +514,20 @@ export const preSearchCafe = async (request: IAnyRequest, reply: FastifyReply, d
             /*cafe.filter(news => news.link && news.link.includes("http"))
                 .forEach(news => articlePromises.push(getArticle(news)));
             await Promise.all(articlePromises);*/
+            const cafeData = cafe.map(cafe => {
+                return {
+                    ...cafe,
+                    timestamp: moment().unix(),
+                    pub_date: getDateString(moment().unix(), 'unit')
 
+                }
+            })
             request.transfer = {
                 result: MESSAGE.SUCCESS,
                 code: STANDARD.SUCCESS,
                 message: "SUCCESS",
-                list_count: cafe.length,
-                data: cafe
+                list_count: cafeData.length,
+                data: cafeData
             };
         } else {
             request.transfer = {result: MESSAGE.FAIL, code: ERROR400.statusCode, message: "Over Page"};
@@ -527,7 +546,7 @@ export const preSearchCafeNewLink = async (request: IAnyRequest, reply: FastifyR
         const redis = await getRedis();
         let oldLinks = await hgetData(redis, R_CAFE_KEYWORD, "json", query);
 
-        let cafe: News[] = [];
+        let cafe: CafeItem[] = [];
 
         //최근기사 100건만
         for (let i = 1; i < 100; i += 100) {
@@ -541,7 +560,15 @@ export const preSearchCafeNewLink = async (request: IAnyRequest, reply: FastifyR
         }
 
         const uniqueNews = Array.from(new Set(cafe.filter(n => n.link?.startsWith("http"))));
-        const sortedCafe = uniqueNews.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
+        const cafeData = uniqueNews.map(cafe => {
+            return {
+                ...cafe,
+                timestamp: moment().unix(),
+                pub_date: getDateString(moment().unix(), 'unit')
+
+            }
+        })
+        const sortedCafe = cafeData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
       //  const naverNews = Array.from(new Set(news.filter(n => n.link?.includes("naver"))));
 
        /* sortedCafe.forEach(news => articlePromises.push(getArticle(news)));
@@ -551,8 +578,8 @@ export const preSearchCafeNewLink = async (request: IAnyRequest, reply: FastifyR
             result: MESSAGE.SUCCESS,
             code: STANDARD.SUCCESS,
             message: "SUCCESS",
-            list_count: cafe.length,
-            data: sortedCafe
+            list_count: cafeData.length,
+            data: cafeData
         };
         done();
     } catch (e) {

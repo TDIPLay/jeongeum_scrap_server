@@ -1,6 +1,6 @@
 import {CafeItem, NewsItem, SearchNews} from "../interfaces";
 import {getApiClientKey} from "./engine";
-import {MAX_LINK, NAVER_API_URL, R_CAFE_KEYWORD, RKEYWORD, RSEARCHAPI} from "../helpers/common";
+import {MAX_LINK, R_CAFE_KEYWORD, RSEARCHAPI} from "../helpers/common";
 import axios from "axios";
 import {hmsetRedis} from "./worker";
 import {getRedis} from "../../service/redis";
@@ -38,13 +38,10 @@ export async function getFindCafeLinks(query: string, start: number = 1, oldLink
     if (listCnt > MAX_LINK) {
         tempLinks.splice(-(listCnt - MAX_LINK));
     }
-    // console.log(`total : ${listCnt}`)
-    // console.log(`newLinks : ${newLinks.length}`)
-    // console.log(`tempLinks : ${tempLinks.length}`)
     const redisData = {[`${query}`]: JSON.stringify([...newLinks, ...tempLinks])};
     await hmsetRedis(await getRedis(), R_CAFE_KEYWORD, redisData, 0);
 
-    return data.items.filter(news => news.link && news.link.includes("http") && !oldLinks.includes(news.link));
+    return data.items.filter(cafe => cafe.link && cafe.link.includes("http") && !oldLinks.includes(cafe.link));
 }
 
 export async function getCafe(query: string, start: number, display: number = 100, sort: string = 'date'): Promise<NewsItem[]> {
@@ -60,5 +57,5 @@ export async function getCafe(query: string, start: number, display: number = 10
     };
     const {data} = await axios.get(api_url, options);
 
-    return data.items.filter(news => news.link && news.link.includes("http"));
+    return data.items.filter(cafe => cafe.link && cafe.link.includes("http"));
 }
