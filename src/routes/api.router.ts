@@ -97,25 +97,25 @@ async function apiRouter(fastify: FastifyInstance) {
         url: '/datalab',
         schema: apiSchema, preHandler: preApiDataLab, handler: apiSyncUp
     })
-    //최근 블로그스크랩 기본데이터+기자+이메일등 최대 ~ 1000  전달
+    //최근 블로그 api 데이터 최대 ~ 1000 전달
     fastify.route({
         method: 'GET',
         url: '/blog_all',
         schema: apiSchema, preHandler: preSearchBlog, handler: apiSyncUp
     })
-    //키워드별 신규 블로그스크랩 기본데이터+기자+이메일등 전달
+    //키워드별 신규 블로그 api 데이터 전달
     fastify.route({
         method: 'GET',
         url: '/blog',
         schema: apiSchema, preHandler: preSearchBlogNewLink, handler: apiSyncUp
     })
-    //최근 카페스크랩 기본데이터+기자+이메일등 최대 ~ 1000  전달
+    //최근 카페 api 최대 ~ 1000  전달
     fastify.route({
         method: 'GET',
         url: '/cafe_all',
         schema: apiSchema, preHandler: preSearchCafe, handler: apiSyncUp
     })
-    //키워드별 신규 카페스크랩 기본데이터+기자+이메일등 전달
+    //키워드별 신규 카페 api 전달
     fastify.route({
         method: 'GET',
         url: '/cafe',

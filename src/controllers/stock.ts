@@ -74,8 +74,10 @@ export async function getStockPage(page: number = 1, stock: string) {
     const code = await getStockCode(stock);
 
     const url = [
-        `https://finance.naver.com/item/board.naver?code=${code}&page=${page}`,
-        `https://finance.naver.com/item/frgn.naver?code=${code}&page=${page}`
+        `https://finance.naver.com/item/board.naver?code=${code}&page=${page}`,         //토론게시판
+        `https://finance.naver.com/item/frgn.naver?code=${code}&page=${page}`,          //증시현제가,거래랑등
+        `https://finance.naver.com/item/news_news.naver?code=${code}&page=${page}`,     //뉴스
+        `https://finance.naver.com/item/news_notice.naver?code=${code}&page=${page}`,   //공시
     ];
     //최근 게시글 수/ 조회수/공감/비공감/ 아이디중복율
     // const $ = await axiosCall(url[0]);
