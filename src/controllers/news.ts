@@ -76,8 +76,8 @@ async function getArticleDetails(news: News): Promise<void> {
         if (company) news.company = company.includes("|") ? company.split("|")[1].trim() : company.trim();
         if (description) news.description = decodeHtmlEntities(description);
         if (author) news.author = author;
-        if (name) news.name = JSON.stringify(name);
-        if (email) news.email = JSON.stringify(email);
+        if (name) news.name = name;
+        if (email) news.email = email;
 
         if (!press) await setRedisPress(domain, news.company);
         if (news.pubDate) {
@@ -154,8 +154,8 @@ async function getArticleMetaDetails(news: News): Promise<void> {
             news.author = data.author || '';
             news.content = data.body || '';
             const ext = extractAuthorAndEmail(news.author);
-            news.name = JSON.stringify(ext.map(x => x.name)) || '';
-            news.email = JSON.stringify(data.email);
+            news.name = ext.map(x => x.name) || [];
+            news.email = data.email;
             const {domain, press} = await getRedisPress(news);
             news.company = press || (data.site_name || data.copyright)
             news.title = decodeHtmlEntities(news.title);
@@ -199,8 +199,8 @@ export async function getNaverRankNews(): Promise<Scraper> {
                     content: '',
                     description: '',
                     author: '',
-                    name: '',
-                    email: '',
+                    name: [],
+                    email: [],
                 };
             }).get();
         });
@@ -240,8 +240,8 @@ export async function getNaverRealNews(): Promise<Scraper> {
                     content: '',
                     description: '',
                     author: '',
-                    name: '',
-                    email: '',
+                    name: [],
+                    email: [],
                 };
             }).get();
         });
