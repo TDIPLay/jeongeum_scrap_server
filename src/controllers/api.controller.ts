@@ -86,6 +86,15 @@ export const apiBriefingMail = async (request: IAnyRequest, reply: FastifyReply)
     }
 }
 
+export const apiHtmlUp = async (request: IAnyRequest, reply: FastifyReply) => {
+    try {
+        reply.status(STANDARD.SUCCESS).header('Content-Type', 'text/html; charset=utf-8').send(request.transfer)
+    } catch (e) {
+        console.log(e)
+        handleServerError(reply, e)
+    }
+}
+
 export const signUp = async (request: IUserRequest, reply: FastifyReply) => {
     try {
         const {email/*, password, firstName, lastName*/} = request.body

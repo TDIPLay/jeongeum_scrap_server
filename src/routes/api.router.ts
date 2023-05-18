@@ -2,7 +2,7 @@ import {FastifyInstance} from 'fastify'
 import {apiSchema, signupSchema} from '../schema'
 import {
     apiAuth,
-    apiBriefingMail,
+    apiBriefingMail, apiHtmlUp,
     apiLogin,
     apiMemoryRate,
     apiSyncUp,
@@ -20,7 +20,7 @@ import {
     preSocialCallback,
     preSocialLogin,
     preStock,
-    preStockRaw,
+    preStockRaw, preStockUp,
     signUp
 } from "../controllers";
 
@@ -144,6 +144,11 @@ async function apiRouter(fastify: FastifyInstance) {
         method: 'GET',
         url: '/stock_raw',
         schema: apiSchema,preHandler:preStockRaw, handler: apiSyncUp
+    })
+    fastify.route({
+        method: 'GET',
+        url: '/stock_table',
+        schema: apiSchema,preHandler:preStockUp, handler: apiHtmlUp
     })
 
     //api 인증서 발급 사용안함

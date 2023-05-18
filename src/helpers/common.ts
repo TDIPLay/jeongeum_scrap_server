@@ -72,6 +72,10 @@ export const QUERY = {
         "code" +
         " FROM stock ",
 
+    StockRaw: "SELECT " +
+        "name, " +
+        "code" +
+        " FROM stock ",
     Search_API: "SELECT " +
         "api_name," +
         "api_limit, " +

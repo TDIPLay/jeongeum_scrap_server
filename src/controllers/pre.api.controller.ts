@@ -2,7 +2,7 @@ import {FastifyReply} from "fastify"
 import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
 import Common_service from '../../service/common_service'
-import {BlogItem, CafeItem, IAnyRequest, News, SearchNews} from "../interfaces";
+import {AlarmData, BlogItem, CafeItem, IAnyRequest, News, SearchNews} from "../interfaces";
 //import rp from 'request-promise-native'
 import {getArticle, getFindNewLinks, getNaverRankNews, getNaverRealNews, getNewLinks, getNews, getReply} from "./news";
 import {generateChatMessage} from "./openai";
@@ -10,7 +10,16 @@ import moment from "moment/moment";
 import {closeBrowser, getDateString, sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
-import {MAX_LINK, R_BlOG_KEYWORD, R_CAFE_KEYWORD, RKEYWORD, RREPLY_KEYWORD, RSTOCK, RTOTEN} from "../helpers/common";
+import {
+    MAX_LINK,
+    QUERY,
+    R_BlOG_KEYWORD,
+    R_CAFE_KEYWORD,
+    RKEYWORD,
+    RREPLY_KEYWORD,
+    RSTOCK,
+    RTOTEN
+} from "../helpers/common";
 import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
 import {getKakaoUserInfo, userKakaoOAuth, validateKakaoToken} from "./kakaoauth";
 import {sendMail} from "./mailer";
@@ -25,6 +34,7 @@ import * as puppeteer from "puppeteer";
 import {getBlog, getBlogLinks, getFindBlogLinks} from "./naverblog";
 import {getCafe, getFindCafeLinks, getNewCafeLinks} from "./navercafe";
 import {promisify} from "util";
+import mysql from "../../service/mysql";
 //import { KoalaNLP } from 'koalanlp';
 //import {analyzeSentiment} from "./koanlp";
 export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done) => {
@@ -772,6 +782,86 @@ export const preSocialLogin = async (request: IAnyRequest, reply: FastifyReply, 
         done();
     } catch (e) {
         console.log(e)
+        handleServerError(reply, e)
+    }
+}
+//Stock html
+export const preStockUp = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+
+        const {page,query,startDate,endDate} = request.query;
+        const sDate = startDate ? ` and date >= '${startDate}'` : '';
+        const eDate = endDate ? ` and date <= '${endDate}'` : '';
+        const company = query ? ` and company = '${query}'` : '';
+        const start = (page - 1) * 500 + 1;
+        const end = page * 500;
+        // http://127.0.0.1/tdi/talk/v1/stock_table?query=%EC%82%BC%EC%84%B1%EC%A0%84%EA%B8%B0&startDate=20230422&endDate=20230517&page=1
+        let squery = `SELECT * FROM stock_information2 WHERE 1 ${sDate}${eDate}${company} ORDER BY DATE DESC LIMIT ${start},${end}`
+        const stock = await mysql.getInstance().query(squery);
+        const html = `
+      <html>
+        <head>
+          <style>
+            table {
+              border-collapse: collapse;
+            }
+            th, td {
+              border: 1px solid black;
+              padding: 8px;
+            }
+          </style>
+        </head>
+        <body>
+          <table>
+            <tr>
+              <th>No</th>
+              <th>Date</th>
+              <th>Company</th>
+              <th>News Count</th>
+              <th>Disclosure Count</th>
+              <th>Post Count</th>
+              <th>Views</th>
+              <th>Sympathy</th>
+              <th>Non-Sympathy</th>
+              <th>ID Duplicate Ratio</th>
+              <th>Closing Price</th>
+              <th>Stock Price Change Rate</th>
+              <th>Trading Volume</th>
+              <th>Trading Value</th>
+              <th>Institutional Investors</th>
+              <th>Foreign Investors</th>
+              <th>KOSDAQ KOSPI</th>
+            </tr>
+            ${stock.map((row) => `
+              <tr>
+                <td>${row.no}</td>
+                <td>${row.date.split('T')[0]}</td>
+                <td>${row.company}</td>
+                <td>${row.news_count}</td>
+                <td>${row.disclosure_count}</td>
+                <td>${row.post_count}</td>
+                <td>${row.views}</td>
+                <td>${row.sympathy}</td>
+                <td>${row.non_sympathy}</td>
+                <td>${row.id_duplicate_ratio}</td>
+                <td>${row.closing_price}</td>
+                <td>${row.stock_price_change_rate}</td>
+                <td>${row.trading_volume}</td>
+                <td>${row.trading_value}</td>
+                <td>${row.institutional_investors}</td>
+                <td>${row.foreign_investors}</td>
+                <td>${row.kosdaq_kospi}</td>
+              </tr>
+            `).join('')}
+          </table>
+
+          </body>
+        </html>
+    `;
+        request.transfer = html
+
+        done();
+    } catch (e) {
         handleServerError(reply, e)
     }
 }
