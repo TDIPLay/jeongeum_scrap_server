@@ -799,64 +799,74 @@ export const preStockUp = async (request: IAnyRequest, reply: FastifyReply, done
         let squery = `SELECT * FROM stock_information2 WHERE 1 ${sDate}${eDate}${company} ORDER BY DATE DESC LIMIT ${start},${end}`
         const stock = await mysql.getInstance().query(squery);
         const html = `
-      <html>
-        <head>
-          <style>
-            table {
-              border-collapse: collapse;
-            }
-            th, td {
-              border: 1px solid black;
-              padding: 8px;
-            }
-          </style>
-        </head>
-        <body>
-          <table>
-            <tr>
-              <th>No</th>
-              <th>Date</th>
-              <th>Company</th>
-              <th>News Count</th>
-              <th>Disclosure Count</th>
-              <th>Post Count</th>
-              <th>Views</th>
-              <th>Sympathy</th>
-              <th>Non-Sympathy</th>
-              <th>ID Duplicate Ratio</th>
-              <th>Closing Price</th>
-              <th>Stock Price Change Rate</th>
-              <th>Trading Volume</th>
-              <th>Trading Value</th>
-              <th>Institutional Investors</th>
-              <th>Foreign Investors</th>
-              <th>KOSDAQ KOSPI</th>
-            </tr>
-            ${stock.map((row) => `
-              <tr>
-                <td>${row.no}</td>
-                <td>${row.date.split('T')[0]}</td>
-                <td>${row.company}</td>
-                <td>${row.news_count}</td>
-                <td>${row.disclosure_count}</td>
-                <td>${row.post_count}</td>
-                <td>${row.views}</td>
-                <td>${row.sympathy}</td>
-                <td>${row.non_sympathy}</td>
-                <td>${row.id_duplicate_ratio}</td>
-                <td>${row.closing_price}</td>
-                <td>${row.stock_price_change_rate}</td>
-                <td>${row.trading_volume}</td>
-                <td>${row.trading_value}</td>
-                <td>${row.institutional_investors}</td>
-                <td>${row.foreign_investors}</td>
-                <td>${row.kosdaq_kospi}</td>
-              </tr>
-            `).join('')}
-          </table>
-
-          </body>
-        </html>
+     <html>
+  <head>
+    <style>
+      table {
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: right;
+      }
+      th {
+        background-color: lightgray;
+      }
+      .negative {
+        color: red;
+      }
+      .positive {
+        color: blue;
+      }
+    </style>
+  </head>
+  <body>
+    <table>
+      <tr>
+        <th>번호</th>
+        <th>날짜</th>
+        <th>회사</th>
+        <th>뉴스 수</th>
+        <th>공시 수</th>
+        <th>토론글 수</th>
+        <th>조회 수</th>
+        <th>공감</th>
+        <th>비공감</th>
+        <th>ID 중복 비율</th>
+        <th>종가</th>
+        <th>주가 변동률</th>
+        <th>거래량</th>
+        <th>거래금액</th>
+        <th>기관 투자자</th>
+        <th>외국인 투자자</th>
+        <th>KOSDAQ KOSPI</th>
+      </tr>
+      ${stock.map((row) => `
+        <tr>
+          <td>${row.no}</td>
+          <td>${row.date.split('T')[0]}</td>
+          <td>${row.company}</td>
+          <td>${row.news_count.toLocaleString()}</td>
+          <td>${row.disclosure_count.toLocaleString()}</td>
+          <td>${row.post_count.toLocaleString()}</td>
+          <td>${row.views.toLocaleString()}</td>
+          <td>${row.sympathy.toLocaleString()}</td>
+          <td>${row.non_sympathy.toLocaleString()}</td>
+          <td>${row.id_duplicate_ratio}</td>
+          <td class="${row.closing_price < 0 ? 'negative' : 'positive'}">${row.closing_price.toLocaleString()}</td>
+          <td class="${row.stock_price_change_rate < 0 ? 'negative' : 'positive'}">${row.stock_price_change_rate.toLocaleString()}</td>
+          <td>${row.trading_volume.toLocaleString()}</td>
+          <td>${row.trading_value.toLocaleString()}</td>
+           <td class="${row.institutional_investors < 0 ? 'negative' : 'positive'}">${row.institutional_investors.toLocaleString()}</td>
+          <td class="${row.foreign_investors < 0 ? 'negative' : 'positive'}">${row.foreign_investors.toLocaleString()}</td>
+          <td>${row.kosdaq_kospi}</td>
+        </tr>
+      `).join('')}
+    </table>
+  </body>
+</html>
     `;
         request.transfer = html
 
