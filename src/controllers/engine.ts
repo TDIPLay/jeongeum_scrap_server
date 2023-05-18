@@ -137,20 +137,5 @@ export async function init_Transaction(): Promise<boolean> {
     }
     await scanAll('');
 
-
-    /* await redis.hkeys("Transaction", async (err, reply) => {
-         if (reply != '') {
-             const hget_Async: any = promisify(redis.hget).bind(redis);
-             for (const key in reply) {
-                 const userData = await hget_Async("Transaction", reply[key]);
-                 const uData = JSON.parse(userData);
-
-                 if ((tm - uData.tm) > 3600) {
-                     redis.hdel("Transaction", reply[key])
-                     console.log(`deleted ${reply[key]}`)
-                 }
-             }
-         }
-     })*/
     return true;
 }

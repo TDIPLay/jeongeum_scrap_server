@@ -10,7 +10,7 @@ import moment from "moment/moment";
 import {closeBrowser, getDateString, sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
-import {MAX_LINK, R_BlOG_KEYWORD, R_CAFE_KEYWORD, RKEYWORD, RREPLY_KEYWORD, RTOTEN} from "../helpers/common";
+import {MAX_LINK, R_BlOG_KEYWORD, R_CAFE_KEYWORD, RKEYWORD, RREPLY_KEYWORD, RSTOCK, RTOTEN} from "../helpers/common";
 import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
 import {getKakaoUserInfo, userKakaoOAuth, validateKakaoToken} from "./kakaoauth";
 import {sendMail} from "./mailer";
@@ -24,6 +24,7 @@ import {getStockBoard, getStockPage, getStockReply} from "./stock";
 import * as puppeteer from "puppeteer";
 import {getBlog, getBlogLinks, getFindBlogLinks} from "./naverblog";
 import {getCafe, getFindCafeLinks, getNewCafeLinks} from "./navercafe";
+import {promisify} from "util";
 //import { KoalaNLP } from 'koalanlp';
 //import {analyzeSentiment} from "./koanlp";
 export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done) => {
@@ -79,20 +80,53 @@ export const preStock = async (request: IAnyRequest, reply: FastifyReply, done) 
 
 export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
-        const {page,query} = request.query;
+        const {page,query,date} = request.query;
+        let articlePromises: Promise<void>[] = [];
 
-        const stock = await getStockPage(page, query);
-        const endDate = moment().subtract(1, 'day').format('YYYY-MM-DD');
-        const CHUNK_SIZE = 10;
-        const browser = await puppeteer.launch({args: ['--no-sandbox']});
-        //const browser = await puppeteer.launch({args: ['--no-sandbox'], headless: false});
-        for (let i = 1; i < stock.board.length; i += CHUNK_SIZE) {
-            const articlePromises = stock.board.slice(i, i + CHUNK_SIZE).map(stock => getStockPage(i, query));
-            await Promise.all(articlePromises);
-            await sleep(20);
+        let stock = null;
+         // stock= await getStockPage(page, query,``,date);
+
+        // const stock = await getStockPage(page, query,date);
+        const redis = await getRedis();
+        const tm = moment().unix();
+        const hscan = promisify(redis.hscan).bind(redis);
+        let flag = false;
+
+
+        const scanAll = async (pattern) => {
+            let rediskey = '';
+            let cursor = '0';
+            do {
+                const reply = await hscan(RSTOCK, cursor, "COUNT", "10")
+                cursor = reply[0];
+                articlePromises = []
+                console.log(`cursor => ${cursor}`)
+                for (const key in reply[1]) {
+                    if (reply[1].hasOwnProperty(key)) {
+                        if (parseInt(key) % 2 == 0) {
+                            rediskey = reply[1][key];
+                        } else {
+                            try {
+                                if(rediskey == '랩지노믹스'){
+                                    flag = true;
+                                }
+                                if(flag) {
+                                    articlePromises.push(getStockPage(page, rediskey,reply[1][key],date));
+                                    // await getStockPage(page, rediskey,reply[1][key],date);
+                                }
+                            } catch (e) {
+                                console.log(e)
+                            }
+                        }
+                    }
+                }
+                await Promise.all(articlePromises);
+                await sleep(1000);
+            } while (cursor !== '0');
         }
-        //await closeBrowser(browser);*/
+        await scanAll('');
 
+        //const endDate = moment().subtract(1, 'day').format('YYYY-MM-DD');
 
         request.transfer = {
             result: MESSAGE.SUCCESS,
