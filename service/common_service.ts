@@ -1,15 +1,12 @@
 import mysql from "./mysql"
 import cron from 'node-cron';
 import {getDateString, logger} from "../src/helpers/utils";
-import {xServerError} from "../src/helpers/errors";
 import {initAPIResource, initPress, searchApiIdx} from "../src/controllers/engine"
-import {initRedisHmSet} from "../src/controllers/worker";
 import {processKeywordAlarms} from "../src/controllers/user";
-import {AlarmData, KeywordAlarm, SearchApi} from "../src/interfaces";
-import {QUERY, RSEARCHAPI, RTRENDAPI} from "../src/helpers/common";
+import {KeywordAlarm, SearchApi} from "../src/interfaces";
+import {RSEARCHAPI, RTRENDAPI} from "../src/helpers/common";
 
 export default class Common_service {
-
 
     private static INSTANCE: Common_service;
     static server_info: any = {};
@@ -29,32 +26,45 @@ export default class Common_service {
     }
 
     constructor() {
-        //sql connection & make dataset
-
-
+        //dataSet
         cron.schedule("*/10 * * * *", async () => {
             logger.info(getDateString(0, 'default'));
             await this.module_start();
         });
 
+        //datalap api의 경우 1분마다 api 상태를 확인하고 사용량이 적은 api로 변경
         cron.schedule("*/1 * * * *", async () => {
-            const trendIdx = await searchApiIdx(RTRENDAPI);
-            if (trendIdx > -1) {
-                if(Common_service.search_api_idx.trend !== trendIdx){
-                    console.log(`${Common_service.search_api[Common_service?.search_api_idx.trend]?.api_name ?? ''  } Changed trendIdx => ${Common_service.search_api[trendIdx].api_name }`);
-                    Common_service.search_api_idx.trend = trendIdx;
-                }
-            }
+            // 트렌트 API 인덱스 확인 및 업데이트
+            Common_service.search_api_idx.trend = await this.checkAndUpdateApiIndex(RTRENDAPI, Common_service.search_api, Common_service.search_api_idx.trend);
         });
     }
 
+    //시작 /10분마다 실행
     async module_start() {
         logger.info("init_start")
         try {
-            const resultAlarm: AlarmData[] = await mysql.getInstance().query(QUERY.Alarm);
-            Common_service.alarm_info = processKeywordAlarms(resultAlarm)
+            //알람전송 데이터셋
+            if (!await processKeywordAlarms()) {
+                console.log("processKeywordAlarms error");
+            }
 
-            await this.engine_start();
+            //언론사를 페이지에서 찾지 못할경우를 위해 redis에 저장 후 사용
+            if (!await initPress()) {
+                console.log("initPress error");
+            }
+
+            //api 사용량 초기화
+            if (!await initAPIResource()) {
+                console.log("initAPIResource error");
+            }
+
+            // 검색 API 인덱스 확인 및 업데이트
+            Common_service.search_api_idx.search = await this.checkAndUpdateApiIndex(RSEARCHAPI, Common_service.search_api, Common_service.search_api_idx.search);
+
+            // 트렌트 API 인덱스 확인 및 업데이트
+            Common_service.search_api_idx.trend = await this.checkAndUpdateApiIndex(RTRENDAPI, Common_service.search_api, Common_service.search_api_idx.trend);
+
+            //신규 상장사 추가시 DB에 데이터 적재후 실행
            /* if (!await initStock()) {
                 console.log("initPress error");
             }*/
@@ -65,55 +75,14 @@ export default class Common_service {
         }
     }
 
-    async engine_start() {
-
-        if (!await initPress()) {
-            console.log("initPress error");
+    async checkAndUpdateApiIndex(apiType, apiArray, apiIndex) {
+        const newIndex = await searchApiIdx(apiType);
+        if (newIndex > -1 && apiIndex !== newIndex) {
+            console.log(`${apiArray[apiIndex]?.api_name ?? ''} Changed ${apiType}Idx => ${apiArray[newIndex]?.api_name}`);
+            apiIndex = newIndex;
         }
-
-        if (!await initAPIResource()) {
-            console.log("initAPIResource error");
-        }
-
-        const searchIdx = await searchApiIdx(RSEARCHAPI);
-
-        if (searchIdx > -1) {
-            if(Common_service.search_api_idx.search !== searchIdx){
-                console.log(`${Common_service.search_api[Common_service.search_api_idx?.search]?.api_name ?? ''} Changed searchIdx => ${Common_service.search_api[searchIdx]?.api_name }`);
-                Common_service.search_api_idx.search = searchIdx;
-            }
-        }
-
-        const trendIdx = await searchApiIdx(RTRENDAPI);
-        if (trendIdx > -1) {
-            if(Common_service.search_api_idx.trend !== trendIdx){
-                console.log(`${Common_service.search_api[Common_service?.search_api_idx.trend]?.api_name ?? ''} Changed trendIdx => ${Common_service.search_api[trendIdx].api_name }`);
-                Common_service.search_api_idx.trend = trendIdx;
-            }
-        }
-
+        return apiIndex;
     }
-
-
-    private async initDataSet(key: string, query: string, sort_key: any, redis, expire: number) {
-        try {
-            await mysql.getInstance().query(query).then(async (raws) => {
-
-                let result;
-
-                if (redis !== null) {
-                    initRedisHmSet(key, redis, JSON.stringify(result), expire);
-                }
-
-            }).catch((err) => setImmediate(() => {
-                logger.error({err})
-                throw err;
-            }))
-        } catch (e) {
-            xServerError(e);
-        }
-    }
-
 
     sql_release() {
         mysql.getInstance().release().then(err => console.log(err))

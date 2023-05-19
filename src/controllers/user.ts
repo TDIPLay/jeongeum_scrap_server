@@ -1,7 +1,9 @@
 import axios from 'axios';
 import moment from "moment";
 import {AlarmData, KeywordAlarm} from "../interfaces";
-import {ALARM} from "../helpers/common";
+import {ALARM, QUERY} from "../helpers/common";
+import mysql from "../../service/mysql";
+import Common_service from "../../service/common_service";
 
 
 const AXIOS_OPTIONS = {
@@ -12,11 +14,12 @@ const AXIOS_OPTIONS = {
 };
 
 
-export function processKeywordAlarms(alarms: AlarmData[]): { [p: string]: KeywordAlarm } {
+export async function processKeywordAlarms(): Promise<number> {
     const keywordAlarms: { [email: string]: KeywordAlarm } = {};
+    const alarmData: AlarmData[] = await mysql.getInstance().query(QUERY.Alarm);
 
     // 각 알람에 대해
-    for (const alarm of alarms) {
+    for (const alarm of alarmData) {
         // 알람의 시작 시간과 종료 시간을 Timestamp로 변환
         const start_time = moment(alarm.alarm_start_time, "HH:mm:ss.SS").valueOf();
         const end_time = moment(alarm.alarm_end_time, "HH:mm:ss.SS").valueOf();
@@ -34,7 +37,10 @@ export function processKeywordAlarms(alarms: AlarmData[]): { [p: string]: Keywor
         }
         keywordAlarms[key].keyword.push(alarm.keyword);
     }
-    return keywordAlarms;
+
+    Common_service.alarm_info = keywordAlarms;
+    
+    return 1;
 }
 
 export function getAlarmsUser(query: string, keywordAlarms: { [email: string]: KeywordAlarm }) {

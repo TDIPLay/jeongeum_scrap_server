@@ -1,7 +1,6 @@
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
-import axios from 'axios';
-import {ResponseType} from "axios/index";
+import axios, {ResponseType} from 'axios';
 import {RSTOCK} from "../helpers/common";
 import {hgetData} from "./worker";
 import {getRedis} from "../../service/redis";
@@ -64,15 +63,13 @@ export async function getStockBoard(page: number = 1, stock: string): Promise<an
     const financeUrl = `https://finance.naver.com/item/main.nhn?code=${code}`;
     const finance = await getFinanceTable(financeUrl, ".tb_type1", 2);
 
-    const objStock = {
+    return {
         name: stock,
         code: code,
         stockInfo: stockInfo,
         board: posts,
         finance: finance
     };
-
-    return objStock;
 }
 
 
@@ -150,12 +147,14 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
                                 duplicateRatio: 0
                             };
                         }
-                        targetObj[date].authors.add(news[2]);
-                        targetObj[date].boardCount = (targetObj[date].boardCount || 0) + 1;
+
                         if (isNaN(news[3]) || isNaN(news[4]) || isNaN(news[5])) {
                             console.log(`${url}${i}`)
                             console.log(`Value is Nan => ${news[3]},${news[4]},${news[5]}`)
                         }
+
+                        targetObj[date].authors.add(news[2]);
+                        targetObj[date].boardCount = (targetObj[date].boardCount || 0) + 1;
                         if (news[5] === undefined) {
                             targetObj[date].viewCount += !isNaN(news[2]) ? Number(news[2]) : 0;
                             targetObj[date].sympathyCount += !isNaN(news[3]) ? Number(news[3]) : 0;
@@ -220,82 +219,8 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
     }
 }
 
-export async function getStockPage7(page = 1, stock, endDate) {
-    if (!stock || !endDate) {
-        return null;
-    }
-
-    const code = await getStockCode(stock);
-    const urls = [
-        `https://finance.naver.com/item/board.naver?code=${code}&page=`,
-        `https://finance.naver.com/item/frgn.naver?code=${code}&page=`,
-        `https://finance.naver.com/item/news_news.naver?code=${code}&page=`,
-        `https://finance.naver.com/item/news_notice.naver?code=${code}&page=`,
-    ];
-
-    const objCount = {company: "", code: "", kosdaq_kospi: "", board: {}, finance: {}, newsCnt: {}, disclosureCnt: {}};
-    objCount.company = stock;
-    objCount.code = code;
-    objCount.kosdaq_kospi = stock;
-    const processFinanceData = async (url, index) => {
-        let pageIndex = 1;
-        while (true) {
-            const finance = await getFinanceTable(`${url}${pageIndex}`, (!index || index === 1) ? ".type2" : index === 2 ? ".type5" : ".type6", index === 1 ? 1 : 0);
-            const targetObj = objCount[!index ? 'board' : index === 1 ? 'finance' : index === 2 ? 'newsCnt' : 'disclosureCnt'];
-
-            for (const news of finance.slice(index === 1 ? 2 : 1)) {
-                let date = news[0].replaceAll('.', '');
-
-                switch (index) {
-                    case 0:
-                        date = date.split(' ')[0];
-                        targetObj[date] = targetObj[date] || {
-                            authors: new Set(),
-                            boardCount: 0,
-                            viewCount: 0,
-                            sympathyCount: 0,
-                            nonSympathyCount: 0,
-                            duplicateRatio: 0
-                        };
-                        targetObj[date].authors.add(news[2]);
-                        targetObj[date].boardCount++;
-                        targetObj[date].viewCount += Number(news[3]);
-                        targetObj[date].sympathyCount += Number(news[4]);
-                        targetObj[date].nonSympathyCount += Number(news[5]);
-                        targetObj[date].duplicateRatio = ((targetObj[date].boardCount - targetObj[date].authors.size) / targetObj[date].boardCount) * 100;
-                        break;
-
-                    case 1:
-                        date = news[0].replaceAll('.', '');
-                        targetObj[date] = targetObj[date] || [];
-                        targetObj[date].push(news);
-                        break;
-
-                    default:
-                        date = news[index === 2 && news[0].includes('연관기사') ? 3 : 2].split(' ')[0].replaceAll('.', '');
-                        targetObj[date] = (targetObj[date] || 0) + 1;
-                        break;
-                }
-            }
-
-            const keys = Object.keys(targetObj);
-            if (keys === endDate || moment(keys[0]).unix() < moment(endDate).unix()) {
-                break;
-            }
-            await sleep(10);
-            pageIndex++;
-        }
-    };
-
-    await Promise.all(urls.map((url, index) => processFinanceData(url, index)));
-
-    return objCount;
-}
-
-
 async function getStockCode(stock: string): Promise<string> {
-    const code = await hgetData(await getRedis(), RSTOCK, "", stock);
-    return code;
+    return await hgetData(await getRedis(), RSTOCK, "", stock);
 }
 
 function parseStockInfo($: cheerio.CheerioAPI): Record<string, string> {
@@ -344,7 +269,6 @@ async function getFinance(url: string) {
 
     } else if (ele.find('.kospi')) {
         f_class = ele.find('img').attr('alt')
-
     }
     if (ele.find('img').attr('alt') === '코넥스') {
         f_class = '';
@@ -359,7 +283,7 @@ async function setDataBase(data, endDate) {
                                closingPrice, stockPriceChangeRate, tradingVolume, tradingValue, institutionalInvestors, foreignInvestors, kosdaqKospi) => {
 
         const insertQuery =
-            `INSERT INTO stock_information (date, company, code, news_count, disclosure_count, post_count,
+            `INSERT INTO stock_information3 (date, company, code, news_count, disclosure_count, post_count,
                                             views, sympathy, non_sympathy, id_duplicate_ratio,
                                             closing_price, stock_price_change_rate, trading_volume,
                                             trading_value, institutional_investors, foreign_investors,
@@ -386,10 +310,10 @@ async function setDataBase(data, endDate) {
 
         return insertQuery;
     };
-    const keyAll = [...new Set([...Object.keys(data.board), ...Object.keys(data.finance), ...Object.keys(data.newsCnt), ...Object.keys(data.disclosureCnt)])];
+    const DateKey = [...new Set([...Object.keys(data.board), ...Object.keys(data.finance), ...Object.keys(data.newsCnt), ...Object.keys(data.disclosureCnt)])];
 //['날짜','종가','전일비', '등락률','거래량', '기관','외국인'],
 
-    for (const date of keyAll) {
+    for (const date of DateKey) {
         if (!isValidDate(date) || moment(date).unix() < moment(endDate).unix()) continue;
 
         const boardData = data.board[date];

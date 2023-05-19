@@ -249,9 +249,7 @@ export async function getRelKeyword(query, start, end): Promise<DailyData> {
     const sumPercent = (dailyData.pcCount + dailyData.mobileCount) / allRatioSum;
 
     dailyData.daily.forEach((item) => {
-        const allCount = Math.round(sumPercent * item.ratio);
-
-        item.totalCount = allCount;
+        item.totalCount = Math.round(sumPercent * item.ratio);
     });
     return dailyData;
 }
