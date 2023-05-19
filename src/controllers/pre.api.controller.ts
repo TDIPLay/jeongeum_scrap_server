@@ -83,9 +83,16 @@ export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, don
     try {
         const {page, query, date} = request.query;
         let stock = null;
+        let endDate = date;
         //single
+        const currentDate = moment();
+
+        const formattedDate = currentDate.format('YYYYMMDD');
+        if(!date || date === ''){
+            endDate = currentDate.format('YYYYMMDD');
+        }
         if(query && query === ''){
-            await getStockPage(page, query,``,date);
+            await getStockPage(page, query,``,endDate);
         }else{
             // multiple
             let articlePromises: Promise<void>[] = [];
@@ -102,9 +109,7 @@ export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, don
                 do {
                     const reply = await hscan(RSTOCK, cursor, "COUNT", defPage)
                     cursor = reply[0];
-                    articlePromises = []
-
-
+                    articlePromises = [];
                     for (const key in reply[1]) {
                         if (reply[1].hasOwnProperty(key)) {
                             if (parseInt(key) % 2 == 0) {
@@ -112,7 +117,7 @@ export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, don
                             } else {
                                 try {
                                     if (flag) {
-                                        articlePromises.push(getStockPage(page, rediskey, reply[1][key], date));
+                                        articlePromises.push(getStockPage(page, rediskey, reply[1][key], endDate));
                                     }
                                 } catch (e) {
                                     console.log(e)

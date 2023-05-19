@@ -21,7 +21,7 @@ export async function initPress(): Promise<boolean> {
 
 export async function initAPIResource(): Promise<boolean> {
     const result = await mysql.getInstance().query(QUERY.Search_API);
-    service.search_api = result.map(obj => ({
+    service.apis = result.map(obj => ({
         ...obj,
         api_key: JSON.parse(obj.api_key),
     }));
@@ -30,7 +30,7 @@ export async function initAPIResource(): Promise<boolean> {
     if (now.getHours() === 0 && now.getMinutes() === 0) {
         const redis = await getRedis();
         const hash: Record<string, number> = {};
-        for (const api of service.search_api) {
+        for (const api of service.apis) {
             hash[api.api_name] = 0;
         }
         console.log("Serach_Api 카운트 초기화")
@@ -54,9 +54,9 @@ export async function initStock(): Promise<boolean> {
 
 
 export async function searchApiIdx(redisKey:string): Promise<number> {
-    const search_api: SearchApi[] = service.search_api;
+    const search_api: SearchApi[] = service.apis;
 
-    if (service.search_api.length > 0) {
+    if (service.apis.length > 0) {
         const redis = await getRedis();
         let selectIdx = 0;
         let minReqCnt = Infinity;
@@ -86,18 +86,18 @@ export async function searchApiIdx(redisKey:string): Promise<number> {
 
 export async function getApiClientKey(key:string, crbyCnt: number): Promise<{ client_id: string, client_secret: string }> {
     const redis = await getRedis();
-    const api = service.search_api_idx;
+    const api = service.apiIdx;
 
     if(key === RSEARCHAPI){
         if (api.search !== -1) {
-            const {client_id, client_secret} = service.search_api[api.search].api_key;
-            redis.hincrbyfloat(key, service.search_api[api.search].api_name,crbyCnt)
+            const {client_id, client_secret} = service.apis[api.search].api_key;
+            redis.hincrbyfloat(key, service.apis[api.search].api_name,crbyCnt)
             return {client_id, client_secret};
         }
     }else{
         if (api.trend !== -1) {
-            const {client_id, client_secret} = service.search_api[api.trend ].api_key;
-            redis.hincrbyfloat(key, service.search_api[api.trend ].api_name, crbyCnt)
+            const {client_id, client_secret} = service.apis[api.trend ].api_key;
+            redis.hincrbyfloat(key, service.apis[api.trend ].api_name, crbyCnt)
             return {client_id, client_secret};
         }
     }

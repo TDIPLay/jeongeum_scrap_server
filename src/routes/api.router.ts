@@ -145,6 +145,7 @@ async function apiRouter(fastify: FastifyInstance) {
         url: '/stock_raw',
         schema: apiSchema,preHandler:preStockRaw, handler: apiSyncUp
     })
+    //주식종목데이터 html 전달
     fastify.route({
         method: 'GET',
         url: '/stock_table',

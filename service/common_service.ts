@@ -11,8 +11,8 @@ export default class Common_service {
     private static INSTANCE: Common_service;
     static server_info: any = {};
     static alarm_info: { [p: string]: KeywordAlarm } = {};
-    static search_api:SearchApi[]= [];
-    static search_api_idx = {search: -1, trend: -1};
+    static apis:SearchApi[]= [];
+    static apiIdx = {search: -1, trend: -1};
     static err_cnt = 0;
     static debug_flag_log = false;
     static system_flag = false;
@@ -35,7 +35,7 @@ export default class Common_service {
         //datalap api의 경우 1분마다 api 상태를 확인하고 사용량이 적은 api로 변경
         cron.schedule("*/1 * * * *", async () => {
             // 트렌트 API 인덱스 확인 및 업데이트
-            Common_service.search_api_idx.trend = await this.checkAndUpdateApiIndex(RTRENDAPI, Common_service.search_api, Common_service.search_api_idx.trend);
+            Common_service.apiIdx.trend = await this.checkAndUpdateApiIndex(RTRENDAPI, Common_service.apis, Common_service.apiIdx.trend);
         });
     }
 
@@ -59,10 +59,10 @@ export default class Common_service {
             }
 
             // 검색 API 인덱스 확인 및 업데이트
-            Common_service.search_api_idx.search = await this.checkAndUpdateApiIndex(RSEARCHAPI, Common_service.search_api, Common_service.search_api_idx.search);
+            Common_service.apiIdx.search = await this.checkAndUpdateApiIndex(RSEARCHAPI, Common_service.apis, Common_service.apiIdx.search);
 
             // 트렌트 API 인덱스 확인 및 업데이트
-            Common_service.search_api_idx.trend = await this.checkAndUpdateApiIndex(RTRENDAPI, Common_service.search_api, Common_service.search_api_idx.trend);
+            Common_service.apiIdx.trend = await this.checkAndUpdateApiIndex(RTRENDAPI, Common_service.apis, Common_service.apiIdx.trend);
 
             //신규 상장사 추가시 DB에 데이터 적재후 실행
            /* if (!await initStock()) {
