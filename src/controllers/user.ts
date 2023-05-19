@@ -18,8 +18,8 @@ export function processKeywordAlarms(alarms: AlarmData[]): { [p: string]: Keywor
     // 각 알람에 대해
     for (const alarm of alarms) {
         // 알람의 시작 시간과 종료 시간을 Timestamp로 변환
-        const start_time = moment(alarm.alarm_start_time, "HH:mm:ss.SSSSSS").valueOf();
-        const end_time = moment(alarm.alarm_end_time, "HH:mm:ss.SSSSSS").valueOf();
+        const start_time = moment(alarm.alarm_start_time, "HH:mm:ss.SS").valueOf();
+        const end_time = moment(alarm.alarm_end_time, "HH:mm:ss.SS").valueOf();
         const alarm_type = alarm.alarm_type;
         // 알람 메일 주소/ 폰전화번호를 key로 하는 object에 해당 키워드 알람을 추가
         const key = alarm_type === ALARM.email ? alarm.alarm_mail : alarm.alarm_phone_number;
