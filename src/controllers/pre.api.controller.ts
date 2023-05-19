@@ -91,50 +91,52 @@ export const preStock = async (request: IAnyRequest, reply: FastifyReply, done) 
 export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
         const {page, query, date} = request.query;
-        let articlePromises: Promise<void>[] = [];
-
         let stock = null;
-        //test single
-        // stock = await getStockPage(page, query,``,date);
+        //single
+        if(query && query === ''){
+            await getStockPage(page, query,``,date);
+        }else{
+            // multiple
+            let articlePromises: Promise<void>[] = [];
+            const redis = await getRedis();
+            const hscan = promisify(redis.hscan).bind(redis);
+            const totalStock  = 2590;
+            const defPage = page || 10;
+            let flag = true;
+            let i  = 1;
 
-        // const stock = await getStockPage(page, query,date);
-        const redis = await getRedis();
-        const hscan = promisify(redis.hscan).bind(redis);
-        let flag = true;
-        const defPage = page || 10;
-        let totalStock  = 2590;
-        let i  = 1;
-        // multiple
-        const scanAll = async (pattern) => {
-            let rediskey = '';
-            let cursor = '0';
-            do {
-                const reply = await hscan(RSTOCK, cursor, "COUNT", defPage)
-                cursor = reply[0];
-                articlePromises = []
+            const scanAll = async (pattern) => {
+                let rediskey = '';
+                let cursor = '0';
+                do {
+                    const reply = await hscan(RSTOCK, cursor, "COUNT", defPage)
+                    cursor = reply[0];
+                    articlePromises = []
 
 
-                for (const key in reply[1]) {
-                    if (reply[1].hasOwnProperty(key)) {
-                        if (parseInt(key) % 2 == 0) {
-                            rediskey = reply[1][key];
-                        } else {
-                            try {
-                                if (flag) {
-                                    articlePromises.push(getStockPage(page, rediskey, reply[1][key], date));
+                    for (const key in reply[1]) {
+                        if (reply[1].hasOwnProperty(key)) {
+                            if (parseInt(key) % 2 == 0) {
+                                rediskey = reply[1][key];
+                            } else {
+                                try {
+                                    if (flag) {
+                                        articlePromises.push(getStockPage(page, rediskey, reply[1][key], date));
+                                    }
+                                } catch (e) {
+                                    console.log(e)
                                 }
-                            } catch (e) {
-                                console.log(e)
                             }
                         }
                     }
-                }
-                await Promise.all(articlePromises);
-                console.log(`cursor/page/total/cnt => ${cursor}/${defPage}/${totalStock/parseInt(defPage)}/${i++}`)
-                await sleep(1000);
-            } while (cursor !== '0');
+                    await Promise.all(articlePromises);
+                    console.log(`cursor/page/total/cnt => ${cursor}/${defPage}/${totalStock/parseInt(defPage)}/${i++}`)
+                    await sleep(1000);
+                } while (cursor !== '0');
+            }
+            await scanAll('');
         }
-        await scanAll('');
+
 
         request.transfer = {
             result: MESSAGE.SUCCESS,
