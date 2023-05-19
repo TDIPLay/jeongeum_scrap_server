@@ -53,6 +53,17 @@ export const logger = pino({
     level: 'debug'
 });
 
+
+export const isValidDate = function (value) {
+    try {
+        const date = new Date(value);
+        return date instanceof Date;
+    } catch (e) {
+        console.log(e);
+        return false;
+    }
+};
+
 export const decodeHtmlEntities = (str: string): string => {
     return str.replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
@@ -61,7 +72,7 @@ export const decodeHtmlEntities = (str: string): string => {
         .replace(/&quot;/g, '"');
 }
 
-export const  extractAuthorAndEmail = (input: string): { name: string, email: string }[] => {
+export const extractAuthorAndEmail = (input: string): { name: string, email: string }[] => {
     const result: { name: string, email: string }[] = [];
     const emailRegex = /\S+@\S+\.\S+/;
     const pattern = /(?<name>[\p{L}\p{M}]+[\p{Z}\t]*[\p{L}\p{M}\p{Z}\t]*)[\s\n]*(\(|\b)(?<email>\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b)/ug;
@@ -103,7 +114,7 @@ export const getDomain = (url: string) => {
 export const getDateString = (time: number, type: string) => {
     if (!time) {
         return moment().format("YYYY-MM-DD HH:mm:ss")
-    }else{
+    } else {
         if (type === 'default') {
             return moment(time).format("YYYY-MM-DD HH:mm:ss");
         } else {
@@ -129,7 +140,7 @@ export const closeBrowser = async (browser) => {
         await page.close();
     }
     await browser.close();
-    await sleep( 1000);
+    await sleep(1000);
     await browser.close();
 }
 

@@ -40,9 +40,9 @@ import mysql from "../../service/mysql";
 export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
 
-  /*      const text = '최근 도서 지역에서 양귀비를 몰래 재배한 사례가 잇따라 발생하고 있다. 25일 경찰 등에 따르면 전날 제주 서귀포시 서호동 소재 귤밭에서 양귀비 100여주가 재배됐다는 신고가 들어와 경찰이 소유주 수사에 나섰다.';
-        const sentiment = await analyzeSentiment(text);
-        console.log(sentiment);*/
+        /*      const text = '최근 도서 지역에서 양귀비를 몰래 재배한 사례가 잇따라 발생하고 있다. 25일 경찰 등에 따르면 전날 제주 서귀포시 서호동 소재 귤밭에서 양귀비 100여주가 재배됐다는 신고가 들어와 경찰이 소유주 수사에 나섰다.';
+              const sentiment = await analyzeSentiment(text);
+              console.log(sentiment);*/
 
         request.transfer = {
             result: MESSAGE.SUCCESS,
@@ -59,7 +59,7 @@ export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done)
 }
 export const preStock = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
-        const {page,query} = request.query;
+        const {page, query} = request.query;
 
         const stock = await getStockBoard(page, query);
 
@@ -90,24 +90,25 @@ export const preStock = async (request: IAnyRequest, reply: FastifyReply, done) 
 
 export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
-        const {page,query,date} = request.query;
+        const {page, query, date} = request.query;
         let articlePromises: Promise<void>[] = [];
 
         let stock = null;
-         // stock= await getStockPage(page, query,``,date);
+        //test single
+        // stock = await getStockPage(page, query,``,date);
 
         // const stock = await getStockPage(page, query,date);
         const redis = await getRedis();
         const tm = moment().unix();
         const hscan = promisify(redis.hscan).bind(redis);
-        let flag = false;
+        let flag = true;
 
-
+        // multiple
         const scanAll = async (pattern) => {
             let rediskey = '';
             let cursor = '0';
             do {
-                const reply = await hscan(RSTOCK, cursor, "COUNT", "10")
+                const reply = await hscan(RSTOCK, cursor, "COUNT", "100")
                 cursor = reply[0];
                 articlePromises = []
                 console.log(`cursor => ${cursor}`)
@@ -117,12 +118,11 @@ export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, don
                             rediskey = reply[1][key];
                         } else {
                             try {
-                                if(rediskey == '랩지노믹스'){
-                                    flag = true;
-                                }
-                                if(flag) {
-                                    articlePromises.push(getStockPage(page, rediskey,reply[1][key],date));
-                                    // await getStockPage(page, rediskey,reply[1][key],date);
+                                //  if(rediskey == '에코프로'){
+                                //    flag = true;
+                                //}
+                                if (flag) {
+                                    articlePromises.push(getStockPage(page, rediskey, reply[1][key], date));
                                 }
                             } catch (e) {
                                 console.log(e)
@@ -158,14 +158,14 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         const {query} = request.query;
         const redis = await getRedis();
         const oldLinks = await hgetData(redis, RREPLY_KEYWORD, "json", query) || [];
-        const sortBySimNews = await getNews(query,1,25,'sim');
-        const sortByDateNews = await getNews(query,1,25);
+        const sortBySimNews = await getNews(query, 1, 25, 'sim');
+        const sortByDateNews = await getNews(query, 1, 25);
         const blog = /*await getBlog(query,1,10)*/[];
-        const neverNews  = [...sortBySimNews,...sortByDateNews,...blog].filter(news => news.link && news.link.includes("naver.com"))
+        const neverNews = [...sortBySimNews, ...sortByDateNews, ...blog].filter(news => news.link && news.link.includes("naver.com"))
         let uniqueNeverNews = neverNews.filter((news, index, self) =>
             index === self.findIndex(t => t.link === news.link)
         );
-        uniqueNeverNews =  uniqueNeverNews.filter(news => !oldLinks.includes(news.link));
+        uniqueNeverNews = uniqueNeverNews.filter(news => !oldLinks.includes(news.link));
 
         // process.setMaxListeners(18);
         //브라우져 메모리/ 브라우징 이슈로 인해 10개 미만으로
@@ -181,7 +181,7 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
 
         const replyList = neverNews
             .filter(news => news.reply && news.reply !== undefined)
-            //.flatMap(news => news.reply);
+        //.flatMap(news => news.reply);
         const sortedNews = replyList.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
         const diffLinks = sortedNews.filter((item: News) => oldLinks && !oldLinks.includes(item.link));
         const newLinks = Array.from(diffLinks).map((news: SearchNews) => news?.link) || [];
@@ -245,7 +245,7 @@ export const preApiDataLab = async (request: IAnyRequest, reply: FastifyReply, d
             result: MESSAGE.SUCCESS,
             code: STANDARD.SUCCESS,
             message: "SUCCESS",
-            data : date
+            data: date
         };
         done();
 
@@ -348,7 +348,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
 
         const uniqueNews = Array.from(new Set(news.filter(n => n.link?.startsWith("http"))));
         const sortedNews = uniqueNews.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
-      //  const naverNews = Array.from(new Set(news.filter(n => n.link?.includes("naver"))));
+        //  const naverNews = Array.from(new Set(news.filter(n => n.link?.includes("naver"))));
 
         sortedNews.forEach(news => articlePromises.push(getArticle(news)));
         await Promise.all(articlePromises);
@@ -613,10 +613,10 @@ export const preSearchCafeNewLink = async (request: IAnyRequest, reply: FastifyR
             }
         })
         const sortedCafe = cafeData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
-      //  const naverNews = Array.from(new Set(news.filter(n => n.link?.includes("naver"))));
+        //  const naverNews = Array.from(new Set(news.filter(n => n.link?.includes("naver"))));
 
-       /* sortedCafe.forEach(news => articlePromises.push(getArticle(news)));
-        await Promise.all(articlePromises);*/
+        /* sortedCafe.forEach(news => articlePromises.push(getArticle(news)));
+         await Promise.all(articlePromises);*/
 
         request.transfer = {
             result: MESSAGE.SUCCESS,
@@ -789,14 +789,17 @@ export const preSocialLogin = async (request: IAnyRequest, reply: FastifyReply, 
 export const preStockUp = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
 
-        const {page,query,startDate,endDate} = request.query;
+        const {page, query, startDate, endDate} = request.query;
         const sDate = startDate ? ` and date >= '${startDate}'` : '';
         const eDate = endDate ? ` and date <= '${endDate}'` : '';
         const company = query ? ` and company = '${query}'` : '';
         const start = (page - 1) * 500 + 1;
         const end = page * 500;
         // http://127.0.0.1/tdi/talk/v1/stock_table?query=%EC%82%BC%EC%84%B1%EC%A0%84%EA%B8%B0&startDate=20230422&endDate=20230517&page=1
-        let squery = `SELECT * FROM stock_information2 WHERE 1 ${sDate}${eDate}${company} ORDER BY DATE DESC LIMIT ${start},${end}`
+        let squery = `SELECT *
+                      FROM stock_information2
+                      WHERE 1 ${sDate}${eDate}${company}
+                      ORDER BY DATE DESC LIMIT ${start}, ${end}`
         const stock = await mysql.getInstance().query(squery);
         const html = `
      <html>

@@ -8,7 +8,7 @@ import {hgetData} from "./worker";
 import {getRedis} from "../../service/redis";
 import {Stock} from "../interfaces";
 import moment from "moment/moment";
-import {sleep} from "../helpers/utils";
+import {isValidDate, sleep} from "../helpers/utils";
 import mysql from "mysql";
 import Mysql from "../../service/mysql";
 
@@ -79,7 +79,8 @@ export async function getStockBoard(page: number = 1, stock: string): Promise<an
 
 
 export async function getStockPage(page: number = 1, stock: string, rcode: string, endDate: string) {
-    console.log(`start stock analysis => ${stock}`)
+    //console.log(`start stock analysis => ${stock}`)
+    let keys = '';
     if (!stock || !endDate) {
         return null;
     }
@@ -102,116 +103,107 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
             console.log('코넥스 패스')
             return null;
         }
-        const objCount = {company: stock, description: sub, board: {}, finance: {}, newsCnt: {}, disclosureCnt: {}};
+
+        const objCount = {
+            company: stock,
+            code: code,
+            description: sub,
+            board: {},
+            finance: {},
+            newsCnt: {},
+            disclosureCnt: {}
+        };
 
         const processFinanceData = async (url: string, index: number) => {
             let lastData = '';
+            // 100000  이전까지만 조회
             for (let i = 1; i < 100000; i++) {
                 const finance = await getFinanceTable(`${url}${i}`, (!index || index === 1) ? ".type2" : index === 2 ? ".type5" : ".type6", index === 1 ? 1 : 0);
+                const len = finance.length;
+                if (len === 1) break;
+                if (!index) {
+                    if (lastData === `${finance[len - 1][1]}${finance[len - 1][2]}${finance[len - 1][3]}${finance[len - 1][4]}`) {
+                        break;
+                    }
+                } else if (lastData === `${finance[len - 1][1]}${finance[len - 1][2]}`) {
+                    break;
+                }
+
                 if (i % 1000 === 0) {
-                    console.log(`${url}${i}`)
-                }
-                if(!index){
-                if(lastData === `${finance[finance.length - 1][1]}${finance[finance.length - 1][2]}${finance[finance.length - 1][3]}${finance[finance.length - 1][4]}`) {
-                    break;
-                }
-                }else if(lastData === `${finance[finance.length - 1][1]}${finance[finance.length - 1][2]}`) {
-                    break;
+                    console.log(`${stock} scrap => ${url}${i}`)
                 }
 
                 const targetObj = objCount[!index ? `board` : index === 1 ? 'finance' : index === 2 ? 'newsCnt' : 'disclosureCnt'];
-                let rate = {};
                 let endFlag = false;
-                if (finance.length === 1) break;
+
                 for (const news of finance.slice(index === 1 ? 2 : 1)) {
 
                     let date = news[0].replaceAll('.', '');
-                    switch (index) {
-                        case 0:
-                            date = date.split(' ')[0];
+                    if (index === 0) {
+                        date = date.split(' ')[0];
 
-                            if (!targetObj[date]) {
-                                rate[date] = 0;
-                                targetObj[date] = {
-                                    authors: new Set(),
-                                    boardCount: 0,
-                                    viewCount: 0,
-                                    sympathyCount: 0,
-                                    nonSympathyCount: 0,
-                                    duplicateRatio: 0
-                                };
-                            }
-                            targetObj[date].authors.add(news[2]);
-                            targetObj[date].boardCount = (targetObj[date].boardCount || 0) + 1;
-                            if (isNaN(news[3]) || isNaN(news[4]) || isNaN(news[5])) {
-                                console.log(`${url}${i}`)
-                                console.log(`Value is Nan => ${news[3]},${news[4]},${news[5]}`)
-                            }
-                            if(news[5] === undefined){
-                                targetObj[date].viewCount += !isNaN(news[2]) ? Number(news[2]) : 0;
-                                targetObj[date].sympathyCount += !isNaN(news[3]) ? Number(news[3]) : 0;
-                                targetObj[date].nonSympathyCount += !isNaN(news[4]) ? Number(news[4]) : 0;
-                                targetObj[date].duplicateRatio = ((targetObj[date].boardCount - targetObj[date].authors.size) / targetObj[date].boardCount) * 100;
-                            }else{
-                                targetObj[date].viewCount += !isNaN(news[3]) ? Number(news[3]) : 0;
-                                targetObj[date].sympathyCount += !isNaN(news[4]) ? Number(news[4]) : 0;
-                                targetObj[date].nonSympathyCount += !isNaN(news[5]) ? Number(news[5]) : 0;
-                                targetObj[date].duplicateRatio = ((targetObj[date].boardCount - targetObj[date].authors.size) / targetObj[date].boardCount) * 100;
-                            }
+                        if (!targetObj[date]) {
+                            targetObj[date] = {
+                                authors: new Set(),
+                                boardCount: 0,
+                                viewCount: 0,
+                                sympathyCount: 0,
+                                nonSympathyCount: 0,
+                                duplicateRatio: 0
+                            };
+                        }
+                        targetObj[date].authors.add(news[2]);
+                        targetObj[date].boardCount = (targetObj[date].boardCount || 0) + 1;
+                        if (isNaN(news[3]) || isNaN(news[4]) || isNaN(news[5])) {
+                            console.log(`${url}${i}`)
+                            console.log(`Value is Nan => ${news[3]},${news[4]},${news[5]}`)
+                        }
+                        if (news[5] === undefined) {
+                            targetObj[date].viewCount += !isNaN(news[2]) ? Number(news[2]) : 0;
+                            targetObj[date].sympathyCount += !isNaN(news[3]) ? Number(news[3]) : 0;
+                            targetObj[date].nonSympathyCount += !isNaN(news[4]) ? Number(news[4]) : 0;
+                        } else {
+                            targetObj[date].viewCount += !isNaN(news[3]) ? Number(news[3]) : 0;
+                            targetObj[date].sympathyCount += !isNaN(news[4]) ? Number(news[4]) : 0;
+                            targetObj[date].nonSympathyCount += !isNaN(news[5]) ? Number(news[5]) : 0;
+                        }
+                        //전체 게시글 대비 작성자 중복율 = ((전체 게시글 수 - 작성자 수) / 전체 게시글 수) * 100
+                        targetObj[date].duplicateRatio = ((targetObj[date].boardCount - targetObj[date].authors.size) / targetObj[date].boardCount) * 100;
 
-                            //전체 게시글 대비 작성자 중복율 = ((전체 게시글 수 - 작성자 수) / 전체 게시글 수) * 100
-                            rate[date] = rate[date] + 1
-                            lastData = `${news[1]}${news[2]}${news[3]}${news[4]}`;
-                            break;
+                        lastData = `${news[1]}${news[2]}${news[3]}${news[4]}`;
+                        if (!isValidDate(date) || (moment(date).unix() < moment(endDate).unix())){
+                          break;
+                        }
 
-                        case 1:
-                            if (!targetObj[date]) {
-                                targetObj[date] = [news];
-                            } else {
-                                targetObj[date].push(news);
-                                lastData = `${news[1]}${news[2]}`;
-                            }
-                            break;
-                        case 2:
-                            if (news && news.length > 2) {
-                                date = news[0].includes('연관기사')
-                                    ? news[3].split(' ')[0].replaceAll('.', '')
-                                    : news[2].split(' ')[0].replaceAll('.', '');
-                                targetObj[date] = (targetObj[date] || 0) + 1;
-                                lastData = `${news[1]}${news[2]}`;
-                            } else {
-                                endFlag = true;
-                            }
+                    } else if (index === 1) {
+                        if (!targetObj[date]) {
+                            targetObj[date] = [news];
+                        } else {
+                            targetObj[date].push(news);
+                            lastData = `${news[1]}${news[2]}`;
+                        }
+                    } else if (index === 2) {
+                        if (news && news.length > 2) {
+                            date = news[0].includes('연관기사') ? news[3].split(' ')[0].replaceAll('.', '') : news[2].split(' ')[0].replaceAll('.', '');
 
-                            break;
-                        case 3:
-                            if (news && news.length > 2) {
-                                date = news[2].split(' ')[0].replaceAll('.', '');
-                                targetObj[date] = (targetObj[date] || 0) + 1;
-                                lastData = `${news[1]}${news[2]}`;
-                            } else {
-                                endFlag = true;
-                            }
-                            break;
-
-                        default:
-                            break;
+                            targetObj[date] = (targetObj[date] || 0) + 1;
+                            lastData = `${news[1]}${news[2]}`;
+                        } else {
+                            endFlag = true;
+                        }
+                    } else if (index === 3) {
+                        if (news && news.length > 2) {
+                            date = news[2].split(' ')[0].replaceAll('.', '');
+                            targetObj[date] = (targetObj[date] || 0) + 1;
+                            lastData = `${news[1]}${news[2]}`;
+                        } else {
+                            endFlag = true;
+                        }
                     }
                 }
-                const keys = Object.keys(targetObj)[0];
 
-                /*try {
-                    if (moment(keys).unix() < moment(endDate).unix()) {
-                    }
-                } catch (e) {
-                    console.log("======err keys=========")
-                    console.log(keys)
-                }*/
-                if (endFlag || targetObj[endDate] !== undefined || (keys && moment(keys).unix() < moment(endDate).unix())) {
-                    // console.log(targetObj[endDate])
-                    // console.log(keys)
-                    // console.log(moment(keys).unix())
-                    // console.log( moment(endDate).unix())
+                keys = Object.keys(targetObj)[0];
+                if (endFlag || targetObj[endDate] !== undefined || !isValidDate(keys) || (moment(keys).unix() < moment(endDate).unix())) {
                     break;
                 }
                 await sleep(10);
@@ -219,12 +211,13 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
         };
 
         await processFinanceData(url[0], 0); // Board
-        // await processFinanceData(url[1], 1); // Finance
-        // await processFinanceData(url[2], 2); // News
-        // await processFinanceData(url[3], 3); // Disclosure
+        await processFinanceData(url[1], 1); // Finance
+        await processFinanceData(url[2], 2); // News
+        await processFinanceData(url[3], 3); // Disclosure
 
-        await setData(objCount);
+        await setDataBase(objCount, endDate);
     } catch (e) {
+        console.log(`=================keys${keys}`)
         console.log(e)
     }
 }
@@ -242,8 +235,9 @@ export async function getStockPage7(page = 1, stock, endDate) {
         `https://finance.naver.com/item/news_notice.naver?code=${code}&page=`,
     ];
 
-    const objCount = {company: "", kosdaq_kospi: "", board: {}, finance: {}, newsCnt: {}, disclosureCnt: {}};
+    const objCount = {company: "", code: "", kosdaq_kospi: "", board: {}, finance: {}, newsCnt: {}, disclosureCnt: {}};
     objCount.company = stock;
+    objCount.code = code;
     objCount.kosdaq_kospi = stock;
     const processFinanceData = async (url, index) => {
         let pageIndex = 1;
@@ -287,7 +281,7 @@ export async function getStockPage7(page = 1, stock, endDate) {
             }
 
             const keys = Object.keys(targetObj);
-            if (keys.includes(endDate) || moment(keys[0]).unix() < moment(endDate).unix()) {
+            if (keys === endDate || moment(keys[0]).unix() < moment(endDate).unix()) {
                 break;
             }
             await sleep(10);
@@ -361,18 +355,18 @@ async function getFinance(url: string) {
     return f_class;
 }
 
-async function setData(data) {
+async function setDataBase(data, endDate) {
     const insertQueries = [];
-    const createInsertQuery = (date, company, newsCount, disclosureCount, boardCount, viewCount, sympathyCount, nonSympathyCount, duplicateRatio,
+    const createInsertQuery = (date, company, code, newsCount, disclosureCount, boardCount, viewCount, sympathyCount, nonSympathyCount, duplicateRatio,
                                closingPrice, stockPriceChangeRate, tradingVolume, tradingValue, institutionalInvestors, foreignInvestors, kosdaqKospi) => {
 
         const insertQuery =
-            `INSERT INTO stock_information2 (date, company, news_count, disclosure_count, post_count,
+            `INSERT INTO stock_information3 (date, company, code, news_count, disclosure_count, post_count,
                                              views, sympathy, non_sympathy, id_duplicate_ratio,
                                              closing_price, stock_price_change_rate, trading_volume,
                                              trading_value, institutional_investors, foreign_investors,
                                              kosdaq_kospi)
-             VALUES ('${date}', '${company}', ${newsCount}, ${disclosureCount}, ${boardCount},
+             VALUES ('${date}', '${company}', '${code}', ${newsCount}, ${disclosureCount}, ${boardCount},
                      ${viewCount}, ${sympathyCount}, ${nonSympathyCount}, ${duplicateRatio},
                      ${closingPrice}, '${stockPriceChangeRate}', ${tradingVolume}, ${tradingValue},
                      '${institutionalInvestors}', '${foreignInvestors}', '${kosdaqKospi}') ON DUPLICATE KEY
@@ -396,7 +390,10 @@ async function setData(data) {
     };
     const keyAll = [...new Set([...Object.keys(data.board), ...Object.keys(data.finance), ...Object.keys(data.newsCnt), ...Object.keys(data.disclosureCnt)])];
 //['날짜','종가','전일비', '등락률','거래량', '기관','외국인'],
+
     for (const date of keyAll) {
+        if(!isValidDate(date) || moment(date).unix() < moment(endDate).unix()) continue;
+
         const boardData = data.board[date];
         const financeData = data.finance[date] || 0;
         const newsCount = data.newsCnt[date] || 0;
@@ -407,6 +404,7 @@ async function setData(data) {
         const insertQuery = createInsertQuery(
             date,
             data.company,
+            data.code,
             newsCount,
             disclosureCount,
             boardData ? boardData.boardCount : 0,
@@ -422,15 +420,15 @@ async function setData(data) {
             financeData ? financeData[0][6].replace(/,/g, '') : '-',
             data.description
         );
-
-        insertQueries.push(insertQuery);
+        await Mysql.getInstance().query(insertQuery);
+        //insertQueries.push(insertQuery);
     }
 
 // 생성된 삽입 쿼리 출력
-    for (const query of insertQueries) {
+   /* for (const query of insertQueries) {
         //console.log(query)
         await Mysql.getInstance().query(query);
-    }
+    }*/
 
 }
 
@@ -577,4 +575,78 @@ export async function getStockReply(stock, browser) {
         console.log(stock.link);
         await page.close();
     }
+}
+
+export function genStockHTML(raw): string {
+    return `
+         <html>
+      <head>
+        <style>
+          table {
+            border-collapse: collapse;
+            font-size: 12px;
+          }
+          th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: right;
+          }
+          th {
+            background-color: lightgray;
+          }
+          .negative {
+            color: red;
+          }
+          .positive {
+            color: blue;
+          }
+        </style>
+      </head>
+      <body>
+        <table>
+          <tr>
+            <th>번호</th>
+            <th>날짜</th>
+            <th>회사</th>
+            <th>뉴스 수</th>
+            <th>공시 수</th>
+            <th>토론글 수</th>
+            <th>조회 수</th>
+            <th>공감</th>
+            <th>비공감</th>
+            <th>ID 중복 비율</th>
+            <th>종가</th>
+            <th>주가 변동률</th>
+            <th>거래량</th>
+            <th>거래금액</th>
+            <th>기관 투자자</th>
+            <th>외국인 투자자</th>
+            <th>KOSDAQ KOSPI</th>
+          </tr>
+          ${raw.map((row) => `
+            <tr>
+              <td>${row.no}</td>
+              <td>${row.date.split('T')[0]}</td>
+              <td>${row.company}</td>
+              <td>${row.news_count.toLocaleString()}</td>
+              <td>${row.disclosure_count.toLocaleString()}</td>
+              <td>${row.post_count.toLocaleString()}</td>
+              <td>${row.views.toLocaleString()}</td>
+              <td>${row.sympathy.toLocaleString()}</td>
+              <td>${row.non_sympathy.toLocaleString()}</td>
+              <td>${row.id_duplicate_ratio}</td>
+              <td class="${row.closing_price < 0 ? 'negative' : 'positive'}">${row.closing_price.toLocaleString()}</td>
+              <td class="${row.stock_price_change_rate < 0 ? 'negative' : 'positive'}">${row.stock_price_change_rate.toLocaleString()}</td>
+              <td>${row.trading_volume.toLocaleString()}</td>
+              <td>${row.trading_value.toLocaleString()}</td>
+               <td class="${row.institutional_investors < 0 ? 'negative' : 'positive'}">${row.institutional_investors.toLocaleString()}</td>
+              <td class="${row.foreign_investors < 0 ? 'negative' : 'positive'}">${row.foreign_investors.toLocaleString()}</td>
+              <td>${row.kosdaq_kospi}</td>
+            </tr>
+          `).join('')}
+        </table>
+      </body>
+    </html>
+        `;
+
 }
