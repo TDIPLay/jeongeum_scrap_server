@@ -99,28 +99,27 @@ export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, don
 
         // const stock = await getStockPage(page, query,date);
         const redis = await getRedis();
-        const tm = moment().unix();
         const hscan = promisify(redis.hscan).bind(redis);
         let flag = true;
-
+        const defPage = page || 10;
+        let totalStock  = 2590;
+        let i  = 1;
         // multiple
         const scanAll = async (pattern) => {
             let rediskey = '';
             let cursor = '0';
             do {
-                const reply = await hscan(RSTOCK, cursor, "COUNT", "100")
+                const reply = await hscan(RSTOCK, cursor, "COUNT", defPage)
                 cursor = reply[0];
                 articlePromises = []
-                console.log(`cursor => ${cursor}`)
+
+
                 for (const key in reply[1]) {
                     if (reply[1].hasOwnProperty(key)) {
                         if (parseInt(key) % 2 == 0) {
                             rediskey = reply[1][key];
                         } else {
                             try {
-                                //  if(rediskey == '에코프로'){
-                                //    flag = true;
-                                //}
                                 if (flag) {
                                     articlePromises.push(getStockPage(page, rediskey, reply[1][key], date));
                                 }
@@ -131,12 +130,11 @@ export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, don
                     }
                 }
                 await Promise.all(articlePromises);
+                console.log(`cursor/page/total/cnt => ${cursor}/${defPage}/${totalStock/parseInt(defPage)}/${i++}`)
                 await sleep(1000);
             } while (cursor !== '0');
         }
         await scanAll('');
-
-        //const endDate = moment().subtract(1, 'day').format('YYYY-MM-DD');
 
         request.transfer = {
             result: MESSAGE.SUCCESS,

@@ -100,7 +100,7 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
         const sub = await getFinance(url[1])
 
         if (!sub) {
-            console.log('코넥스 패스')
+            //console.log('코넥스 패스')
             return null;
         }
 
@@ -361,7 +361,7 @@ async function setDataBase(data, endDate) {
                                closingPrice, stockPriceChangeRate, tradingVolume, tradingValue, institutionalInvestors, foreignInvestors, kosdaqKospi) => {
 
         const insertQuery =
-            `INSERT INTO stock_information3 (date, company, code, news_count, disclosure_count, post_count,
+            `INSERT INTO stock_information (date, company, code, news_count, disclosure_count, post_count,
                                              views, sympathy, non_sympathy, id_duplicate_ratio,
                                              closing_price, stock_price_change_rate, trading_volume,
                                              trading_value, institutional_investors, foreign_investors,
