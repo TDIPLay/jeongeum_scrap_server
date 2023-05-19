@@ -1,7 +1,7 @@
 import {getDateString, getDomain, logger} from "../helpers/utils";
 import {promisify} from "util";
 import {getRedis} from "../../service/redis";
-import {RPRESS, RPRESSNON, RSEARCHAPI} from "../helpers/common";
+import {RPRESS, RPRESSNON} from "../helpers/common";
 import {News} from "../interfaces";
 
 

@@ -2,14 +2,12 @@ import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
 import axios from 'axios';
 import {ResponseType} from "axios/index";
-import axiosRetry from "axios-retry";
-import {AXIOS_OPTIONS, RSTOCK} from "../helpers/common";
+import {RSTOCK} from "../helpers/common";
 import {hgetData} from "./worker";
 import {getRedis} from "../../service/redis";
 import {Stock} from "../interfaces";
 import moment from "moment/moment";
 import {isValidDate, sleep} from "../helpers/utils";
-import mysql from "mysql";
 import Mysql from "../../service/mysql";
 
 
@@ -171,8 +169,8 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
                         targetObj[date].duplicateRatio = ((targetObj[date].boardCount - targetObj[date].authors.size) / targetObj[date].boardCount) * 100;
 
                         lastData = `${news[1]}${news[2]}${news[3]}${news[4]}`;
-                        if (!isValidDate(date) || (moment(date).unix() < moment(endDate).unix())){
-                          break;
+                        if (!isValidDate(date) || (moment(date).unix() < moment(endDate).unix())) {
+                            break;
                         }
 
                     } else if (index === 1) {
@@ -362,10 +360,10 @@ async function setDataBase(data, endDate) {
 
         const insertQuery =
             `INSERT INTO stock_information (date, company, code, news_count, disclosure_count, post_count,
-                                             views, sympathy, non_sympathy, id_duplicate_ratio,
-                                             closing_price, stock_price_change_rate, trading_volume,
-                                             trading_value, institutional_investors, foreign_investors,
-                                             kosdaq_kospi)
+                                            views, sympathy, non_sympathy, id_duplicate_ratio,
+                                            closing_price, stock_price_change_rate, trading_volume,
+                                            trading_value, institutional_investors, foreign_investors,
+                                            kosdaq_kospi)
              VALUES ('${date}', '${company}', '${code}', ${newsCount}, ${disclosureCount}, ${boardCount},
                      ${viewCount}, ${sympathyCount}, ${nonSympathyCount}, ${duplicateRatio},
                      ${closingPrice}, '${stockPriceChangeRate}', ${tradingVolume}, ${tradingValue},
@@ -392,7 +390,7 @@ async function setDataBase(data, endDate) {
 //['날짜','종가','전일비', '등락률','거래량', '기관','외국인'],
 
     for (const date of keyAll) {
-        if(!isValidDate(date) || moment(date).unix() < moment(endDate).unix()) continue;
+        if (!isValidDate(date) || moment(date).unix() < moment(endDate).unix()) continue;
 
         const boardData = data.board[date];
         const financeData = data.finance[date] || 0;
@@ -425,10 +423,10 @@ async function setDataBase(data, endDate) {
     }
 
 // 생성된 삽입 쿼리 출력
-   /* for (const query of insertQueries) {
-        //console.log(query)
-        await Mysql.getInstance().query(query);
-    }*/
+    /* for (const query of insertQueries) {
+         //console.log(query)
+         await Mysql.getInstance().query(query);
+     }*/
 
 }
 

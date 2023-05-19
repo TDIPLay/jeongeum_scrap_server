@@ -1,4 +1,4 @@
-import {CafeItem, NewsItem, SearchNews} from "../interfaces";
+import {CafeItem, NewsItem} from "../interfaces";
 import {getApiClientKey} from "./engine";
 import {MAX_LINK, R_CAFE_KEYWORD, RSEARCHAPI} from "../helpers/common";
 import axios from "axios";
@@ -29,8 +29,8 @@ export async function getFindCafeLinks(query: string, start: number = 1, oldLink
     // 기존의 링크와 신규 링크를 비교해서 새로운 링크만 저장
     const uniqueLinks = Array.from(new Set(data.items));
 
-    const diffLinks = uniqueLinks.filter((item: SearchNews) => !oldLinks.includes(item.link));
-    const newLinks = Array.from(diffLinks).map((news: SearchNews) => news?.link) || [];
+    const diffLinks = uniqueLinks.filter((item: CafeItem) => !oldLinks.includes(item.link));
+    const newLinks = Array.from(diffLinks).map((news: CafeItem) => news?.link) || [];
 
     let tempLinks = oldLinks;
     const listCnt = oldLinks.length + newLinks.length;

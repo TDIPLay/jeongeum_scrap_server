@@ -402,7 +402,7 @@ export async function getReply(news: News, type: string = 'News', browser) {
                     const sympathyCount = sympathyEl ? parseInt(sympathyEl.textContent.trim()) : 0;
                     const nonSympathyCount = non_sympathyEl ? parseInt(non_sympathyEl.textContent.trim()) : 0;
 
-                    if(contentsEl || sympathyEl || non_sympathyEl){
+                    if (contentsEl || sympathyEl || non_sympathyEl) {
                         result.push({
                             contents: contents,
                             sympathy: sympathyCount,
@@ -415,22 +415,22 @@ export async function getReply(news: News, type: string = 'News', browser) {
             });
 
             //like icon 수 가져오기
-           /* if (type == 'News') {
-                try {
-                    const likeItElements = await page.evaluate(() => {
-                        const elements = document.querySelectorAll('#likeItCountViewDiv li');
-                        const likeItCounts = {};
-                        elements.forEach((element) => {
-                            const name = element.querySelector('span.u_likeit_list_name._label').textContent.trim();
-                            const count = parseInt(element.querySelector('span.u_likeit_list_count._count').textContent.trim());
-                            likeItCounts[name] = count;
-                        });
-                        return likeItCounts;
-                    });
-                    news.like = likeItElements;
-                } catch (e) {
-                }
-            }*/
+            /* if (type == 'News') {
+                 try {
+                     const likeItElements = await page.evaluate(() => {
+                         const elements = document.querySelectorAll('#likeItCountViewDiv li');
+                         const likeItCounts = {};
+                         elements.forEach((element) => {
+                             const name = element.querySelector('span.u_likeit_list_name._label').textContent.trim();
+                             const count = parseInt(element.querySelector('span.u_likeit_list_count._count').textContent.trim());
+                             likeItCounts[name] = count;
+                         });
+                         return likeItCounts;
+                     });
+                     news.like = likeItElements;
+                 } catch (e) {
+                 }
+             }*/
 
             if (textContents && textContents.length > 0) {
 

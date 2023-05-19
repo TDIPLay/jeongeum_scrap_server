@@ -2,8 +2,7 @@
 import type {RedisClientType} from 'redis'
 import {createClient} from 'redis'
 import {logger} from '../src/helpers/utils';
-import Common_service from "./common_service";
-import service from "./common_service"
+import service from "./common_service";
 
 let redisClient: RedisClientType
 let isReady: boolean = false;

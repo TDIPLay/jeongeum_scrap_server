@@ -1,4 +1,4 @@
-import {BlogItem, SearchNews} from "../interfaces";
+import {BlogItem} from "../interfaces";
 import {getApiClientKey} from "./engine";
 import {MAX_LINK, R_BlOG_KEYWORD, RSEARCHAPI} from "../helpers/common";
 import axios from "axios";

@@ -1,4 +1,4 @@
-import mysql, { Connection,Pool, Query } from 'mysql';
+import mysql, {Pool, Query} from 'mysql';
 import unnamed from 'named-placeholders';
 import {logger} from "../src/helpers/utils";
 

@@ -37,7 +37,7 @@ export function processKeywordAlarms(alarms: AlarmData[]): { [p: string]: Keywor
     return keywordAlarms;
 }
 
-export function getAlarmsUser( query: string, keywordAlarms: { [email: string]: KeywordAlarm }) {
+export function getAlarmsUser(query: string, keywordAlarms: { [email: string]: KeywordAlarm }) {
     const now = moment().valueOf();
 
     let alarmEmailUser = []

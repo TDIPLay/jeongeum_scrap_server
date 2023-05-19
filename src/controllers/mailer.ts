@@ -52,7 +52,7 @@ export async function sendMail(user: string, news: News[], query: string) {
     });
 }
 
-export async function sendBriefingMail(user: string, title: string,content: string) {
+export async function sendBriefingMail(user: string, title: string, content: string) {
 
     await new EmailSender({
         user: process.env.GOOGLE_MAIL_ID,

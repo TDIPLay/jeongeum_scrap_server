@@ -2,10 +2,10 @@ import mysql from "./mysql"
 import cron from 'node-cron';
 import {getDateString, logger} from "../src/helpers/utils";
 import {xServerError} from "../src/helpers/errors";
-import {initAPIResource, initPress, initStock, searchApiIdx} from "../src/controllers/engine"
+import {initAPIResource, initPress, searchApiIdx} from "../src/controllers/engine"
 import {initRedisHmSet} from "../src/controllers/worker";
 import {processKeywordAlarms} from "../src/controllers/user";
-import {AlarmData, KeywordAlarm, SearchApi, StockData} from "../src/interfaces";
+import {AlarmData, KeywordAlarm, SearchApi} from "../src/interfaces";
 import {QUERY, RSEARCHAPI, RTRENDAPI} from "../src/helpers/common";
 
 export default class Common_service {

@@ -2,7 +2,7 @@ import {FastifyReply} from "fastify"
 import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
 import Common_service from '../../service/common_service'
-import {AlarmData, BlogItem, CafeItem, IAnyRequest, News, SearchNews} from "../interfaces";
+import {BlogItem, CafeItem, IAnyRequest, News, SearchNews} from "../interfaces";
 //import rp from 'request-promise-native'
 import {getArticle, getFindNewLinks, getNaverRankNews, getNaverRealNews, getNewLinks, getNews, getReply} from "./news";
 import {generateChatMessage} from "./openai";
@@ -10,16 +10,7 @@ import moment from "moment/moment";
 import {closeBrowser, getDateString, sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
-import {
-    MAX_LINK,
-    QUERY,
-    R_BlOG_KEYWORD,
-    R_CAFE_KEYWORD,
-    RKEYWORD,
-    RREPLY_KEYWORD,
-    RSTOCK,
-    RTOTEN
-} from "../helpers/common";
+import {MAX_LINK, R_BlOG_KEYWORD, R_CAFE_KEYWORD, RKEYWORD, RREPLY_KEYWORD, RSTOCK, RTOTEN} from "../helpers/common";
 import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
 import {getKakaoUserInfo, userKakaoOAuth, validateKakaoToken} from "./kakaoauth";
 import {sendMail} from "./mailer";
