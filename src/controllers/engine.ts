@@ -35,6 +35,7 @@ export async function initAPIResource(): Promise<boolean> {
         }
         console.log("Serach_Api 카운트 초기화")
         await hmsetRedis(redis, RSEARCHAPI, hash, 0);
+        await hmsetRedis(redis, RTRENDAPI, hash, 0);
     }
     return true;
 }
