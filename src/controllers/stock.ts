@@ -108,7 +108,6 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
             newsCnt: {},
             disclosureCnt: {}
         };
-
         const processFinanceData = async (url: string, index: number) => {
             let lastData = '';
             // 100000  이전까지만 조회
@@ -127,13 +126,11 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
                 if (i % 1000 === 0) {
                     console.log(`${stock} scrap => ${url}${i}`)
                 }
-
                 const targetObj = objCount[!index ? `board` : index === 1 ? 'finance' : index === 2 ? 'newsCnt' : 'disclosureCnt'];
                 let endFlag = false;
 
                 for (const news of finance.slice(index === 1 ? 2 : 1)) {
-
-                    let date = news[0].replaceAll('.', '');
+                    let date = news[0].replace(/\./g, '');
                     if (index === 0) {
                         date = date.split(' ')[0];
 
@@ -181,7 +178,7 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
                         }
                     } else if (index === 2) {
                         if (news && news.length > 2) {
-                            date = news[0].includes('연관기사') ? news[3].split(' ')[0].replaceAll('.', '') : news[2].split(' ')[0].replaceAll('.', '');
+                            date = news[0].includes('연관기사') ? news[3].split(' ')[0].replace(/\./g, '') : news[2].split(' ')[0].replace(/\./g, '');
 
                             targetObj[date] = (targetObj[date] || 0) + 1;
                             lastData = `${news[1]}${news[2]}`;
@@ -190,7 +187,7 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
                         }
                     } else if (index === 3) {
                         if (news && news.length > 2) {
-                            date = news[2].split(' ')[0].replaceAll('.', '');
+                            date = news[2].split(' ')[0].replace(/\./g, '');
                             targetObj[date] = (targetObj[date] || 0) + 1;
                             lastData = `${news[1]}${news[2]}`;
                         } else {
@@ -211,7 +208,6 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
         await processFinanceData(url[1], 1); // Finance
         await processFinanceData(url[2], 2); // News
         await processFinanceData(url[3], 3); // Disclosure
-
         await setDataBase(objCount, endDate);
     } catch (e) {
         console.log(`=================keys${keys}`)

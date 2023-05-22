@@ -67,6 +67,7 @@ export async function searchApiIdx(redisKey:string): Promise<number> {
                 selectIdx = i;
                 break;
             } else {
+
                 if (reqCnt < minReqCnt) {
                     selectIdx = i;
                     minReqCnt = reqCnt;
