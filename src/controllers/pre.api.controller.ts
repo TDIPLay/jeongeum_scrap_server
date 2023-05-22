@@ -98,7 +98,7 @@ export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, don
             const redis = await getRedis();
             const hscan = promisify(redis.hscan).bind(redis);
             const totalStock  = 2590;
-            const defPage = page || 10;
+            const defPage = page || 100;
             let flag = true;
             let i  = 1;
 
