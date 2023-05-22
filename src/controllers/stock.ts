@@ -114,7 +114,9 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
             for (let i = 1; i < 100000; i++) {
                 const finance = await getFinanceTable(`${url}${i}`, (!index || index === 1) ? ".type2" : index === 2 ? ".type5" : ".type6", index === 1 ? 1 : 0);
                 const len = finance.length;
+
                 if (len === 1) break;
+
                 if (!index) {
                     if (lastData === `${finance[len - 1][1]}${finance[len - 1][2]}${finance[len - 1][3]}${finance[len - 1][4]}`) {
                         break;
@@ -197,7 +199,7 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
                 }
 
                 keys = Object.keys(targetObj)[0];
-                if (endFlag || targetObj[endDate] !== undefined || !isValidDate(keys) || (moment(keys).unix() < moment(endDate).unix())) {
+                if (endFlag || !isValidDate(keys) || (moment(keys).unix() < moment(endDate).unix())) {
                     break;
                 }
                 await sleep(10);
