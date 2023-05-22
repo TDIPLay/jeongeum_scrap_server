@@ -250,6 +250,7 @@ export async function parseCloseStock() {
         }
     }
 }
+
 //거래 데이터 시작일부터 현재까지 추가 생성 삽입
 export async function parsePreviousCloseStock() {
     const url = `https://finance.naver.com/sise/trading_halt.naver`;
