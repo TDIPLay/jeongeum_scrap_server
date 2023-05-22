@@ -98,7 +98,7 @@ export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, don
             endDate = moment().subtract(2, 'day').format('YYYYMMDD');
         }
 
-        if(query && query === ''){
+        if(query && query !== ''){
             //single
             await getStockPage(page, query,``,endDate);
         }else{
