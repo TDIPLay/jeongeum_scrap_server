@@ -29,7 +29,7 @@ import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken
 import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth";
 import {generateTalkTemplate} from "./aligoxkakao";
 import {getRelKeyword} from "./naverdatalab";
-import {getStockBoard, getStockPage, getStockReply} from "./stock";
+import {getStockBoard, getStockPage, getStockReply, parseCloseStock} from "./stock";
 import * as puppeteer from "puppeteer";
 import {getBlog, getBlogLinks, getFindBlogLinks} from "./naverblog";
 import {getCafe, getFindCafeLinks, getNewCafeLinks} from "./navercafe";
@@ -49,6 +49,23 @@ export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done)
             code: STANDARD.SUCCESS,
             message: "SUCCESS",
             data: {}
+        };
+        done();
+
+    } catch (e) {
+        console.log(e)
+        handleServerError(reply, e)
+    }
+}
+export const preCloseStock = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const stock = await parseCloseStock();
+
+        request.transfer = {
+            result: MESSAGE.SUCCESS,
+            code: STANDARD.SUCCESS,
+            message: "SUCCESS",
+            data: stock
         };
         done();
 

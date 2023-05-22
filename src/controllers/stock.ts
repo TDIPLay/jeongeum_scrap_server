@@ -119,9 +119,9 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
 
                 if (!index) {
                     /*try {*/
-                        if (lastData === `${finance[len - 1][1]}${finance[len - 1][2]}${finance[len - 1][3]}${finance[len - 1][4]}`) {
-                            break;
-                        }
+                    if (lastData === `${finance[len - 1][1]}${finance[len - 1][2]}${finance[len - 1][3]}${finance[len - 1][4]}`) {
+                        break;
+                    }
                     /*}catch (e) {
                         console.log(lastData)
                         console.log(finance)
@@ -137,8 +137,8 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
                 const targetObj = objCount[!index ? `board` : index === 1 ? 'finance' : index === 2 ? 'newsCnt' : 'disclosureCnt'];
                 let endFlag = false;
 
-                for (const news of finance.slice(index === 1 ? 2 : 1)) {
-                    let date = news[0].replace(/\./g, '');
+                for (const stock of finance.slice(index === 1 ? 2 : 1)) {
+                    let date = stock[0].replace(/\./g, '');
                     if (index === 0) {
                         date = date.split(' ')[0];
 
@@ -148,56 +148,57 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
                                 boardCount: 0,
                                 viewCount: 0,
                                 sympathyCount: 0,
+
                                 nonSympathyCount: 0,
                                 duplicateRatio: 0
                             };
                         }
 
-                        if (isNaN(news[3]) || isNaN(news[4]) || isNaN(news[5])) {
+                        if (isNaN(stock[3]) || isNaN(stock[4]) || isNaN(stock[5])) {
                             console.log(`${url}${i}`)
-                            console.log(`Value is Nan => ${news[3]},${news[4]},${news[5]}`)
+                            console.log(`Value is Nan => ${stock[3]},${stock[4]},${stock[5]}`)
                         }
 
-                        targetObj[date].authors.add(news[2]);
+                        targetObj[date].authors.add(stock[2]);
                         targetObj[date].boardCount = (targetObj[date].boardCount || 0) + 1;
-                        if (news[5] === undefined) {
-                            targetObj[date].viewCount += !isNaN(news[2]) ? Number(news[2]) : 0;
-                            targetObj[date].sympathyCount += !isNaN(news[3]) ? Number(news[3]) : 0;
-                            targetObj[date].nonSympathyCount += !isNaN(news[4]) ? Number(news[4]) : 0;
+                        if (stock[5] === undefined) {
+                            targetObj[date].viewCount += !isNaN(stock[2]) ? Number(stock[2]) : 0;
+                            targetObj[date].sympathyCount += !isNaN(stock[3]) ? Number(stock[3]) : 0;
+                            targetObj[date].nonSympathyCount += !isNaN(stock[4]) ? Number(stock[4]) : 0;
                         } else {
-                            targetObj[date].viewCount += !isNaN(news[3]) ? Number(news[3]) : 0;
-                            targetObj[date].sympathyCount += !isNaN(news[4]) ? Number(news[4]) : 0;
-                            targetObj[date].nonSympathyCount += !isNaN(news[5]) ? Number(news[5]) : 0;
+                            targetObj[date].viewCount += !isNaN(stock[3]) ? Number(stock[3]) : 0;
+                            targetObj[date].sympathyCount += !isNaN(stock[4]) ? Number(stock[4]) : 0;
+                            targetObj[date].nonSympathyCount += !isNaN(stock[5]) ? Number(stock[5]) : 0;
                         }
                         //전체 게시글 대비 작성자 중복율 = ((전체 게시글 수 - 작성자 수) / 전체 게시글 수) * 100
                         targetObj[date].duplicateRatio = ((targetObj[date].boardCount - targetObj[date].authors.size) / targetObj[date].boardCount) * 100;
 
-                        lastData = `${news[1]}${news[2]}${news[3]}${news[4]}`;
+                        lastData = `${stock[1]}${stock[2]}${stock[3]}${stock[4]}`;
                         if (!isValidDate(date) || (moment(date).unix() < moment(endDate).unix())) {
                             break;
                         }
 
                     } else if (index === 1) {
                         if (!targetObj[date]) {
-                            targetObj[date] = [news];
+                            targetObj[date] = [stock];
                         } else {
-                            targetObj[date].push(news);
-                            lastData = `${news[1]}${news[2]}`;
+                            targetObj[date].push(stock);
+                            lastData = `${stock[1]}${stock[2]}`;
                         }
                     } else if (index === 2) {
-                        if (news && news.length > 2) {
-                            date = news[0].includes('연관기사') ? news[3].split(' ')[0].replace(/\./g, '') : news[2].split(' ')[0].replace(/\./g, '');
+                        if (stock && stock.length > 2) {
+                            date = stock[0].includes('연관기사') ? stock[3].split(' ')[0].replace(/\./g, '') : stock[2].split(' ')[0].replace(/\./g, '');
 
                             targetObj[date] = (targetObj[date] || 0) + 1;
-                            lastData = `${news[1]}${news[2]}`;
+                            lastData = `${stock[1]}${stock[2]}`;
                         } else {
                             endFlag = true;
                         }
                     } else if (index === 3) {
-                        if (news && news.length > 2) {
-                            date = news[2].split(' ')[0].replace(/\./g, '');
+                        if (stock && stock.length > 2) {
+                            date = stock[2].split(' ')[0].replace(/\./g, '');
                             targetObj[date] = (targetObj[date] || 0) + 1;
-                            lastData = `${news[1]}${news[2]}`;
+                            lastData = `${stock[1]}${stock[2]}`;
                         } else {
                             endFlag = true;
                         }
@@ -213,10 +214,10 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
         };
 
         await processFinanceData(url[0], 0); // Board
-        await processFinanceData(url[1], 1); // Finance
-        await processFinanceData(url[2], 2); // News
-        await processFinanceData(url[3], 3); // Disclosure
-        await setDataBase(objCount, endDate);
+        // await processFinanceData(url[1], 1); // Finance
+        // await processFinanceData(url[2], 2); // News
+        // await processFinanceData(url[3], 3); // Disclosure
+        // await setDataBase(objCount, endDate);
     } catch (e) {
         console.log(`=================keys${keys}`)
         console.log(e)
@@ -225,6 +226,65 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
 
 async function getStockCode(stock: string): Promise<string> {
     return await hgetData(await getRedis(), R_STOCK, "", stock);
+}
+
+export async function parseCloseStock() {
+    const url = `https://finance.naver.com/sise/trading_halt.naver`;
+    const finance = await getFinanceTable(url, ".type_2", 0);
+    const createInsertQuery = (date, company, code, suspension_reason, close_date) => {
+
+        const insertQuery =
+            `INSERT INTO stock_close (date, company, code, suspension_reason, close_date)
+             VALUES ('${date}', '${company}', '${code}', '${suspension_reason}', '${close_date}') ON DUPLICATE KEY
+            UPDATE suspension_reason = '${suspension_reason}'`;
+
+        return insertQuery;
+    };
+    for (const data of finance.slice(1)) {
+        if (data.length > 2) {
+            const code = await getStockCode(data[1]);
+            if (code) {
+                const insertQuery = createInsertQuery(moment().format('YYYYMMDD'), data[1], code, data[3], data[2]);
+                await Mysql.getInstance().query(insertQuery);
+            }
+        }
+    }
+}
+//거래 데이터 시작일부터 현재까지 추가 생성 삽입
+export async function parsePreviousCloseStock() {
+    const url = `https://finance.naver.com/sise/trading_halt.naver`;
+    const finance = await getFinanceTable(url, ".type_2", 0);
+    const createInsertQuery = (date, company, code, suspension_reason, close_date) => {
+        const insertQuery =
+            `INSERT INTO stock_close (date, company, code, suspension_reason, close_date)
+             VALUES ('${date}', '${company}', '${code}', '${suspension_reason}', '${close_date}') ON DUPLICATE KEY
+            UPDATE suspension_reason = '${suspension_reason}'`;
+
+        return insertQuery;
+    };
+
+    const currentDate = moment().format('YYYYMMDD');
+    for (const data of finance.slice(1)) {
+        if (data.length > 2) {
+            const code = await getStockCode(data[1]);
+            if (code) {
+                const closeDate = moment(data[2], 'YYYY.MM.DD').format('YYYYMMDD');
+                const insertQuery = createInsertQuery(currentDate, data[1], code, data[3], data[2]);
+                await Mysql.getInstance().query(insertQuery);
+
+                let currentDateMoment = moment(currentDate, 'YYYYMMDD');
+                let currentDateMinusOneDay = currentDateMoment.clone().subtract(1, 'day');
+                let previousDate = moment(closeDate, 'YYYYMMDD');
+
+                while (previousDate.isBefore(currentDateMinusOneDay, 'day')) {
+                    previousDate.add(1, 'day');
+                    const additionalInsertQuery = createInsertQuery(previousDate.format('YYYYMMDD'), data[1], code, data[3], closeDate);
+                    console.log(additionalInsertQuery)
+                    await Mysql.getInstance().query(additionalInsertQuery);
+                }
+            }
+        }
+    }
 }
 
 function parseStockInfo($: cheerio.CheerioAPI): Record<string, string> {
@@ -326,27 +386,31 @@ async function setDataBase(data, endDate) {
         const disclosureCount = data.disclosureCnt[date] || 0;
         const closingPrice = financeData ? Number(financeData[0][1].replace(/,/g, '')) : 0;
         const tradingVolume = financeData ? Number(financeData[0][4].replace(/,/g, '')) : 0;
+        //네이버 토론게시판 100 page 제한에 따라 과거데이터를 업데이트 할수없음
+        //board count 0인건 업데이트 안함
+        if (boardData.boardCount) {
+            const insertQuery = createInsertQuery(
+                date,
+                data.company,
+                data.code,
+                newsCount,
+                disclosureCount,
+                boardData ? boardData.boardCount : 0,
+                boardData ? boardData.viewCount : 0,
+                boardData ? boardData.sympathyCount : 0,
+                boardData ? boardData.nonSympathyCount : 0,
+                boardData ? boardData.duplicateRatio : 0,
+                financeData ? closingPrice : 0,
+                financeData ? financeData[0][3].replace(/[+-]%/g, '') : '-',
+                financeData ? tradingVolume : 0,
+                financeData ? tradingVolume * closingPrice : 0,
+                financeData ? financeData[0][5].replace(/,/g, '') : '-',
+                financeData ? financeData[0][6].replace(/,/g, '') : '-',
+                data.description
+            );
+            await Mysql.getInstance().query(insertQuery);
+        }
 
-        const insertQuery = createInsertQuery(
-            date,
-            data.company,
-            data.code,
-            newsCount,
-            disclosureCount,
-            boardData ? boardData.boardCount : 0,
-            boardData ? boardData.viewCount : 0,
-            boardData ? boardData.sympathyCount : 0,
-            boardData ? boardData.nonSympathyCount : 0,
-            boardData ? boardData.duplicateRatio : 0,
-            financeData ? closingPrice : 0,
-            financeData ? financeData[0][3].replace(/[+-]%/g, '') : '-',
-            financeData ? tradingVolume : 0,
-            financeData ? tradingVolume * closingPrice : 0,
-            financeData ? financeData[0][5].replace(/,/g, '') : '-',
-            financeData ? financeData[0][6].replace(/,/g, '') : '-',
-            data.description
-        );
-        await Mysql.getInstance().query(insertQuery);
         //insertQueries.push(insertQuery);
     }
 

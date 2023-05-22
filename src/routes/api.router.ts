@@ -10,7 +10,7 @@ import {
     preApiDataLab,
     preApiRankNews,
     preApiRealNews,
-    preApiSyncUp,
+    preApiSyncUp, preCloseStock,
     preKoaNap,
     preOpenAi,
     preReply, preSearchBlog, preSearchBlogNewLink, preSearchCafe, preSearchCafeNewLink,
@@ -145,6 +145,13 @@ async function apiRouter(fastify: FastifyInstance) {
         url: '/stock_raw',
         schema: apiSchema,preHandler:preStockRaw, handler: apiSyncUp
     })
+
+    fastify.route({
+        method: 'GET',
+        url: '/close_stock',
+        schema: apiSchema,preHandler:preCloseStock, handler: apiSyncUp
+    })
+
     //주식종목데이터 html 전달
     fastify.route({
         method: 'GET',
