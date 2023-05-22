@@ -280,7 +280,6 @@ export async function parsePreviousCloseStock() {
                 while (previousDate.isBefore(currentDateMinusOneDay, 'day')) {
                     previousDate.add(1, 'day');
                     const additionalInsertQuery = createInsertQuery(previousDate.format('YYYYMMDD'), data[1], code, data[3], closeDate);
-                    console.log(additionalInsertQuery)
                     await Mysql.getInstance().query(additionalInsertQuery);
                 }
             }

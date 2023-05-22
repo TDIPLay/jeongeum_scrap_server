@@ -112,7 +112,7 @@ export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, don
         let endDate = date;
 
         if(!date || date === ''){
-            endDate = moment().subtract(2, 'day').format('YYYYMMDD');
+            endDate = moment().subtract(1, 'day').format('YYYYMMDD');
         }
 
         if(query && query !== ''){
