@@ -115,7 +115,7 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
                 const finance = await getFinanceTable(`${url}${i}`, (!index || index === 1) ? ".type2" : index === 2 ? ".type5" : ".type6", index === 1 ? 1 : 0);
                 const len = finance.length;
 
-                if (!len || len === 1) break;
+                if (len < 2) break;
 
                 if (!index) {
                     /*try {*/
