@@ -1,6 +1,6 @@
 import {BlogItem} from "../interfaces";
 import {getApiClientKey} from "./engine";
-import {MAX_LINK, R_BlOG_KEYWORD, RSEARCHAPI} from "../helpers/common";
+import {MAX_LINK, R_BlOG_KEYWORD, R_SEARCH_API} from "../helpers/common";
 import axios from "axios";
 import {hmsetRedis} from "./worker";
 import {getRedis} from "../../service/redis";
@@ -14,7 +14,7 @@ export async function getBlogLinks(query: string, start: number, oldLinks: strin
 
 export async function getFindBlogLinks(query: string, start: number = 1, oldLinks: string[] = []): Promise<BlogItem[]> {
 
-    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
+    const clientInfo = await getApiClientKey(R_SEARCH_API, 1);
 
     let api_url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURI(query)}&start=${start}&display=100&`; // JSON 결과
     let options = {
@@ -46,7 +46,7 @@ export async function getFindBlogLinks(query: string, start: number = 1, oldLink
 }
 
 export async function getBlog(query: string, start: number, display: number = 100, sort: string = 'date'): Promise<BlogItem[]> {
-    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
+    const clientInfo = await getApiClientKey(R_SEARCH_API, 1);
     let api_url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURI(query)}&start=${start}&display=${display}&sort=${sort}`; // JSON 결과
 
     let options = {

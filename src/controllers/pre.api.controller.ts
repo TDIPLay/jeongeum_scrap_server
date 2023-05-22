@@ -10,7 +10,16 @@ import moment from "moment/moment";
 import {closeBrowser, getDateString, sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
-import {MAX_LINK, R_BlOG_KEYWORD, R_CAFE_KEYWORD, RKEYWORD, RREPLY_KEYWORD, RSTOCK, RTOTEN} from "../helpers/common";
+import {
+    MAX_LINK,
+    R_BlOG_KEYWORD,
+    R_CAFE_KEYWORD,
+    R_KEYWORD,
+    R_REPLY_KEYWORD,
+    R_STOCK,
+    R_TOTEN,
+    TOTAL_COUNT_STOCK
+} from "../helpers/common";
 import {ERROR400, ERROR403, MESSAGE, STANDARD} from "../helpers/constants";
 import {getKakaoUserInfo, userKakaoOAuth, validateKakaoToken} from "./kakaoauth";
 import {sendMail} from "./mailer";
@@ -97,7 +106,7 @@ export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, don
             let articlePromises: Promise<void>[] = [];
             const redis = await getRedis();
             const hscan = promisify(redis.hscan).bind(redis);
-            const totalStock  = 2590;
+            const totalStock  = TOTAL_COUNT_STOCK;
             const defPage = page || 100;
             let flag = true;
             let i  = 1;
@@ -106,7 +115,7 @@ export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, don
                 let rediskey = '';
                 let cursor = '0';
                 do {
-                    const reply = await hscan(RSTOCK, cursor, "COUNT", defPage)
+                    const reply = await hscan(R_STOCK, cursor, "COUNT", defPage)
                     cursor = reply[0];
                     articlePromises = [];
                     for (const key in reply[1]) {
@@ -152,7 +161,7 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
     try {
         const {query} = request.query;
         const redis = await getRedis();
-        const oldLinks = await hgetData(redis, RREPLY_KEYWORD, "json", query) || [];
+        const oldLinks = await hgetData(redis, R_REPLY_KEYWORD, "json", query) || [];
         const sortBySimNews = await getNews(query, 1, 25, 'sim');
         const sortByDateNews = await getNews(query, 1, 25);
         const blog = /*await getBlog(query,1,10)*/[];
@@ -188,7 +197,7 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
         }
 
         const redisData = {[`${query}`]: JSON.stringify([...newLinks, ...oldLinks])};
-        await hmsetRedis(redis, RREPLY_KEYWORD, redisData, 0);
+        await hmsetRedis(redis, R_REPLY_KEYWORD, redisData, 0);
 
         request.transfer = {
             result: MESSAGE.SUCCESS,
@@ -286,7 +295,7 @@ export const preSearchNews = async (request: IAnyRequest, reply: FastifyReply, d
                 let data = null;
 
                 if (i === 1) {
-                    let oldLinks = await hgetData(redis, RKEYWORD, "json", query);
+                    let oldLinks = await hgetData(redis, R_KEYWORD, "json", query);
                     data = await getFindNewLinks(query, i, oldLinks || []);
                     if (!data || !data.length || data.length < 50) {
                         data = await getNews(query, i, 100);
@@ -326,7 +335,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
         const {query, start} = request.query;
         const articlePromises: Promise<void>[] = [];
         const redis = await getRedis();
-        let oldLinks = await hgetData(redis, RKEYWORD, "json", query);
+        let oldLinks = await hgetData(redis, R_KEYWORD, "json", query);
 
         let news: News[] = [];
 
@@ -676,7 +685,7 @@ export const preSocialCallback = async (request: IAnyRequest, reply: FastifyRepl
         }
         const {name, email, mobile, image} = user;
         const redisData = {[`${email}`]: JSON.stringify(token)};
-        await hmsetRedis(await getRedis(), RTOTEN, redisData, 8650454);
+        await hmsetRedis(await getRedis(), R_TOTEN, redisData, 8650454);
 
         let userObj = {
             division: 'regist',

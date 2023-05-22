@@ -1,7 +1,7 @@
 import {getDateString, getDomain, logger} from "../helpers/utils";
 import {promisify} from "util";
 import {getRedis} from "../../service/redis";
-import {RPRESS, RPRESSNON} from "../helpers/common";
+import {R_PRESS, R_PRESS_NON} from "../helpers/common";
 import {News} from "../interfaces";
 
 
@@ -57,13 +57,13 @@ export const initRedisHmSet = (key: string, redis, result: string, expire: numbe
 export const getRedisPress = async (news: News) => {
     const redis = await getRedis();
     const domain = getDomain(news.originallink || news.link);
-    const press = await hgetData(redis, RPRESS, "", domain)
+    const press = await hgetData(redis, R_PRESS, "", domain)
     return {domain:domain, press:press}
 }
 
 export const setRedisPress = async (domain:string, data) => {
     const redis = await getRedis();
-    await hmsetRedis(redis, RPRESSNON, {[`${domain}`]: data || -1}, 0);
+    await hmsetRedis(redis, R_PRESS_NON, {[`${domain}`]: data || -1}, 0);
 }
 
 

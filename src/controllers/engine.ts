@@ -2,7 +2,7 @@ import mysql from "../../service/mysql";
 import moment from "moment";
 import {getRedis} from "../../service/redis";
 import {promisify} from "util";
-import {QUERY, RPRESS, RSEARCHAPI, RSTOCK, RTRENDAPI} from "../helpers/common";
+import {QUERY, R_PRESS, R_SEARCH_API, R_STOCK, R_TREND_API} from "../helpers/common";
 import service from "../../service/common_service"
 import {SearchApi, StockData} from "../interfaces";
 import {hgetData, hmsetRedis} from "./worker";
@@ -15,7 +15,7 @@ export async function initPress(): Promise<boolean> {
     for (const api of press) {
         hash[api.press_id] = api.press_name;
     }
-    await hmsetRedis(redis, RPRESS, hash, 0);
+    await hmsetRedis(redis, R_PRESS, hash, 0);
     return true;
 }
 
@@ -34,8 +34,8 @@ export async function initAPIResource(): Promise<boolean> {
             hash[api.api_name] = 0;
         }
         console.log("Serach_Api 카운트 초기화")
-        await hmsetRedis(redis, RSEARCHAPI, hash, 0);
-        await hmsetRedis(redis, RTRENDAPI, hash, 0);
+        await hmsetRedis(redis, R_SEARCH_API, hash, 0);
+        await hmsetRedis(redis, R_TREND_API, hash, 0);
     }
     return true;
 }
@@ -48,7 +48,7 @@ export async function initStock(): Promise<boolean> {
     for (const api of stock) {
         hash[api.name] = api.code;
     }
-    await hmsetRedis(redis, RSTOCK, hash, 0);
+    await hmsetRedis(redis, R_STOCK, hash, 0);
     return true;
 }
 
@@ -73,10 +73,10 @@ export async function searchApiIdx(redisKey:string): Promise<number> {
                 }
             }
         }
-        if (redisKey === RSEARCHAPI && minReqCnt >= 24000) {
+        if (redisKey === R_SEARCH_API && minReqCnt >= 24000) {
             console.log("limit cnt Over 24000");
         }
-        if (redisKey === RTRENDAPI && minReqCnt >= 950) {
+        if (redisKey === R_TREND_API && minReqCnt >= 950) {
             console.log("limit cnt Over 950");
         }
         return selectIdx;
@@ -88,7 +88,7 @@ export async function getApiClientKey(key:string, crbyCnt: number): Promise<{ cl
     const redis = await getRedis();
     const api = service.apiIdx;
 
-    if(key === RSEARCHAPI){
+    if(key === R_SEARCH_API){
         if (api.search !== -1) {
             const {client_id, client_secret} = service.apis[api.search].api_key;
             redis.hincrbyfloat(key, service.apis[api.search].api_name,crbyCnt)

@@ -4,7 +4,7 @@ import iconv from 'iconv-lite';
 import {News, NewsItem, Scraper, SearchNews} from "../interfaces";
 import cron from 'node-cron';
 import moment from 'moment'
-import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, REQUEST_OPTIONS, RKEYWORD, RSEARCHAPI} from "../helpers/common";
+import {MAX_LINK, NAVER_API_URL, NAVER_RANK_URL, REQUEST_OPTIONS, R_KEYWORD, R_SEARCH_API} from "../helpers/common";
 import {decodeHtmlEntities, extractAuthorAndEmail, getDateString} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {getRedisPress, hmsetRedis, setRedisPress} from "./worker";
@@ -268,7 +268,7 @@ export async function getNaverRealNews(): Promise<Scraper> {
 //검색어에 +넣으면 &연산 -넣으면 or연산 다음에 추가
 export async function getFindNewLinks(query: string, start: number = 1, oldLinks: string[] = []): Promise<NewsItem[]> {
 
-    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
+    const clientInfo = await getApiClientKey(R_SEARCH_API, 1);
 
     let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=100&`; // JSON 결과
     let options = {
@@ -296,13 +296,13 @@ export async function getFindNewLinks(query: string, start: number = 1, oldLinks
     // console.log(`newLinks : ${newLinks.length}`)
     // console.log(`tempLinks : ${tempLinks.length}`)
     const redisData = {[`${query}`]: JSON.stringify([...newLinks, ...tempLinks])};
-    await hmsetRedis(await getRedis(), RKEYWORD, redisData, 0);
+    await hmsetRedis(await getRedis(), R_KEYWORD, redisData, 0);
 
     return data.items.filter(news => news.link && news.link.includes("http") && !oldLinks.includes(news.link));
 }
 
 export async function getNews(query: string, start: number, display: number = 100, sort: string = 'date'): Promise<NewsItem[]> {
-    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
+    const clientInfo = await getApiClientKey(R_SEARCH_API, 1);
     let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=${display}&sort=${sort}`; // JSON 결과
 
     let options = {

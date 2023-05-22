@@ -1,7 +1,7 @@
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
 import axios, {ResponseType} from 'axios';
-import {RSTOCK} from "../helpers/common";
+import {R_STOCK} from "../helpers/common";
 import {hgetData} from "./worker";
 import {getRedis} from "../../service/redis";
 import {Stock} from "../interfaces";
@@ -220,7 +220,7 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
 }
 
 async function getStockCode(stock: string): Promise<string> {
-    return await hgetData(await getRedis(), RSTOCK, "", stock);
+    return await hgetData(await getRedis(), R_STOCK, "", stock);
 }
 
 function parseStockInfo($: cheerio.CheerioAPI): Record<string, string> {

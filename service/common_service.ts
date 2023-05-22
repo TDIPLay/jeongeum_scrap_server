@@ -4,7 +4,7 @@ import {getDateString, logger} from "../src/helpers/utils";
 import {initAPIResource, initPress, searchApiIdx} from "../src/controllers/engine"
 import {processKeywordAlarms} from "../src/controllers/user";
 import {KeywordAlarm, SearchApi} from "../src/interfaces";
-import {RSEARCHAPI, RTRENDAPI} from "../src/helpers/common";
+import {R_SEARCH_API, R_TREND_API} from "../src/helpers/common";
 
 export default class Common_service {
 
@@ -35,7 +35,7 @@ export default class Common_service {
         //datalap api의 경우 1분마다 api 상태를 확인하고 사용량이 적은 api로 변경
         cron.schedule("*/1 * * * *", async () => {
             // 트렌트 API 인덱스 확인 및 업데이트
-            Common_service.apiIdx.trend = await this.checkAndUpdateApiIndex(RTRENDAPI, Common_service.apis, Common_service.apiIdx.trend);
+            Common_service.apiIdx.trend = await this.checkAndUpdateApiIndex(R_TREND_API, Common_service.apis, Common_service.apiIdx.trend);
         });
     }
 
@@ -59,10 +59,10 @@ export default class Common_service {
             }
 
             // 검색 API 인덱스 확인 및 업데이트
-            Common_service.apiIdx.search = await this.checkAndUpdateApiIndex(RSEARCHAPI, Common_service.apis, Common_service.apiIdx.search);
+            Common_service.apiIdx.search = await this.checkAndUpdateApiIndex(R_SEARCH_API, Common_service.apis, Common_service.apiIdx.search);
 
             // 트렌트 API 인덱스 확인 및 업데이트
-            Common_service.apiIdx.trend = await this.checkAndUpdateApiIndex(RTRENDAPI, Common_service.apis, Common_service.apiIdx.trend);
+            Common_service.apiIdx.trend = await this.checkAndUpdateApiIndex(R_TREND_API, Common_service.apis, Common_service.apiIdx.trend);
 
             //신규 상장사 추가시 DB에 데이터 적재후 실행
            /* if (!await initStock()) {

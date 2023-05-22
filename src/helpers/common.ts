@@ -2,18 +2,20 @@ import {ResponseType} from 'axios';
 
 export const REDIS_EXPIRE = 86400		                    // 레디스 expire TTL
 export const FIX = 10000		                            // 소수점 4자리
+export const TOTAL_COUNT_STOCK = 2590		                            // 소수점 4자리
 
-export const RKEYWORD = "Keyword_Jungeum"		            //Redis KEYWORD key
-export const R_BlOG_KEYWORD = "BLOG_Keyword_Jungeum"		            //Redis KEYWORD key
-export const R_CAFE_KEYWORD = "CAFE_Keyword_Jungeum"		            //Redis KEYWORD key
-export const RREPLY_KEYWORD = "Keyword_Reply"		        //Redis Reply key
-export const RTOTEN = "Token"		                        //Redis KEYWORD key
-export const RSEARCHAPI = "Serach_Api"		                //Redis Serach_Api key
-export const RTRENDAPI = "Trend_Api"		                //Redis Trend_Api key
+
+export const R_KEYWORD = "KEYWORD"		            //Redis KEYWORD key
+export const R_BlOG_KEYWORD = "BLOG_KEYWORD"		            //Redis KEYWORD key
+export const R_CAFE_KEYWORD = "CAFE_KEYWORD"		            //Redis KEYWORD key
+export const R_REPLY_KEYWORD = "Keyword_Reply"		        //Redis Reply key
+export const R_TOTEN = "Token"		                        //Redis KEYWORD key
+export const R_SEARCH_API = "Search_Api"		                //Redis Serach_Api key
+export const R_TREND_API = "Trend_Api"		                //Redis Trend_Api key
 export const R_TREND_DATA = "Trend_Data"		            //Redis Trend_Data key
-export const RPRESS = "PressInfo"		                    //Redis PressInfo key
-export const RSTOCK = "StockInfo"		                    //Redis StockInfo key
-export const RPRESSNON = "PressNON"		                    //Redis KEYWORD key
+export const R_PRESS = "PressInfo"		                    //Redis PressInfo key
+export const R_STOCK = "StockInfo"		                    //Redis StockInfo key
+export const R_PRESS_NON = "NON_Press"		                    //Redis KEYWORD key
 export const RTOTEN_GOOGLE = "Token_Google"		            //Redis Token_Google key
 export const MAX_LINK = 200		                    // MAX_LINK
 export const NAVER_API_URL = "https://openapi.naver.com/v1/search/news.json"

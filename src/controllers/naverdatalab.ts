@@ -1,5 +1,5 @@
 import {getApiClientKey} from "./engine";
-import {NAVER_API_URL, RSEARCHAPI, RTRENDAPI} from "../helpers/common";
+import {NAVER_API_URL, R_SEARCH_API, R_TREND_API} from "../helpers/common";
 import axios from 'axios';
 import moment from "moment";
 import {generate} from "../helpers/utils";
@@ -81,7 +81,7 @@ interface AgeGroupDataCollection {
 
 
 async function getSearchRate(query: string, start?: string, end?: string): Promise<any> {
-    const {client_id, client_secret} = await getApiClientKey(RTRENDAPI, 9);
+    const {client_id, client_secret} = await getApiClientKey(R_TREND_API, 9);
 
     const apiUrl = 'https://openapi.naver.com/v1/datalab/search';
     const headers = {
@@ -288,7 +288,7 @@ function getAgeRatios(data: AgeGroupDataCollection): AgeRatio {
 
 
 async function getRelBlogCount(query: string, start: number = 1): Promise<number> {
-    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
+    const clientInfo = await getApiClientKey(R_SEARCH_API, 1);
     let api_url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURI(query)}&start=${start}&display=1`; // JSON 결과
     let options = {
         headers: {
@@ -304,7 +304,7 @@ async function getRelBlogCount(query: string, start: number = 1): Promise<number
 
 
 async function getRelCafeCount(query: string, start: number = 1): Promise<number> {
-    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
+    const clientInfo = await getApiClientKey(R_SEARCH_API, 1);
     let api_url = `https://openapi.naver.com/v1/search/cafearticle.json?query=${encodeURI(query)}&start=${start}&display=1`; // JSON 결과
     let options = {
         headers: {
@@ -319,7 +319,7 @@ async function getRelCafeCount(query: string, start: number = 1): Promise<number
 }
 
 async function getRelNewsCount(query: string, start: number = 1): Promise<number> {
-    const clientInfo = await getApiClientKey(RSEARCHAPI, 1);
+    const clientInfo = await getApiClientKey(R_SEARCH_API, 1);
     let api_url = `${NAVER_API_URL}?query=${encodeURI(query)}&start=${start}&display=1`; // JSON 결과
     let options = {
         headers: {
