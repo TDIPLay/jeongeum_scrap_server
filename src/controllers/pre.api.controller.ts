@@ -84,14 +84,13 @@ export const preStockRaw = async (request: IAnyRequest, reply: FastifyReply, don
         const {page, query, date} = request.query;
         let stock = null;
         let endDate = date;
-        //single
-        const currentDate = moment();
 
-        const formattedDate = currentDate.format('YYYYMMDD');
         if(!date || date === ''){
-            endDate = currentDate.format('YYYYMMDD');
+            endDate = moment().subtract(2, 'day').format('YYYYMMDD');
         }
+
         if(query && query === ''){
+            //single
             await getStockPage(page, query,``,endDate);
         }else{
             // multiple

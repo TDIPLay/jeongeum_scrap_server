@@ -283,7 +283,7 @@ async function setDataBase(data, endDate) {
                                closingPrice, stockPriceChangeRate, tradingVolume, tradingValue, institutionalInvestors, foreignInvestors, kosdaqKospi) => {
 
         const insertQuery =
-            `INSERT INTO stock_information3 (date, company, code, news_count, disclosure_count, post_count,
+            `INSERT INTO stock_information (date, company, code, news_count, disclosure_count, post_count,
                                             views, sympathy, non_sympathy, id_duplicate_ratio,
                                             closing_price, stock_price_change_rate, trading_volume,
                                             trading_value, institutional_investors, foreign_investors,
