@@ -29,12 +29,13 @@ import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken
 import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth";
 import {generateTalkTemplate} from "./aligoxkakao";
 import {getRelKeyword} from "./naverdatalab";
-import {getStockBoard, getStockPage, getStockReply, parseCloseStock} from "./stock";
+import {genStockHTML, getStockBoard, getStockPage, getStockReply, parseCloseStock} from "./stock";
 import * as puppeteer from "puppeteer";
 import {getBlog, getBlogLinks, getFindBlogLinks} from "./naverblog";
 import {getCafe, getFindCafeLinks, getNewCafeLinks} from "./navercafe";
 import {promisify} from "util";
 import mysql from "../../service/mysql";
+import {initStock} from "./engine";
 //import { KoalaNLP } from 'koalanlp';
 //import {analyzeSentiment} from "./koanlp";
 export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done) => {
@@ -57,8 +58,15 @@ export const preKoaNap = async (request: IAnyRequest, reply: FastifyReply, done)
         handleServerError(reply, e)
     }
 }
+
 export const preCloseStock = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
+
+        //신규 상장사 추가시 DB에 데이터 적재후 실행
+        //현재 crontab에서 9:00 실행
+        if (!await initStock()) {
+             console.log("initStock error");
+        }
         const stock = await parseCloseStock();
 
         request.transfer = {
@@ -810,7 +818,7 @@ export const preSocialLogin = async (request: IAnyRequest, reply: FastifyReply, 
 export const preStockUp = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
 
-        const {page, query, startDate, endDate} = request.query;
+        const {page = 1, query, startDate, endDate} = request.query;
         const sDate = startDate ? ` and date >= '${startDate}'` : '';
         const eDate = endDate ? ` and date <= '${endDate}'` : '';
         const company = query ? ` and company = '${query}'` : '';
@@ -818,81 +826,13 @@ export const preStockUp = async (request: IAnyRequest, reply: FastifyReply, done
         const end = page * 500;
         // http://127.0.0.1/tdi/talk/v1/stock_table?query=%EC%82%BC%EC%84%B1%EC%A0%84%EA%B8%B0&startDate=20230422&endDate=20230517&page=1
         let squery = `SELECT *
-                      FROM stock_information2
+                      FROM stock_information
                       WHERE 1 ${sDate}${eDate}${company}
                       ORDER BY DATE DESC LIMIT ${start}, ${end}`
+
         const stock = await mysql.getInstance().query(squery);
-        const html = `
-     <html>
-  <head>
-    <style>
-      table {
-        border-collapse: collapse;
-        font-size: 12px;
-      }
-      th, td {
-        border: 1px solid black;
-        padding: 8px;
-        text-align: right;
-      }
-      th {
-        background-color: lightgray;
-      }
-      .negative {
-        color: red;
-      }
-      .positive {
-        color: blue;
-      }
-    </style>
-  </head>
-  <body>
-    <table>
-      <tr>
-        <th>번호</th>
-        <th>날짜</th>
-        <th>회사</th>
-        <th>뉴스 수</th>
-        <th>공시 수</th>
-        <th>토론글 수</th>
-        <th>조회 수</th>
-        <th>공감</th>
-        <th>비공감</th>
-        <th>ID 중복 비율</th>
-        <th>종가</th>
-        <th>주가 변동률</th>
-        <th>거래량</th>
-        <th>거래금액</th>
-        <th>기관 투자자</th>
-        <th>외국인 투자자</th>
-        <th>KOSDAQ KOSPI</th>
-      </tr>
-      ${stock.map((row) => `
-        <tr>
-          <td>${row.no}</td>
-          <td>${row.date.split('T')[0]}</td>
-          <td>${row.company}</td>
-          <td>${row.news_count.toLocaleString()}</td>
-          <td>${row.disclosure_count.toLocaleString()}</td>
-          <td>${row.post_count.toLocaleString()}</td>
-          <td>${row.views.toLocaleString()}</td>
-          <td>${row.sympathy.toLocaleString()}</td>
-          <td>${row.non_sympathy.toLocaleString()}</td>
-          <td>${row.id_duplicate_ratio}</td>
-          <td class="${row.closing_price < 0 ? 'negative' : 'positive'}">${row.closing_price.toLocaleString()}</td>
-          <td class="${row.stock_price_change_rate < 0 ? 'negative' : 'positive'}">${row.stock_price_change_rate.toLocaleString()}</td>
-          <td>${row.trading_volume.toLocaleString()}</td>
-          <td>${row.trading_value.toLocaleString()}</td>
-           <td class="${row.institutional_investors < 0 ? 'negative' : 'positive'}">${row.institutional_investors.toLocaleString()}</td>
-          <td class="${row.foreign_investors < 0 ? 'negative' : 'positive'}">${row.foreign_investors.toLocaleString()}</td>
-          <td>${row.kosdaq_kospi}</td>
-        </tr>
-      `).join('')}
-    </table>
-  </body>
-</html>
-    `;
-        request.transfer = html
+
+        request.transfer = genStockHTML(stock);
 
         done();
     } catch (e) {

@@ -38,12 +38,14 @@ async function apiRouter(fastify: FastifyInstance) {
         schema: apiSchema, preHandler: preSearchNews, handler: apiSyncUp
     })
     //키워드별 신규 뉴스스크랩 기본데이터+기자+이메일등 전달
+    //****한번 전달된데이터는 재요청해도 전달되지않음******
     fastify.route({
         method: 'GET',
         url: '/search',
         schema: apiSchema, preHandler: preSearchNewLink, handler: apiSyncUp
     })
     //뉴스 댓글 전달
+    //****한번 전달된데이터는 재요청해도 전달되지않음******
     fastify.route({
         method: 'GET',
         url: '/news_reply',
@@ -104,6 +106,7 @@ async function apiRouter(fastify: FastifyInstance) {
         schema: apiSchema, preHandler: preSearchBlog, handler: apiSyncUp
     })
     //키워드별 신규 블로그 api 데이터 전달
+    //****한번 전달된데이터는 재요청해도 전달되지않음******
     fastify.route({
         method: 'GET',
         url: '/blog',
@@ -116,6 +119,7 @@ async function apiRouter(fastify: FastifyInstance) {
         schema: apiSchema, preHandler: preSearchCafe, handler: apiSyncUp
     })
     //키워드별 신규 카페 api 전달
+    //****한번 전달된데이터는 재요청해도 전달되지않음******
     fastify.route({
         method: 'GET',
         url: '/cafe',

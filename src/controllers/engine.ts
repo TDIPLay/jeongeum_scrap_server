@@ -6,6 +6,7 @@ import {QUERY, R_PRESS, R_SEARCH_API, R_STOCK, R_TREND_API} from "../helpers/com
 import service from "../../service/common_service"
 import {SearchApi, StockData} from "../interfaces";
 import {hgetData, hmsetRedis} from "./worker";
+import {sendBriefingMail} from "./mailer";
 
 export async function initPress(): Promise<boolean> {
     const press = await mysql.getInstance().query(QUERY.Press);
@@ -52,7 +53,6 @@ export async function initStock(): Promise<boolean> {
     return true;
 }
 
-
 export async function searchApiIdx(redisKey:string): Promise<number> {
     const search_api: SearchApi[] = service.apis;
 
@@ -67,7 +67,6 @@ export async function searchApiIdx(redisKey:string): Promise<number> {
                 selectIdx = i;
                 break;
             } else {
-
                 if (reqCnt < minReqCnt) {
                     selectIdx = i;
                     minReqCnt = reqCnt;
@@ -75,9 +74,11 @@ export async function searchApiIdx(redisKey:string): Promise<number> {
             }
         }
         if (redisKey === R_SEARCH_API && minReqCnt >= 24000) {
+            await sendBriefingMail('tdiplaydev@nsmg21.com','네이버 검색 api 사용량 경고',`최대/현재(1n) : 25000/${minReqCnt}`)
             console.log("limit cnt Over 24000");
         }
         if (redisKey === R_TREND_API && minReqCnt >= 950) {
+            await sendBriefingMail('tdiplaydev@nsmg21.com','네이버 트렌드 api 사용량 경고',`최대/현재(1n) : 1000/${minReqCnt}`)
             console.log("limit cnt Over 950");
         }
         return selectIdx;

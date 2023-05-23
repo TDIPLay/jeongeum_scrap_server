@@ -117,16 +117,11 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
                 if (len < 2) break;
 
                 if (index === 0) {
-                    /*try {*/
-                    if (lastData === `${finance[len - 1][1]}${finance[len - 1][2]}${finance[len - 1][3]}${finance[len - 1][4]}`) {
+                    //토론게시판
+                    if (lastData === `${finance[len-1][1]}${finance[len-1][2]}${finance[len-1][3]}${finance[len-1][4]}`) {
                         break;
                     }
-                    /*}catch (e) {
-                        console.log(lastData)
-                        console.log(finance)
-                    }*/
-
-                } else if (lastData === `${finance[len - 1][1]}${finance[len - 1][2]}`) {
+                } else if (lastData === `${finance[len-1][1]}${finance[len-1][2]}`) {
                     break;
                 }
 

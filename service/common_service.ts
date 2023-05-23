@@ -66,7 +66,7 @@ export default class Common_service {
 
             //신규 상장사 추가시 DB에 데이터 적재후 실행
            /* if (!await initStock()) {
-                console.log("initPress error");
+                console.log("initStock error");
             }*/
 
         } catch (e) {
