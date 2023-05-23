@@ -14,8 +14,8 @@ export interface News {
     like?: {};
     company?: string;
     author?: string;
-    email?: string;
-    name?: string;
+    email?: string[];
+    name?: string[];
     timestamp?: number;
 }
 

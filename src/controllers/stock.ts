@@ -114,10 +114,9 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
             for (let i = 1; i < 100000; i++) {
                 const finance = await getFinanceTable(`${url}${i}`, (!index || index === 1) ? ".type2" : index === 2 ? ".type5" : ".type6", index === 1 ? 1 : 0);
                 const len = finance.length;
-
                 if (len < 2) break;
 
-                if (!index) {
+                if (index === 0) {
                     /*try {*/
                     if (lastData === `${finance[len - 1][1]}${finance[len - 1][2]}${finance[len - 1][3]}${finance[len - 1][4]}`) {
                         break;
@@ -134,7 +133,7 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
                 if (i % 1000 === 0) {
                     console.log(`${stock} scrap => ${url}${i}`)
                 }
-                const targetObj = objCount[!index ? `board` : index === 1 ? 'finance' : index === 2 ? 'newsCnt' : 'disclosureCnt'];
+                const targetObj = objCount[index === 0 ? `board` : index === 1 ? 'finance' : index === 2 ? 'newsCnt' : 'disclosureCnt'];
                 let endFlag = false;
 
                 for (const stock of finance.slice(index === 1 ? 2 : 1)) {
@@ -148,7 +147,6 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
                                 boardCount: 0,
                                 viewCount: 0,
                                 sympathyCount: 0,
-
                                 nonSympathyCount: 0,
                                 duplicateRatio: 0
                             };
@@ -214,10 +212,10 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
         };
 
         await processFinanceData(url[0], 0); // Board
-        // await processFinanceData(url[1], 1); // Finance
-        // await processFinanceData(url[2], 2); // News
-        // await processFinanceData(url[3], 3); // Disclosure
-        // await setDataBase(objCount, endDate);
+         await processFinanceData(url[1], 1); // Finance
+         await processFinanceData(url[2], 2); // News
+         await processFinanceData(url[3], 3); // Disclosure
+         await setDataBase(objCount, endDate);
     } catch (e) {
         console.log(`=================keys${keys}`)
         console.log(e)
@@ -380,7 +378,7 @@ async function setDataBase(data, endDate) {
     for (const date of DateKey) {
         if (!isValidDate(date) || moment(date).unix() < moment(endDate).unix()) continue;
 
-        const boardData = data.board[date];
+        const boardData = data.board[date] || 0;
         const financeData = data.finance[date] || 0;
         const newsCount = data.newsCnt[date] || 0;
         const disclosureCount = data.disclosureCnt[date] || 0;
@@ -388,7 +386,6 @@ async function setDataBase(data, endDate) {
         const tradingVolume = financeData ? Number(financeData[0][4].replace(/,/g, '')) : 0;
         //네이버 토론게시판 100 page 제한에 따라 과거데이터를 업데이트 할수없음
         //board count 0인건 업데이트 안함
-        if (boardData.boardCount) {
             const insertQuery = createInsertQuery(
                 date,
                 data.company,
@@ -409,7 +406,6 @@ async function setDataBase(data, endDate) {
                 data.description
             );
             await Mysql.getInstance().query(insertQuery);
-        }
 
         //insertQueries.push(insertQuery);
     }
