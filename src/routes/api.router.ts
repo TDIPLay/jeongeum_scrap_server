@@ -47,7 +47,7 @@ async function apiRouter(fastify: FastifyInstance) {
     //뉴스 댓글 전달
     fastify.route({
         method: 'GET',
-        url: '/news_replyall',
+        url: '/news_reply_all',
         schema: apiSchema,preHandler:preAllReply, handler: apiSyncUp
     })
     //****한번 전달된데이터는 재요청해도 전달되지않음******
