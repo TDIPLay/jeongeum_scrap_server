@@ -238,6 +238,48 @@ export const preReply = async (request: IAnyRequest, reply: FastifyReply, done) 
     }
 }
 
+export const preAllReply = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const {query} = request.query;
+        const sortBySimNews = await getNews(query, 1, 25, 'sim');
+        const sortByDateNews = await getNews(query, 1, 25);
+        const blog = /*await getBlog(query,1,10)*/[];
+        const neverNews = [...sortBySimNews, ...sortByDateNews, ...blog].filter(news => news.link && news.link.includes("naver.com"))
+        let uniqueNeverNews = neverNews.filter((news, index, self) =>
+            index === self.findIndex(t => t.link === news.link)
+        );
+
+        // process.setMaxListeners(18);
+        //브라우져 메모리/ 브라우징 이슈로 인해 10개 미만으로
+        const CHUNK_SIZE = 10;
+        const browser = await puppeteer.launch({args: ['--no-sandbox']});
+
+        for (let i = 0; i < uniqueNeverNews.length; i += CHUNK_SIZE) {
+            const articlePromises = uniqueNeverNews.slice(i, i + CHUNK_SIZE).map(news => getReply(news, 'News', browser));
+            await Promise.all(articlePromises);
+            await sleep(20);
+        }
+        await closeBrowser(browser);
+
+        const replyList = neverNews
+            .filter(news => news.reply && news.reply !== undefined)
+        //.flatMap(news => news.reply);
+        const sortedNews = replyList.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
+
+        request.transfer = {
+            result: MESSAGE.SUCCESS,
+            code: STANDARD.SUCCESS,
+            message: "SUCCESS",
+            data: sortedNews
+        };
+        done();
+
+    } catch (e) {
+        console.log(e)
+        handleServerError(reply, e)
+    }
+}
+
 export const preApiRankNews = async (request: IAnyRequest, reply: FastifyReply, done) => {
     try {
 

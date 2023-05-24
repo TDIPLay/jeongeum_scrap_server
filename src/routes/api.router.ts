@@ -6,7 +6,7 @@ import {
     apiLogin,
     apiMemoryRate,
     apiSyncUp,
-    passUrl,
+    passUrl, preAllReply,
     preApiDataLab,
     preApiRankNews,
     preApiRealNews,
@@ -45,6 +45,11 @@ async function apiRouter(fastify: FastifyInstance) {
         schema: apiSchema, preHandler: preSearchNewLink, handler: apiSyncUp
     })
     //뉴스 댓글 전달
+    fastify.route({
+        method: 'GET',
+        url: '/news_replyall',
+        schema: apiSchema,preHandler:preAllReply, handler: apiSyncUp
+    })
     //****한번 전달된데이터는 재요청해도 전달되지않음******
     fastify.route({
         method: 'GET',
