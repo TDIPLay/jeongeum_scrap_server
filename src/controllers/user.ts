@@ -13,7 +13,6 @@ const AXIOS_OPTIONS = {
     timeout: 5000,
 };
 
-
 export async function processKeywordAlarms(): Promise<number> {
     const keywordAlarms: { [email: string]: KeywordAlarm } = {};
     const alarmData: AlarmData[] = await mysql.getInstance().query(QUERY.Alarm);

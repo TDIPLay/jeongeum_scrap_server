@@ -11,6 +11,7 @@ loadConfig()
 
 
 const port = process.env.API_PORT || 8080;
+
 const server = fastify({
   logger: process.env.NODE_ENV !== 'production' ? logger : false
 })
