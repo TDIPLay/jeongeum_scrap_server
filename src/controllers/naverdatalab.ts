@@ -302,7 +302,6 @@ async function getRelBlogCount(query: string, start: number = 1): Promise<number
     return data.total
 }
 
-
 async function getRelCafeCount(query: string, start: number = 1): Promise<number> {
     const clientInfo = await getApiClientKey(R_SEARCH_API, 1);
     let api_url = `https://openapi.naver.com/v1/search/cafearticle.json?query=${encodeURI(query)}&start=${start}&display=1`; // JSON 결과

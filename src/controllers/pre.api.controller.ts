@@ -252,7 +252,7 @@ export const preAllReply = async (request: IAnyRequest, reply: FastifyReply, don
         // process.setMaxListeners(18);
         //브라우져 메모리/ 브라우징 이슈로 인해 10개 미만으로
         const CHUNK_SIZE = 10;
-        const browser = await puppeteer.launch({args: ['--no-sandbox']});
+        const browser = await puppeteer.launch({args: ['--no-sandbox']/*, headless:false*/});
 
         for (let i = 0; i < uniqueNeverNews.length; i += CHUNK_SIZE) {
             const articlePromises = uniqueNeverNews.slice(i, i + CHUNK_SIZE).map(news => getReply(news, 'News', browser));

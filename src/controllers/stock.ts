@@ -206,7 +206,7 @@ export async function getStockPage(page: number = 1, stock: string, rcode: strin
             }
         };
 
-        await processFinanceData(url[0], 0); // Board
+         await processFinanceData(url[0], 0); // Board
          await processFinanceData(url[1], 1); // Finance
          await processFinanceData(url[2], 2); // News
          await processFinanceData(url[3], 3); // Disclosure
