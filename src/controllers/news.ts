@@ -372,7 +372,6 @@ async function getPageNewLinks(query: string, oldLinks: string[] = []) {
 
 export async function getReply(news: News, type: string = 'News', browser) {
 
-
     const page = await browser.newPage();
     let modifiedUrl = news.link.includes('n.news.naver.com/mnews') ? news.link.replace("/article/", "/article/comment/") : news.link;
     try {
