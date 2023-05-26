@@ -464,26 +464,29 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
                 const emtitle = `조회 키워드:#${query}`
                 //현재 첫번째 뉴스만 전달
                 const content = `유형:[${query}]\n제목:${news[0].title}\n날짜:${news[0].pubDate}\n링크:${news[0].link}`
-                const talkUser = {
-                    body : {
-                        senderkey: '2e4de0c15feba9d1c3948b8957ee8e9aa0b6f1c7',
-                        tpl_code: 'TN_1799',
-                        sender: '010-8599-7810',
-                        receiver_1 : '010-2475-2971',
-                        subject_1: '[정음]오늘의 뉴스',
-                        emtitle_1 : emtitle,
-                        message_1 : content,
-                        button_1 :{ button:[{
-                                "name" : '정음 바로가기',
-                                "linkType" : 'WL',
-                                "linkTypeName" : '웹링크',
-                                "linkMo" :'http://www.news-all.co.kr/monitoring',
-                                "linkPc" :'http://www.news-all.co.kr/monitoring'
-                            }]}
+                for (const user of alarmTalkUser) {
+                    const talkUser = {
+                        body : {
+                            senderkey: '2e4de0c15feba9d1c3948b8957ee8e9aa0b6f1c7',
+                            tpl_code: 'TN_1799',
+                            sender: '010-8599-7810',
+                            receiver_1 : user,
+                            subject_1: '[정음]오늘의 뉴스',
+                            emtitle_1 : emtitle,
+                            message_1 : content,
+                            button_1 :{ button:[{
+                                    "name" : '정음 바로가기',
+                                    "linkType" : 'WL',
+                                    "linkTypeName" : '웹링크',
+                                    "linkMo" :'http://www.news-all.co.kr/monitoring',
+                                    "linkPc" :'http://www.news-all.co.kr/monitoring'
+                                }]}
+                        }
                     }
+                    console.log(talkUser)
+                    await alimtalkSend(talkUser);
                 }
 
-                await alimtalkSend(talkUser);
                 /*const template = generateTalkTemplate(news);
 
                 for (let i = 0; i < alarmTalkUser.length; i++) {
