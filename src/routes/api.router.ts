@@ -6,7 +6,7 @@ import {
     apiLogin,
     apiMemoryRate,
     apiSyncUp,
-    passUrl, preAllReply,
+    passUrl, preAlarmUp, preAllReply,
     preApiDataLab,
     preApiRankNews,
     preApiRealNews,
@@ -23,6 +23,8 @@ import {
     preStockRaw, preStockUp,
     signUp
 } from "../controllers";
+import {getAlarmsUser} from "../controllers/user";
+import Common_service from "../../service/common_service";
 
 async function apiRouter(fastify: FastifyInstance) {
     //동기화 모듈 사용안함
@@ -166,6 +168,11 @@ async function apiRouter(fastify: FastifyInstance) {
         method: 'GET',
         url: '/stock_table',
         schema: apiSchema,preHandler:preStockUp, handler: apiHtmlUp
+    })
+    fastify.route({
+        method: 'GET',
+        url: '/get_alarm',
+        schema: apiSchema,preHandler:preAlarmUp, handler: apiSyncUp
     })
 
     //api 인증서 발급 사용안함

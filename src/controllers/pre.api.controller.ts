@@ -943,6 +943,22 @@ export const preApiSyncUp = async (request: IAnyRequest, reply: FastifyReply, do
         handleServerError(reply, e)
     }
 }
+export const preAlarmUp = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const {query} = request.query;
+        console.log(Common_service.alarm_info)
+        const {alarmEmailUser, alarmTalkUser} = getAlarmsUser(query, Common_service.alarm_info);
+
+        request.transfer = {
+            'alarmEmailUser': alarmEmailUser,
+            'alarmTalkUser': alarmTalkUser
+        }
+
+        done();
+    } catch (e) {
+        handleServerError(reply, e)
+    }
+}
 
 
 
