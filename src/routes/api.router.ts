@@ -6,7 +6,7 @@ import {
     apiLogin,
     apiMemoryRate,
     apiSyncUp,
-    passUrl, preAlarmUp, preAllReply,
+    passUrl, preAlarmUp, preAligoToken, preAllReply,
     preApiDataLab,
     preApiRankNews,
     preApiRealNews,
@@ -168,6 +168,11 @@ async function apiRouter(fastify: FastifyInstance) {
         method: 'GET',
         url: '/stock_table',
         schema: apiSchema,preHandler:preStockUp, handler: apiHtmlUp
+    })
+    fastify.route({
+        method: 'GET',
+        url: '/aligo_token',
+        schema: apiSchema,preHandler:preAligoToken, handler: apiSyncUp
     })
     fastify.route({
         method: 'GET',

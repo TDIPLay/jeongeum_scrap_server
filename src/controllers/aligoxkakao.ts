@@ -1,6 +1,9 @@
 import aligoapi from 'aligoapi';
 import {News} from "../interfaces";
 import axios from "axios";
+import {hgetData} from "./worker";
+import {R_ALIGO_TOTEN, R_CAFE_KEYWORD} from "../helpers/common";
+import {getRedis} from "../../service/redis";
 
 interface AuthData {
     apikey: string;
@@ -11,10 +14,9 @@ interface AuthData {
 const authData: AuthData = {
     apikey: '8qf76e7v8cxlgqmjxfjza3iyj5tyj0u1',
     userid: 'tdi9',
-    token: '4c5c621c19df2004fb5b5f0e19d29b65a122eff5c361feabddfe988b6258e44267480059d9258e256b65b27ccac8d10e1b230e58214bddc24da0ec9299ac75c6Ub6QKeBu3nTGPhOqTdD3Iy7z0jWA3qOYJx5TTFUcg9aiG1M1QyIVb003XhrhzV8PXnl5AyISqXfhdTDNFDj0gw=='
+    token: ''
 };
-// token: '58053ee7a31191a3e753911df50ef582ee2d2e1f5699eb3b976944542d2e70f3d048a6525561affda774d2c461a5dfdab8e90f63a54a2e606cd0a817b4cf4627Uk1moOdqAeGI3p5O7uyHYxPAwrOCNhEVqn0v0AU/qTd4cMzhG2iwXCtAHIh4qbO9BUcXQE0sDJPVYzA/+6TniA==\',\n' +
-// '  urlencode: \'58053ee7a31191a3e753911df50ef582ee2d2e1f5699eb3b976944542d2e70f3d048a6525561affda774d2c461a5dfdab8e90f63a54a2e606cd0a817b4cf4627Uk1moOdqAeGI3p5O7uyHYxPAwrOCNhEVqn0v0AU%2FqTd4cMzhG2iwXCtAHIh4qbO9BUcXQE0sDJPVYzA%2F%2B6TniA%3D%3D'
+
 const token = async (req) => {
     // 토큰 생성
     req.body = {
@@ -23,6 +25,7 @@ const token = async (req) => {
     };
 
     const api_url = 'https://kakaoapi.aligo.in/akv10/token/create/10/y/'; // JSON 결과
+    authData.token =  await hgetData(await getRedis(), R_ALIGO_TOTEN, "", "token");
 
     const params = new URLSearchParams();
     params.append('apikey', authData.apikey);
@@ -241,7 +244,7 @@ const alimtalkSend = async (obj) => {
     // failover값이 Y일때 fsubject와 fmessage값은 필수입니다.
 
     const api_url = 'https://kakaoapi.aligo.in/akv10/alimtalk/send/'; // JSON 결과
-
+    authData.token =  await hgetData(await getRedis(), R_ALIGO_TOTEN, "", "token");
     const params = new URLSearchParams();
     params.append('apikey', authData.apikey);
     params.append('userid', authData.userid);

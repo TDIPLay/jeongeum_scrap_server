@@ -10,6 +10,7 @@ export const R_BlOG_KEYWORD = "BLOG_KEYWORD"		            //Redis KEYWORD key
 export const R_CAFE_KEYWORD = "CAFE_KEYWORD"		            //Redis KEYWORD key
 export const R_REPLY_KEYWORD = "Keyword_Reply"		        //Redis Reply key
 export const R_TOTEN = "Token"		                        //Redis KEYWORD key
+export const R_ALIGO_TOTEN = "AligoToken"		                        //Redis KEYWORD key
 export const R_SEARCH_API = "Search_Api"		                //Redis Serach_Api key
 export const R_TREND_API = "Trend_Api"		                //Redis Trend_Api key
 export const R_TREND_DATA = "Trend_Data"		            //Redis Trend_Data key

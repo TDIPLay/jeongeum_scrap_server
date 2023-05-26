@@ -11,7 +11,7 @@ import {closeBrowser, getDateString, sleep, utils} from "../helpers/utils";
 import {getRedis} from "../../service/redis";
 import {hgetData, hmsetRedis} from "./worker";
 import {
-    MAX_LINK,
+    MAX_LINK, R_ALIGO_TOTEN,
     R_BlOG_KEYWORD,
     R_CAFE_KEYWORD,
     R_KEYWORD,
@@ -938,6 +938,19 @@ export const preApiSyncUp = async (request: IAnyRequest, reply: FastifyReply, do
 
         request.transfer = {'err': service.err_cnt}
 
+        done();
+    } catch (e) {
+        handleServerError(reply, e)
+    }
+}
+export const preAligoToken = async (request: IAnyRequest, reply: FastifyReply, done) => {
+    try {
+        const {query} = request.query;
+
+        const result = await token(request);
+
+        request.transfer = result
+        await hmsetRedis(await getRedis(), R_ALIGO_TOTEN, result, 8650454);
         done();
     } catch (e) {
         handleServerError(reply, e)
