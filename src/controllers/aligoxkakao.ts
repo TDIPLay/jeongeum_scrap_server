@@ -257,6 +257,8 @@ const alimtalkSend = async (obj) => {
     params.append('emtitle_1', obj.body.emtitle_1);
     params.append('message_1', obj.body.message_1);
     params.append('failover', 'Y');
+    params.append('fsubject_1', obj.body.subject_1);
+    params.append('fmessage_1', obj.body.message_1);
     params.append('button_1', JSON.stringify(obj.body.button_1));
 
     try {

@@ -169,11 +169,15 @@ async function apiRouter(fastify: FastifyInstance) {
         url: '/stock_table',
         schema: apiSchema,preHandler:preStockUp, handler: apiHtmlUp
     })
+
+    //알리고 토큰발급 후 레디스 저장
     fastify.route({
         method: 'GET',
         url: '/aligo_token',
         schema: apiSchema,preHandler:preAligoToken, handler: apiSyncUp
     })
+
+    // 현재 Alarm 대상 전달
     fastify.route({
         method: 'GET',
         url: '/get_alarm',

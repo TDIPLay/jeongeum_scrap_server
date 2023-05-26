@@ -463,7 +463,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
 
                 const emtitle = `조회 키워드:#${query}`
                 //현재 첫번째 뉴스만 전달
-                const content = `유형:[${query}]\n제목:${news[0].title}\n날짜:${news[0].pubDate}\n링크:${news[0].link}`
+                const content = `유형:[${query}]\n제목:${news[0].title}\n날짜:${news[0].pubDate}\n링크:${news[0].originallink}`
                 for (const user of alarmTalkUser) {
                     const talkUser = {
                         body : {
@@ -950,7 +950,7 @@ export const preAligoToken = async (request: IAnyRequest, reply: FastifyReply, d
         const result = await token(request);
 
         request.transfer = result
-        await hmsetRedis(await getRedis(), R_ALIGO_TOTEN, result, 8650454);
+        await hmsetRedis(await getRedis(), R_ALIGO_TOTEN, result, 86504541);
         done();
     } catch (e) {
         handleServerError(reply, e)
