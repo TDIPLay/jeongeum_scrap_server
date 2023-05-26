@@ -1,35 +1,43 @@
 import aligoapi from 'aligoapi';
 import {News} from "../interfaces";
+import axios from "axios";
 
 interface AuthData {
     apikey: string;
     userid: string;
+    token: string;
 }
 
-const AuthData: AuthData = {
-    apikey: '<apikey>',
-    userid: '<userid>',
+const authData: AuthData = {
+    apikey: '8qf76e7v8cxlgqmjxfjza3iyj5tyj0u1',
+    userid: 'tdi9',
+    token: '4c5c621c19df2004fb5b5f0e19d29b65a122eff5c361feabddfe988b6258e44267480059d9258e256b65b27ccac8d10e1b230e58214bddc24da0ec9299ac75c6Ub6QKeBu3nTGPhOqTdD3Iy7z0jWA3qOYJx5TTFUcg9aiG1M1QyIVb003XhrhzV8PXnl5AyISqXfhdTDNFDj0gw=='
 };
-
-const token = (req, res) => {
+// token: '58053ee7a31191a3e753911df50ef582ee2d2e1f5699eb3b976944542d2e70f3d048a6525561affda774d2c461a5dfdab8e90f63a54a2e606cd0a817b4cf4627Uk1moOdqAeGI3p5O7uyHYxPAwrOCNhEVqn0v0AU/qTd4cMzhG2iwXCtAHIh4qbO9BUcXQE0sDJPVYzA/+6TniA==\',\n' +
+// '  urlencode: \'58053ee7a31191a3e753911df50ef582ee2d2e1f5699eb3b976944542d2e70f3d048a6525561affda774d2c461a5dfdab8e90f63a54a2e606cd0a817b4cf4627Uk1moOdqAeGI3p5O7uyHYxPAwrOCNhEVqn0v0AU%2FqTd4cMzhG2iwXCtAHIh4qbO9BUcXQE0sDJPVYzA%2F%2B6TniA%3D%3D'
+const token = async (req) => {
     // 토큰 생성
+    req.body = {
+        type: 'y', // 유효시간 타입 코드 // y(년), m(월), d(일), h(시), i(분), s(초)
+        time: 10, // 유효시간
+    };
 
-    // req.body = {
-    /*** 필수값입니다 ***/
-    // type: 유효시간 타입 코드 // y(년), m(월), d(일), h(시), i(분), s(초)
-    // time: 유효시간
-    /*** 필수값입니다 ***/
-    // }
-    // req.body 요청값 예시입니다.
+    const api_url = 'https://kakaoapi.aligo.in/akv10/token/create/10/y/'; // JSON 결과
 
-    aligoapi.token(req, AuthData)
-        .then((r) => {
-            res.send(r)
-        })
-        .catch((e) => {
-            res.send(e)
-        })
-}
+    const params = new URLSearchParams();
+    params.append('apikey', authData.apikey);
+    params.append('userid', authData.userid);
+    console.log(params);
+
+    try {
+        const response = await axios.post(api_url, params);
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};
 
 const profileAuth = (req, res) => {
     // 플러스친구 - 인증요청
@@ -43,7 +51,7 @@ const profileAuth = (req, res) => {
     // req.body 요청값 예시입니다.
     // phonenumber로 인증번호가 발송됩니다
 
-    aligoapi.profileAuth(req, AuthData)
+    aligoapi.profileAuth(req, authData)
         .then((r) => {
             res.send(r)
         })
@@ -55,7 +63,7 @@ const profileAuth = (req, res) => {
 const profileCategory = (req, res) => {
     // 플러스친구 - 카테고리 조회
 
-    aligoapi.profileCategory(req, AuthData)
+    aligoapi.profileCategory(req, authData)
         .then((r) => {
             res.send(r)
         })
@@ -79,7 +87,7 @@ const profileAdd = (req, res) => {
     // 플러스친구 - 인증요청의 phonenumber로 발송된 인증번호를 authnum값으로 보내세요
     // 플러스친구 - 카테고리 조회의 thirdBusinessType 값을 categorycode값으로 보내세요
 
-    aligoapi.profileAdd(req, AuthData)
+    aligoapi.profileAdd(req, authData)
         .then((r) => {
             res.send(r)
         })
@@ -97,7 +105,7 @@ const friendList = (req, res) => {
     // }
     // req.body 요청값 예시입니다.
 
-    aligoapi.friendList(req, AuthData)
+    aligoapi.friendList(req, authData)
         .then((r) => {
             res.send(r)
         })
@@ -117,7 +125,7 @@ const templateList = (req, res) => {
     // }
     // req.body 요청값 예시입니다.
 
-    aligoapi.templateList(req, AuthData)
+    aligoapi.templateList(req, authData)
         .then((r) => {
             res.send(r)
         })
@@ -139,7 +147,7 @@ const templateAdd = (req, res) => {
     // }
     // req.body 요청값 예시입니다.
 
-    aligoapi.templateAdd(req, AuthData)
+    aligoapi.templateAdd(req, authData)
         .then((r) => {
             res.send(r)
         })
@@ -162,7 +170,7 @@ const templateModify = (req, res) => {
     // }
     // req.body 요청값 예시입니다.
 
-    aligoapi.templateModify(req, AuthData)
+    aligoapi.templateModify(req, authData)
         .then((r) => {
             res.send(r)
         })
@@ -182,7 +190,7 @@ const templateDel = (req, res) => {
     // }
     // req.body 요청값 예시입니다.
 
-    aligoapi.templateDel(req, AuthData)
+    aligoapi.templateDel(req, authData)
         .then((r) => {
             res.send(r)
         })
@@ -202,7 +210,7 @@ const templateRequest = (req, res) => {
     // }
     // req.body 요청값 예시입니다.
 
-    aligoapi.templateRequest(req, AuthData)
+    aligoapi.templateRequest(req, authData)
         .then((r) => {
             res.send(r)
         })
@@ -211,9 +219,7 @@ const templateRequest = (req, res) => {
         })
 }
 
-const alimtalkSend = (req, res) => {
-    // 알림톡 전송
-
+const alimtalkSend = async (obj) => {
     // req.body = {
     /*** 필수값입니다 ***/
     // senderkey: 발신프로필 키
@@ -234,13 +240,27 @@ const alimtalkSend = (req, res) => {
     // _로 넘버링된 최대 500개의 receiver, subject, message, button, fsubject, fmessage 값을 보내실 수 있습니다
     // failover값이 Y일때 fsubject와 fmessage값은 필수입니다.
 
-    aligoapi.alimtalkSend(req, AuthData)
-        .then((r) => {
-            res.send(r)
-        })
-        .catch((e) => {
-            res.send(e)
-        })
+    const api_url = 'https://kakaoapi.aligo.in/akv10/alimtalk/send/'; // JSON 결과
+
+    const params = new URLSearchParams();
+    params.append('apikey', authData.apikey);
+    params.append('userid', authData.userid);
+    params.append('token', authData.token);
+    params.append('senderkey', obj.body.senderkey);
+    params.append('tpl_code', obj.body.tpl_code);
+    params.append('sender', obj.body.sender);
+    params.append('receiver_1', obj.body.receiver_1);
+    params.append('subject_1', obj.body.subject_1);
+    params.append('emtitle_1', obj.body.emtitle_1);
+    params.append('message_1', obj.body.message_1);
+    params.append('button_1', JSON.stringify(obj.body.button_1));
+
+    try {
+        const response = await axios.post(api_url, params);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 }
 
 const historyList = (req, res) => {
@@ -254,7 +274,7 @@ const historyList = (req, res) => {
     // }
     // req.body 요청값 예시입니다.
 
-    aligoapi.historyList(req, AuthData)
+    aligoapi.historyList(req, authData)
         .then((r) => {
             res.send(r)
         })
@@ -276,7 +296,7 @@ const historyDetail = (req, res) => {
     // enddate: 조회마감일자 // YYYYMMDD
     // }
     // req.body 요청값 예시입니다.
-    aligoapi.historyDetail(req, AuthData)
+    aligoapi.historyDetail(req, authData)
         .then((r) => {
             res.send(r)
         })
@@ -287,7 +307,7 @@ const historyDetail = (req, res) => {
 
 const kakaoRemain = (req, res) => {
     // 발송가능건수
-    aligoapi.kakaoRemain(req, AuthData)
+    aligoapi.kakaoRemain(req, authData)
         .then((r) => {
             res.send(r)
         })
@@ -306,7 +326,7 @@ const kakaoCancel = (req, res) => {
     // }
     // req.body 요청값 예시입니다.
 
-    aligoapi.kakaoCancel(req, AuthData)
+    aligoapi.kakaoCancel(req, authData)
         .then((r) => {
             res.send(r)
         })

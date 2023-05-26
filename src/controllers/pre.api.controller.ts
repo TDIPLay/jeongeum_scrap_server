@@ -27,7 +27,7 @@ import {v4 as uuid_v4} from "uuid";
 import {createUser, getAlarmsUser} from "./user";
 import {getGoogleUserInfo, loginWithGoogle, userGoogleOAuth, validateGoogleToken} from "./googleauth";
 import {getNaverUserInfo, userNaverOAuth, validateNaverToken} from "./naverauth";
-import {generateTalkTemplate} from "./aligoxkakao";
+import {alimtalkSend, generateTalkTemplate, token} from "./aligoxkakao";
 import {getRelKeyword} from "./naverdatalab";
 import {genStockHTML, getStockBoard, getStockPage, getStockReply, parseCloseStock} from "./stock";
 import * as puppeteer from "puppeteer";
@@ -424,6 +424,10 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
         sortedNews.forEach(news => articlePromises.push(getArticle(news)));
         await Promise.all(articlePromises);
 
+        // const result = await token(request);
+        // console.log(request)
+
+
         if (sortedNews.length > 0) {
             const {alarmEmailUser, alarmTalkUser} = getAlarmsUser(query, Common_service.alarm_info);
 
@@ -440,18 +444,54 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
                 // receiver_1: 수신자 연락처
                 // subject_1: 알림톡 제목
                 // message_1: 알림톡 내용
-                let talkUser = {
-                    senderkey: 3,
-                    tpl_code: 2,
-                    sender: alarmTalkUser.join(','),
+                // req.body = {
+                    /*** 필수값입니다 ***/
+                    // senderkey: 발신프로필 키
+                    // tpl_code: 템플릿 코드
+                    // sender: 발신자 연락처
+                    // receiver_1: 수신자 연락처
+                    // subject_1: 알림톡 제목
+                    // message_1: 알림톡 내용
+                    /*** 필수값입니다 ***/
+                    // senddate: 예약일 // YYYYMMDDHHMMSS
+                    // recvname: 수신자 이름
+                    // button: 버튼 정보 // JSON string
+                    // failover: 실패시 대체문자 전송기능 // Y or N
+                    // fsubject: 실패시 대체문자 제목
+                    // fmessage: 실패시 대체문자 내용
+                    // }
+
+                const emtitle = `조회 키워드:#${query}`
+                //현재 첫번째 뉴스만 전달
+                const content = `유형:[${query}]\n제목:${news[0].title}\n날짜:${news[0].pubDate}\n링크:${news[0].link}`
+                const talkUser = {
+                    body : {
+                        senderkey: '2e4de0c15feba9d1c3948b8957ee8e9aa0b6f1c7',
+                        tpl_code: 'TN_1799',
+                        sender: '010-8599-7810',
+                        receiver_1 : '010-2475-2971',
+                        subject_1: '[정음]오늘의 뉴스',
+                        emtitle_1 : emtitle,
+                        message_1 : content,
+                        button_1 :{ button:[{
+                                "name" : '정음 바로가기',
+                                "linkType" : 'WL',
+                                "linkTypeName" : '웹링크',
+                                "linkMo" :'http://www.news-all.co.kr/monitoring',
+                                "linkPc" :'http://www.news-all.co.kr/monitoring'
+                            }]}
+                    }
                 }
-                const template = generateTalkTemplate(news);
+
+                await alimtalkSend(talkUser);
+                /*const template = generateTalkTemplate(news);
+
                 for (let i = 0; i < alarmTalkUser.length; i++) {
                     talkUser[`receiver_${i + 1}`] = alarmTalkUser[i]
                     talkUser[`subject_${i + 1}`] = `[정음]오늘의 뉴스(#${query})`
                     talkUser[`message_${i + 1}`] = template;
                 }
-                console.log(talkUser)
+                console.log(talkUser)*/
                 //await alimtalkSend(talkUser, news);
             }
         }
