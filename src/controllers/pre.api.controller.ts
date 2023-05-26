@@ -483,7 +483,6 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
                                 }]}
                         }
                     }
-                    console.log(talkUser)
                     await alimtalkSend(talkUser);
                 }
 
