@@ -127,6 +127,26 @@ export interface TokenResponse {
     scope: string;
     vendor?:string;
 }
+
+export interface TalkUser {
+    senderkey: string;
+    tpl_code: string;
+    sender: string;
+    receiver_1: string;
+    subject_1: string;
+    emtitle_1: string;
+    message_1: string;
+    button_1: {
+        button: {
+            name: string;
+            linkType: string;
+            linkTypeName: string;
+            linkMo: string;
+            linkPc: string;
+        }[];
+    };
+}
+
 export interface UserInfo {
     id: string;
     nickname: string;

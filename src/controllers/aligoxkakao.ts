@@ -1,5 +1,5 @@
 import aligoapi from 'aligoapi';
-import {News} from "../interfaces";
+import {News, TalkUser} from "../interfaces";
 import axios from "axios";
 import {hgetData} from "./worker";
 import {R_ALIGO_TOTEN, R_CAFE_KEYWORD} from "../helpers/common";
@@ -222,7 +222,7 @@ const templateRequest = (req, res) => {
         })
 }
 
-const alimtalkSend = async (obj) => {
+const alimtalkSend = async (obj:TalkUser) => {
     // req.body = {
     /*** 필수값입니다 ***/
     // senderkey: 발신프로필 키
@@ -249,17 +249,17 @@ const alimtalkSend = async (obj) => {
     params.append('apikey', authData.apikey);
     params.append('userid', authData.userid);
     params.append('token', authData.token);
-    params.append('senderkey', obj.body.senderkey);
-    params.append('tpl_code', obj.body.tpl_code);
-    params.append('sender', obj.body.sender);
-    params.append('receiver_1', obj.body.receiver_1);
-    params.append('subject_1', obj.body.subject_1);
-    params.append('emtitle_1', obj.body.emtitle_1);
-    params.append('message_1', obj.body.message_1);
+    params.append('senderkey', obj.senderkey);
+    params.append('tpl_code', obj.tpl_code);
+    params.append('sender', obj.sender);
+    params.append('receiver_1', obj.receiver_1);
+    params.append('subject_1', obj.subject_1);
+    params.append('emtitle_1', obj.emtitle_1);
+    params.append('message_1', obj.message_1);
     params.append('failover', 'Y');
-    params.append('fsubject_1', obj.body.subject_1);
-    params.append('fmessage_1', obj.body.message_1);
-    params.append('button_1', JSON.stringify(obj.body.button_1));
+    params.append('fsubject_1', obj.subject_1);
+    params.append('fmessage_1', obj.message_1);
+    params.append('button_1', JSON.stringify(obj.button_1));
 
     try {
         const response = await axios.post(api_url, params);

@@ -2,7 +2,7 @@ import {FastifyReply} from "fastify"
 import {handleServerError} from "../helpers/errors"
 import service from '../../service/common_service'
 import Common_service from '../../service/common_service'
-import {BlogItem, CafeItem, IAnyRequest, News, SearchNews} from "../interfaces";
+import {BlogItem, CafeItem, IAnyRequest, News, SearchNews, TalkUser} from "../interfaces";
 //import rp from 'request-promise-native'
 import {getArticle, getFindNewLinks, getNaverRankNews, getNaverRealNews, getNewLinks, getNews, getReply} from "./news";
 import {generateChatMessage} from "./openai";
@@ -465,8 +465,7 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
                 //현재 첫번째 뉴스만 전달
                 const content = `유형:[${query}]\n제목:${news[0].title}\n날짜:${news[0].pubDate}\n링크:${news[0].originallink}`
                 for (const user of alarmTalkUser) {
-                    const talkUser = {
-                        body : {
+                    const talkUser:TalkUser = {
                             senderkey: '2e4de0c15feba9d1c3948b8957ee8e9aa0b6f1c7',
                             tpl_code: 'TN_1799',
                             sender: '010-8599-7810',
@@ -481,7 +480,6 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
                                     "linkMo" :'http://www.news-all.co.kr/monitoring',
                                     "linkPc" :'http://www.news-all.co.kr/monitoring'
                                 }]}
-                        }
                     }
                     await alimtalkSend(talkUser);
                 }
