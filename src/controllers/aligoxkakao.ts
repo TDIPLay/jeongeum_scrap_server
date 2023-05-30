@@ -261,7 +261,6 @@ const alimtalkSend = async (obj:TalkUser) => {
     params.append('button_1', JSON.stringify(obj.button_1));
     try {
         const response = await axios.post(api_url, params);
-        console.log(response.data)
         return response.data;
     } catch (error) {
         console.log(error)
