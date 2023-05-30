@@ -23,9 +23,8 @@ const token = async (req) => {
         type: 'y', // 유효시간 타입 코드 // y(년), m(월), d(일), h(시), i(분), s(초)
         time: 10, // 유효시간
     };
-
     const api_url = 'https://kakaoapi.aligo.in/akv10/token/create/10/y/'; // JSON 결과
-    authData.token =  await hgetData(await getRedis(), R_ALIGO_TOTEN, "", "token");
+    authData.token =  await hgetData(await getRedis(), R_ALIGO_TOTEN, "", process.env["ALIGO_REG_HOST"]);
 
     const params = new URLSearchParams();
     params.append('apikey', authData.apikey);
@@ -244,7 +243,7 @@ const alimtalkSend = async (obj:TalkUser) => {
     // failover값이 Y일때 fsubject와 fmessage값은 필수입니다.
 
     const api_url = 'https://kakaoapi.aligo.in/akv10/alimtalk/send/'; // JSON 결과
-    authData.token =  await hgetData(await getRedis(), R_ALIGO_TOTEN, "", "token");
+    authData.token =  await hgetData(await getRedis(), R_ALIGO_TOTEN, "", process.env["ALIGO_REG_HOST"]);
     const params = new URLSearchParams();
     params.append('apikey', authData.apikey);
     params.append('userid', authData.userid);
@@ -255,16 +254,15 @@ const alimtalkSend = async (obj:TalkUser) => {
     params.append('receiver_1', obj.receiver_1);
     params.append('subject_1', obj.subject_1);
     params.append('emtitle_1', obj.emtitle_1);
-    params.append('message_1', obj.message_1);
-    params.append('failover', 'Y');
-    params.append('fsubject_1', obj.subject_1);
-    params.append('fmessage_1', obj.message_1);
+    params.append('failover', obj.failover);
+    params.append('fsubject_1', obj.fsubject_1);
+    params.append('fmessage_1', obj.fmessage_1);
     params.append('button_1', JSON.stringify(obj.button_1));
-
     try {
         const response = await axios.post(api_url, params);
         return response.data;
     } catch (error) {
+        console.log(error)
         throw error;
     }
 }

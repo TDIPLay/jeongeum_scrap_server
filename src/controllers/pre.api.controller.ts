@@ -438,32 +438,11 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
 
             if (alarmTalkUser.length > 0) {
                 console.log(`send talk User :  ${alarmTalkUser}`)
-                // senderkey: 발신프로필 키
-                // tpl_code: 템플릿 코드
-                // sender: 발신자 연락처
-                // receiver_1: 수신자 연락처
-                // subject_1: 알림톡 제목
-                // message_1: 알림톡 내용
-                // req.body = {
-                    /*** 필수값입니다 ***/
-                    // senderkey: 발신프로필 키
-                    // tpl_code: 템플릿 코드
-                    // sender: 발신자 연락처
-                    // receiver_1: 수신자 연락처
-                    // subject_1: 알림톡 제목
-                    // message_1: 알림톡 내용
-                    /*** 필수값입니다 ***/
-                    // senddate: 예약일 // YYYYMMDDHHMMSS
-                    // recvname: 수신자 이름
-                    // button: 버튼 정보 // JSON string
-                    // failover: 실패시 대체문자 전송기능 // Y or N
-                    // fsubject: 실패시 대체문자 제목
-                    // fmessage: 실패시 대체문자 내용
-                    // }
 
                 const emtitle = `조회 키워드:#${query}`
-                //현재 첫번째 뉴스만 전달
-                const content = `유형:[${query}]\n제목:${news[0].title}\n날짜:${news[0].pubDate}\n링크:${news[0].originallink}`
+                // 테스트로 첫번째 뉴스만 전달 템플릿에 맞춰 다중변경해야함
+                // sortedNews에 length에 따른 tpl_code 변경, 컨텐츠 리스트로 표현 해야함
+                const content = `유형:[${query}]\n제목:${sortedNews[0].title}\n날짜:${sortedNews[0].pubDate}\n링크:${sortedNews[0].originallink}`
                 for (const user of alarmTalkUser) {
                     const talkUser:TalkUser = {
                             senderkey: '2e4de0c15feba9d1c3948b8957ee8e9aa0b6f1c7',
@@ -479,7 +458,11 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
                                     "linkTypeName" : '웹링크',
                                     "linkMo" :'http://www.news-all.co.kr/monitoring',
                                     "linkPc" :'http://www.news-all.co.kr/monitoring'
-                                }]}
+                                }]},
+                        //문자메세지
+                         failover: 'N',
+                         fsubject_1: '', //제목
+                         fmessage_1: '' //컨텐츠
                     }
                     await alimtalkSend(talkUser);
                 }
@@ -495,25 +478,6 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
                 //await alimtalkSend(talkUser, news);
             }
         }
-
-
-        /*let user: KakaoAccessTokenResponse = await hgetData(redis, RTOTEN_KAKAO, "ygkwang");
-        for (let i = 0; i < news.length; i += 4) {
-            if(i === 4) break;
-            let talk = {
-                object_type: 'text',
-                text: news[i].title,
-                link: {
-                    web_url: `${process.env.LINK_PASS_URL}?url=${news[i].originallink}`,
-                    mobile_web_url: `${process.env.LINK_PASS_URL}?url=${news[i].originallink}`,
-                },
-                button_title: "바로 확인"
-            };
-            console.log(talk)
-            await sleep(10);
-            sendKakaoTalkMessage(user.access_token, talk)
-        }*/
-
 
         request.transfer = {
             result: MESSAGE.SUCCESS,
@@ -946,9 +910,14 @@ export const preAligoToken = async (request: IAnyRequest, reply: FastifyReply, d
         const {query} = request.query;
 
         const result = await token(request);
+        if(result.token){
+            const redisData = {[`${process.env["ALIGO_REG_HOST"]}`]: result.token};
+            await hmsetRedis(await getRedis(), R_ALIGO_TOTEN, redisData, 86504541);
+            request.transfer = result
+        }else{
+            request.transfer = 'fail token'
+        }
 
-        request.transfer = result
-        await hmsetRedis(await getRedis(), R_ALIGO_TOTEN, result, 86504541);
         done();
     } catch (e) {
         handleServerError(reply, e)

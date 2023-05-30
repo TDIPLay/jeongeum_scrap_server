@@ -136,6 +136,9 @@ export interface TalkUser {
     subject_1: string;
     emtitle_1: string;
     message_1: string;
+    failover: string;
+    fsubject_1: string;
+    fmessage_1: string;
     button_1: {
         button: {
             name: string;
