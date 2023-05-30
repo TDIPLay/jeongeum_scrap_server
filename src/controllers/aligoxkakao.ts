@@ -254,12 +254,14 @@ const alimtalkSend = async (obj:TalkUser) => {
     params.append('receiver_1', obj.receiver_1);
     params.append('subject_1', obj.subject_1);
     params.append('emtitle_1', obj.emtitle_1);
+    params.append('message_1', obj.message_1 );
     params.append('failover', obj.failover);
     params.append('fsubject_1', obj.fsubject_1);
     params.append('fmessage_1', obj.fmessage_1);
     params.append('button_1', JSON.stringify(obj.button_1));
     try {
         const response = await axios.post(api_url, params);
+        console.log(response.data)
         return response.data;
     } catch (error) {
         console.log(error)

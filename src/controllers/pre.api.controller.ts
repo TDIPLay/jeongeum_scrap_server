@@ -460,9 +460,9 @@ export const preSearchNewLink = async (request: IAnyRequest, reply: FastifyReply
                                     "linkPc" :'http://www.news-all.co.kr/monitoring'
                                 }]},
                         //문자메세지
-                         failover: '',//전송:Y,미전송:N
-                         fsubject_1: '', //제목
-                         fmessage_1: '' //컨텐츠
+                         failover: 'N',//전송:Y,미전송:N
+                         fsubject_1: '[정음]오늘의 뉴스', //제목
+                         fmessage_1: content //컨텐츠
                     }
                     await alimtalkSend(talkUser);
                 }
@@ -912,7 +912,7 @@ export const preAligoToken = async (request: IAnyRequest, reply: FastifyReply, d
         const result = await token(request);
         if(result.token){
             const redisData = {[`${process.env["ALIGO_REG_HOST"]}`]: result.token};
-            await hmsetRedis(await getRedis(), R_ALIGO_TOTEN, redisData, 86504541);
+            await hmsetRedis(await getRedis(), R_ALIGO_TOTEN, redisData, 0);
             request.transfer = result
         }else{
             request.transfer = 'fail token'
